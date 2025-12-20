@@ -23,7 +23,8 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     const socketUrl =
-      import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
+      import.meta.env.VITE_SOCKET_URL;
+      if (!socketUrl) return;
 
     const s = io(socketUrl, {
       transports: ["websocket"],
