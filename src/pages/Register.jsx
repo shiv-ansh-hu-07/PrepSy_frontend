@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+console.log("🔥 REGISTER FILE LOADED");
+
+
 export default function Register() {
   const navigate = useNavigate();
 
