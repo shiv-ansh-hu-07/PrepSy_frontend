@@ -16,8 +16,6 @@ export default function Login() {
 
     try {
       await login(email, password);
-
-      // ✅ AuthContext is now updated
       navigate("/dashboard", { replace: true });
 
     } catch (err) {

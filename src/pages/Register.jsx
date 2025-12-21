@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 console.log("🔥 REGISTER FILE LOADED");
 
@@ -11,6 +12,8 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const { register } = useAuth();
+
 
   async function handleRegister(e) {
     e.preventDefault();
