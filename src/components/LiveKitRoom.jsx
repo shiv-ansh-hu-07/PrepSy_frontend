@@ -8,7 +8,10 @@ export default function LiveKitRoomWrapper({ roomId, userId }) {
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_BASE_URL}/livekit/token?room=${roomId}&user=${userId}`)
       .then(res => res.json())
-      .then(data => setToken(data.token));
+      .then(data => {
+        setToken(data.token);
+        setServerUrl(data.url); 
+      });;
   }, []);
 
   if (!token) return <>Loading room...</>;
