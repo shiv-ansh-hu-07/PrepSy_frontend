@@ -27,11 +27,14 @@ export const SocketProvider = ({ children }) => {
 
     const s = io(socketUrl, {
       transports: ["websocket"],
-      autoConnect: true,
+      autoConnect: false,          
+      withCredentials: true,
       auth: {
         token: localStorage.getItem("token"),
       },
     });
+
+    s.connect();
 
     s.on("connect", () => {
       console.log("Socket connected:", s.id);
