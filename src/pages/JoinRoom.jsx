@@ -4,7 +4,6 @@ import api from "../services/api";
 
 export default function JoinRoom() {
   const [roomId, setRoomId] = useState("");
-
   const [tagQuery, setTagQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -49,82 +48,202 @@ export default function JoinRoom() {
     }
   };
 
+  const isMobile = window.innerWidth < 900;
+
+  /* ---------------- STYLES ---------------- */
+
+  const pageStyle = {
+    minHeight: "100vh",
+    background: "#f6f7fb",
+    display: "flex",
+    justifyContent: "center",
+    padding: "80px 24px",
+  };
+
+  const layoutStyle = {
+    width: "100%",
+    maxWidth: "1100px",
+    display: "grid",
+    gridTemplateColumns: isMobile ? "1fr" : "1fr 420px",
+    gap: "40px",
+    alignItems: "center",
+  };
+
+  const cardStyle = {
+    background: "#ffffff",
+    borderRadius: "22px",
+    border: "1px solid #e6e8f0",
+    padding: "28px",
+    boxShadow: "0 14px 40px rgba(0,0,0,0.08)",
+  };
+
+  const headingStyle = {
+    fontFamily: "Georgia, serif",
+    fontSize: "26px",
+    color: "#2f3b63",
+    textAlign: "center",
+    marginBottom: "6px",
+  };
+
+  const subText = {
+    textAlign: "center",
+    fontSize: "13px",
+    color: "#6b78a0",
+    marginBottom: "24px",
+  };
+
+  const labelStyle = {
+    fontSize: "12px",
+    color: "#6b78a0",
+    marginBottom: "4px",
+    display: "block",
+  };
+
+  const inputStyle = {
+    width: "100%",
+    height: "36px",
+    borderRadius: "8px",
+    border: "1px solid #d6d9e8",
+    padding: "0 12px",
+    fontSize: "13px",
+    marginBottom: "12px",
+    outline: "none",
+  };
+
+  const primaryButton = {
+    width: "100%",
+    height: "38px",
+    borderRadius: "999px",
+    background: "#8a9bd6",
+    color: "#ffffff",
+    border: "none",
+    fontSize: "14px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0 6px 18px rgba(138,155,214,0.4)",
+  };
+
+  const secondaryButton = {
+    ...primaryButton,
+    background: "#eef1ff",
+    color: "#4a5a85",
+    boxShadow: "none",
+  };
+
+  const divider = {
+    textAlign: "center",
+    fontSize: "12px",
+    color: "#9aa4c7",
+    margin: "26px 0",
+  };
+
+  const sectionHeading = {
+    fontSize: "15px",
+    fontWeight: 600,
+    marginBottom: "10px",
+    color: "#2f3b63",
+  };
+
+  const mutedText = {
+    fontSize: "12px",
+    color: "#9aa4c7",
+  };
+
+  const resultCard = {
+    background: "#f9faff",
+    border: "1px solid #e6e8f0",
+    borderRadius: "12px",
+    padding: "14px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "10px",
+  };
+
+  const tagChip = {
+    fontSize: "11px",
+    padding: "4px 10px",
+    background: "#eef1ff",
+    color: "#4a5a85",
+    borderRadius: "999px",
+    cursor: "pointer",
+  };
+
+  const joinMiniButton = {
+    padding: "6px 14px",
+    borderRadius: "999px",
+    background: "#8a9bd6",
+    color: "#ffffff",
+    border: "none",
+    fontSize: "12px",
+    cursor: "pointer",
+  };
+
+  const illustrationStyle = {
+    width: "100%",
+    maxWidth: "380px",
+    opacity: 0.95,
+    filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.08))",
+  };
+
+  /* ---------------- JSX ---------------- */
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-brand-900 text-white p-6">
-      <div className="bg-brand-800 p-8 rounded-xl w-full max-w-xl shadow-xl space-y-8">
+    <div style={pageStyle}>
+      <div style={layoutStyle}>
 
-        {/* ---------------- JOIN BY ROOM ID ---------------- */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Join a Room</h2>
+        {/* LEFT: JOIN CARD */}
+        <div style={cardStyle}>
+          <h2 style={headingStyle}>Join a Room</h2>
+          <p style={subText}>
+            Enter a room ID or discover rooms by tags
+          </p>
 
-          <label className="block mb-2 text-sm text-gray-300">
-            Enter Room ID
-          </label>
-
+          <label style={labelStyle}>Room ID</label>
           <input
-            className="w-full p-2 mb-4 rounded bg-gray-900 border border-gray-700"
+            style={inputStyle}
             value={roomId}
             onChange={(e) => setRoomId(e.target.value)}
-            placeholder="Room ID"
+            placeholder="Enter Room ID"
           />
 
-          <button
-            onClick={handleJoin}
-            className="w-full py-2 bg-brand-700 rounded-lg hover:bg-brand-600"
-          >
+          <button onClick={handleJoin} style={primaryButton}>
             Join Room
           </button>
-        </div>
 
-        {/* ---------------- SEARCH BY TAGS ---------------- */}
-        <div>
-          <h3 className="text-lg font-semibold mb-3">
-            Or search rooms by tags
-          </h3>
+          <div style={divider}>OR</div>
+
+          <h3 style={sectionHeading}>Discover rooms by tags</h3>
 
           <input
-            className="w-full p-2 rounded bg-gray-900 border border-gray-700"
+            style={inputStyle}
             placeholder="e.g. dsa, jee, react"
             value={tagQuery}
             onChange={(e) => setTagQuery(e.target.value)}
           />
 
-          <button
-            onClick={searchByTags}
-            className="mt-3 px-4 py-2 bg-blue-600 rounded hover:bg-blue-500"
-          >
-            Search
+          <button onClick={searchByTags} style={secondaryButton}>
+            Search Rooms
           </button>
 
-          {/* Results */}
-          <div className="mt-4 space-y-3">
-            {loading && (
-              <p className="text-sm text-gray-400">Searching…</p>
-            )}
-
+          <div style={{ marginTop: "20px" }}>
+            {loading && <p style={mutedText}>Searching…</p>}
             {!loading && results.length === 0 && tagQuery && (
-              <p className="text-sm text-gray-400">
-                No rooms found
-              </p>
+              <p style={mutedText}>No rooms found</p>
             )}
 
             {results.map((room) => (
-              <div
-                key={room.roomId}
-                className="bg-brand-900 p-4 rounded-lg flex justify-between items-center"
-              >
+              <div key={room.roomId} style={resultCard}>
                 <div>
-                  <p className="font-semibold">{room.name}</p>
-
-                  <div className="flex flex-wrap gap-2 mt-1">
+                  <p style={{ fontWeight: 600 }}>{room.name}</p>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "6px" }}>
                     {room.tags.map((tag) => (
                       <span
                         key={tag}
                         onClick={() => handleTagClick(tag)}
-                        className="px-2 py-1 text-xs bg-brand-700 rounded-full cursor-pointer
-                        hover:bg-brand-600 transition"
-
+                        style={tagChip}
                       >
                         #{tag}
                       </span>
@@ -134,7 +253,7 @@ export default function JoinRoom() {
 
                 <button
                   onClick={() => navigate(`/room/${room.roomId}`)}
-                  className="px-3 py-1 bg-green-600 rounded hover:bg-green-500"
+                  style={joinMiniButton}
                 >
                   Join
                 </button>
@@ -142,6 +261,17 @@ export default function JoinRoom() {
             ))}
           </div>
         </div>
+
+        {/* RIGHT: ILLUSTRATION */}
+        {!isMobile && (
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <img
+              src="/joinRoom_img.png"
+              alt="Students studying together"
+              style={illustrationStyle}
+            />
+          </div>
+        )}
 
       </div>
     </div>
