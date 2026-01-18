@@ -7,6 +7,9 @@ import TeamsRoom from "../components/teamsRoom";
 import ChatDrawer from "../components/ChatDrawer";
 import { useEffect, useState } from "react";
 
+console.log("🔥 PROD BUILD CHECK –", new Date().toISOString());
+
+
 export default function RoomPage() {
   const { roomId } = useParams();
   const navigate = useNavigate();
