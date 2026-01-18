@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import { LiveKitRoom } from "@livekit/components-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
-import PomodoroTimer from "../components/PomodoroTimer";
-
-import { LiveKitRoom, VideoConference } from "@livekit/components-react";
-import "@livekit/components-styles";
+import RoomLayout from "../components/RoomLayout";
+import TeamsRoom from "../components/teamsRoom";
+import ChatDrawer from "../components/ChatDrawer";
+import { useEffect, useState } from "react";
 
 export default function RoomPage() {
   const { roomId } = useParams();
@@ -13,141 +13,72 @@ export default function RoomPage() {
   const { user } = useAuth();
 
   const [token, setToken] = useState(null);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [shouldConnect, setShouldConnect] = useState(false);
-
-  const serverUrl = import.meta.env.VITE_LIVEKIT_WS_URL;
+  const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
-    if (!roomId) {
-      console.warn("Room ID not available yet");
-      return;
-    }
+    const identity = user?.id ?? crypto.randomUUID();
+    const name = user?.name || "Guest";
 
-    let cancelled = false;
+    api
+      .get(`/livekit/token?room=${roomId}&user=${identity}&name=${name}`)
+      .then((res) => setToken(res.data.token));
+  }, [roomId, user]);
 
-    const identity =
-      user?.id ?? `guest-${crypto.randomUUID()}`;
-
-    const displayName =
-      user?.name || user?.email || "Guest";
-
-    const fetchToken = async () => {
-      try {
-        console.log("Fetching LiveKit token");
-        console.log("Room:", roomId);
-        console.log("Identity:", identity);
-        console.log("Display name:", displayName);
-
-        const res = await api.get(
-          `/livekit/token?room=${encodeURIComponent(
-            roomId
-          )}&user=${encodeURIComponent(
-            identity
-          )}&name=${encodeURIComponent(displayName)}`
-        );
-
-        if (!res.data || typeof res.data.token !== "string") {
-          throw new Error("Invalid token response");
-        }
-
-        if (!cancelled) {
-          setToken(res.data.token);
-        }
-      } catch (err) {
-        console.error("LiveKit token fetch failed:", err);
-        if (!cancelled) {
-          setError("Failed to join room");
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchToken();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [roomId, user?.id]);
-
-  // ---------------- UI STATES ----------------
-
-  if (!serverUrl) {
+  if (!token) {
     return (
-      <div className="p-8 text-white">
-        LiveKit server URL not configured
+      <div
+        style={{
+          minHeight: "100vh",
+          background:
+            "linear-gradient(180deg, #F8FAFF 0%, #EEF2FF 100%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily:
+            "'Inter', system-ui, -apple-system, BlinkMacSystemFont",
+          color: "#4a5a85",
+        }}
+      >
+        Joining…
       </div>
     );
   }
 
-  if (loading) {
-    return <div className="p-6 text-white">Joining room…</div>;
-  }
-
-  if (error) {
-    return <div className="p-6 text-red-400">{error}</div>;
-  }
-
-  if (!token) {
-    return <div className="p-6 text-red-400">No token received</div>;
-  }
-
-  // ---------------- MAIN RENDER ----------------
-
   return (
-    <div className="flex h-screen">
-      <div className="flex-1 bg-gray-900 p-6">
-        <div className="mb-4 flex justify-between items-center">
-          <button className="btn" onClick={() => navigate(-1)}>
-            ← Exit
-          </button>
+    /* 🔑 SINGLE SCROLL CONTAINER */
+    <div
+      style={{
+        minHeight: "100vh",
+        overflowY: "auto",
+        overflowX: "hidden",
+        background:
+          "linear-gradient(180deg, #F8FAFF 0%, #EEF2FF 100%)",
+        fontFamily:
+          "'Inter', system-ui, -apple-system, BlinkMacSystemFont",
+      }}
+    >
+      <LiveKitRoom
+        token={token}
+        serverUrl={import.meta.env.VITE_LIVEKIT_WS_URL}
+        connect
+        data-lk-room-metadata={user?.id ?? "host"}
+        audio={false}
+        video={false}
+        style={{
+          width: "100%",
+        }}
+      >
+        <RoomLayout
+          onToggleChat={() => setChatOpen((v) => !v)}
+          onLeave={() => navigate("/myRooms")}
+        >
+          <TeamsRoom />
+        </RoomLayout>
 
-          {!shouldConnect && (
-            <button
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-white"
-              onClick={() => setShouldConnect(true)}
-            >
-              Join Room
-            </button>
-          )}
-        </div>
-
-        <div className="w-full h-[calc(100vh-120px)] bg-gray-800 rounded-md flex items-center justify-center">
-          {!shouldConnect ? (
-            <div className="text-gray-300 text-lg">
-              Click{" "}
-              <span className="text-green-400 font-semibold">
-                Join Room
-              </span>{" "}
-              to start
-            </div>
-          ) : (
-            <LiveKitRoom
-              token={token}
-              serverUrl={serverUrl}
-              connect={true}
-              connectOptions={{ autoSubscribe: true }}
-              audio={true}
-              video={true}
-              data-lk-theme="default"
-              style={{ height: "100%", width: "100%" }}
-            >
-              <VideoConference
-                chat={false}
-                screenShare={true}
-              />
-            </LiveKitRoom>
-          )}
-        </div>
-
-        <div className="mt-4">
-          <PomodoroTimer />
-        </div>
-      </div>
+        {chatOpen && (
+          <ChatDrawer onClose={() => setChatOpen(false)} />
+        )}
+      </LiveKitRoom>
     </div>
   );
 }
