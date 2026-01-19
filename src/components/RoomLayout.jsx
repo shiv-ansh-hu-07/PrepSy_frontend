@@ -7,7 +7,7 @@ import {
   MessageSquare,
   LogOut,
 } from "lucide-react";
-import useMediaControls from "../hooks/useMediaControls";
+import useMediaControls from "../hooks/useMediaControl";
 import { useNavigate } from "react-router-dom";
 import PomodoroTimer from "./PomodoroTimer";
 import { useParticipants } from "@livekit/components-react";
