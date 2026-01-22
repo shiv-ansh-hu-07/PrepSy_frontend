@@ -77,12 +77,9 @@ export default function RoomLayout({ children, onToggleChat }) {
   return (
     <div style={styles.page}>
       <div style={styles.centerWrap}>
-        {/* LEFT – VIDEO STAGE */}
         <div style={styles.stageWrap}>
           <div style={styles.stage}>{children}</div>
 
-          {/* LIVE STATUS */}
-          {/* LIVE STATUS – TOP */}
           <div
             style={{
               position: "absolute",

@@ -7,7 +7,6 @@ import TeamsRoom from "../components/teamsRoom";
 import ChatDrawer from "../components/ChatDrawer";
 import { useEffect, useState } from "react";
 
-console.log("🔥 PROD BUILD CHECK –", new Date().toISOString());
 
 
 export default function RoomPage() {
@@ -66,7 +65,7 @@ export default function RoomPage() {
         connect
         data-lk-room-metadata={user?.id ?? "host"}
         audio={false}
-        video={false}
+        video
         style={{
           width: "100%",
         }}

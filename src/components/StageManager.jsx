@@ -48,8 +48,7 @@ export default function StageManager({ tracks = [] }) {
                 >
                     {fitMode === "contain" ? "Fit" : "Fill"}
                 </button>
-
-                {/* PiP participants (camera OR avatar fallback) */}
+                
                 <div style={styles.pip}>
                     {participants.map(p => {
                         const cam = cameraTracks.find(
