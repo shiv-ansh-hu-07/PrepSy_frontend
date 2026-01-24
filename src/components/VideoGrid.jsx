@@ -52,7 +52,6 @@ export default function VideoGrid({ tracks }) {
               />
             )}
 
-            {/* Name badge */}
             <div
               style={{
                 position: "absolute",
