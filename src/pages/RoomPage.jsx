@@ -64,8 +64,8 @@ export default function RoomPage() {
         serverUrl={import.meta.env.VITE_LIVEKIT_WS_URL}
         connect
         data-lk-room-metadata={user?.id ?? "host"}
-        audio={false}
-        video={false}
+        audio
+        video
         style={{
           width: "100%",
         }}

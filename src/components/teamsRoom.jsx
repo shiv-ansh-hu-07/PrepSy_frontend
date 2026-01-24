@@ -9,10 +9,10 @@ export default function TeamsRoom() {
 
   const tracks = useTracks(
     [
-      { source: "screen_share", withPlaceholder: false },
-      { source: "camera", withPlaceholder: false },
+      { source: "screen_share", withPlaceholder: true },
+      { source: "camera", withPlaceholder: true },
     ],
-    { onlySubscribed: false }
+    { onlySubscribed: true }
   );
 
   return (

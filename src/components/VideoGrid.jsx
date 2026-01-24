@@ -22,7 +22,8 @@ export default function VideoGrid({ tracks }) {
         >
 
             {tracks.map(t => (
-                <div key={t.participant.identity} style={{ borderRadius: 12, overflow: "hidden" }}>
+                <div key={t.publication.trackSid}
+                    style={{ borderRadius: 12, overflow: "hidden" }}>
                     {t.publication?.isEnabled
                         ? <VideoTrack trackRef={t} />
                         : <AvatarTile name={t.participant.name} />
