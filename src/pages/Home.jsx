@@ -38,7 +38,7 @@ export default function Home() {
             marginBottom: "16px",
           }}
         >
-          🧠 Built for deep focus
+          🧠 Built for Smart Learning
         </div>
 
         <h1
@@ -61,7 +61,7 @@ export default function Home() {
             marginBottom: "32px",
           }}
         >
-          Focus better. Stay consistent. Prepare quietly.
+          Join live study rooms with people preparing for the same goals.
         </p>
 
         <div
@@ -85,7 +85,7 @@ export default function Home() {
                 "0 8px 22px rgba(99,102,241,0.28)",
             }}
           >
-            Try for free
+            Start studying together
           </Link>
 
           <a
@@ -101,7 +101,7 @@ export default function Home() {
               color: "#4a5a85",
             }}
           >
-            How it works
+            See how PrepSy works
           </a>
         </div>
       </section>
@@ -124,7 +124,7 @@ export default function Home() {
 
           }}
         >
-          PrepSy recreates the productivity of group / solo study session — accountability, structured sessions, and peer motivation — all inside lightweight virtual rooms.
+          PrepSy combines focused study sessions with meaningful peer discussions — so you don’t just study longer, you study smarter.
         </p>
       </section>
 
@@ -150,23 +150,23 @@ export default function Home() {
           {[
             {
               icon: "🚪",
-              title: "Enter a study room",
-              desc: "Join others or have one for yourself.",
+              title: "Join a Study Room",
+              desc: "Enter a room with learners preparing for similar exams or topics.",
             },
             {
               icon: "⏱️",
-              title: "Start a session",
-              desc: "Pomodoro, A.I. companionship and many more features.",
+              title: "Study in Focused Blocks",
+              desc: "Use structured timers (Pomodoro-style) to study seriously without distractions.",
             },
             {
               icon: "👥",
               title: "Study together",
-              desc: "Find people with same topics and discuss.",
+              desc: "After each block, interact — ask doubts, explain concepts, share strategies.",
             },
             {
               icon: "✅",
               title: "Leave with progress",
-              desc: "Valuate your progress with stats at last of every session.",
+              desc: "Track time studied, topics covered, and consistency built over sessions.",
             },
           ].map((item, index) => (
             <div
@@ -242,11 +242,11 @@ export default function Home() {
               color: "#4a5a85",
             }}
           >
-            Motivation fades.
+            Your best study sessions happen with the right people
             <br />
-            Consistency compounds.
+            PrepSy helps you find them
             <br />
-            PrepSy helps you show up.
+            study better together
           </p>
 
           <Link

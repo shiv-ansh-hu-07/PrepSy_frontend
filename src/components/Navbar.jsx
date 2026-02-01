@@ -68,6 +68,9 @@ export default function Navbar() {
           >
             PrepSy
           </span>
+          <span className="mt-1 w-fit rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-600">
+            beta
+          </span>
         </div>
 
         {/* NAV */}
