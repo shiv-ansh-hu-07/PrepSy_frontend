@@ -51,7 +51,7 @@ export default function Home() {
             letterSpacing: "-0.02em",
           }}
         >
-          Study together. Stay consistent. Achieve more.
+          Study together. Learn better. Stay consistent.
         </h1>
 
         <p
@@ -61,7 +61,7 @@ export default function Home() {
             marginBottom: "32px",
           }}
         >
-          Join live study rooms with people preparing for the same goals.
+          Join live study rooms to focus, discuss, and learn with people preparing for the same goals.
         </p>
 
         <div
@@ -127,6 +127,27 @@ export default function Home() {
           PrepSy combines focused study sessions with meaningful peer discussions — so you don’t just study longer, you study smarter.
         </p>
       </section>
+      <section
+        style={{
+          maxWidth: "760px",
+          margin: "0 auto",
+          paddingBottom: "48px",
+          paddingLeft: "24px",
+          paddingRight: "24px",
+          textAlign: "center",
+        }}
+      >
+        <p
+          style={{
+            fontSize: "18px",
+            lineHeight: "1.6",
+            color: "#4a5a85",
+
+          }}
+        >
+          Focus alone is hard. Learning together makes it easier.
+        </p>
+      </section>
 
       <section
         id="how-it-works"
@@ -160,7 +181,7 @@ export default function Home() {
             },
             {
               icon: "👥",
-              title: "Study together",
+              title: "Discuss & Learn Together",
               desc: "After each block, interact — ask doubts, explain concepts, share strategies.",
             },
             {
