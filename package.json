@@ -12,6 +12,7 @@
   "dependencies": {
     "@livekit/components-react": "^2.9.17",
     "@livekit/components-styles": "^1.2.0",
+    "@react-oauth/google": "^0.13.4",
     "@tailwindcss/postcss": "^4.1.17",
     "axios": "^1.13.2",
     "jspdf": "^4.0.0",

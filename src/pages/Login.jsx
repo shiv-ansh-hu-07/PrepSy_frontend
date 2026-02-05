@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { GoogleLogin } from '@react-oauth/google';
+
+import api from '../services/api';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -207,6 +210,17 @@ export default function Login() {
             Sign in
           </button>
 
+            <GoogleLogin
+            onSuccess={async (credentialResponse) => {
+              const res = await api.post("/auth/oauth/google", {
+                idToken: credentialResponse.credential,
+              });
+
+              loginWithToken(res.data.token, res.data.user); 
+              navigate("/dashboard");
+            }}
+            onError={() => alert("Google login failed")}
+          />
 
           {/* Footer */}
           <div
