@@ -8,10 +8,22 @@ import api from '../services/api';
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
-
+  const { loginWithToken } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  const googleLogin = useGoogleLogin({
+  onSuccess: async (tokenResponse) => {
+    const res = await api.post("/auth/oauth/google", {
+      idToken: tokenResponse.credential,
+    });
+
+    await loginWithToken(res.data.token);
+    navigate("/dashboard");
+  },
+  onError: () => alert("Google login failed"),
+});
 
   async function handleLogin(e) {
     e.preventDefault();
