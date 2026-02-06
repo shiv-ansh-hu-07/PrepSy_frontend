@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { GoogleLogin } from '@react-oauth/google';
+import { GoogleLogin } from "@react-oauth/google";
 
 import api from '../services/api';
 
@@ -13,17 +13,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const googleLogin = useGoogleLogin({
-  onSuccess: async (tokenResponse) => {
-    const res = await api.post("/auth/oauth/google", {
-      idToken: tokenResponse.credential,
-    });
 
-    await loginWithToken(res.data.token);
-    navigate("/dashboard");
-  },
-  onError: () => alert("Google login failed"),
-});
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -222,17 +212,20 @@ export default function Login() {
             Sign in
           </button>
 
-            <GoogleLogin
+          <GoogleLogin
             onSuccess={async (credentialResponse) => {
               const res = await api.post("/auth/oauth/google", {
                 idToken: credentialResponse.credential,
               });
 
-              loginWithToken(res.data.token, res.data.user); 
+              await loginWithToken(res.data.token);
               navigate("/dashboard");
             }}
-            onError={() => alert("Google login failed")}
+            onError={() => {
+              alert("Google login failed");
+            }}
           />
+
 
           {/* Footer */}
           <div
@@ -247,7 +240,7 @@ export default function Login() {
             <Link
               to="/register"
               style={{
-            color: "#4a5a85",
+                color: "#4a5a85",
                 fontWeight: 500,
                 textDecoration: "none",
               }}
