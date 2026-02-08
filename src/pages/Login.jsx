@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { GoogleLogin } from "@react-oauth/google";
-import { useGoogleLogin } from "@react-oauth/google";
-
 
 import api from '../services/api';
 
@@ -31,21 +29,6 @@ export default function Login() {
       );
     }
   }
-
-  const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      const res = await api.post("/auth/oauth/google", {
-        accessToken: tokenResponse.access_token,
-      });
-
-      await loginWithToken(res.data.token);
-      navigate("/dashboard");
-    },
-    onError: () => {
-      alert("Google login failed");
-    },
-  });
-
 
   return (
     <div
@@ -229,45 +212,26 @@ export default function Login() {
             Sign in
           </button>
 
-          <button
-            type="button"
-            onClick={() => googleLogin()}
-            style={{
-              marginTop: "18px",
-              width: "90%",
-              padding: "14px",
-              borderRadius: "999px",
-              backgroundColor: "#ffffff",
-              border: "1px solid #e3e6ff",
-              fontSize: "14px",
-              fontWeight: 500,
-              color: "#374151",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "10px",
-              cursor: "pointer",
-              boxShadow: "0 8px 18px rgba(0,0,0,0.06)",
-              transition: "all 0.15s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow =
-                "0 12px 26px rgba(0,0,0,0.1)";
-              e.currentTarget.style.transform = "translateY(-1px)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow =
-                "0 8px 18px rgba(0,0,0,0.06)";
-              e.currentTarget.style.transform = "translateY(0)";
-            }}
-          >
-            <img
-              src="https://www.svgrepo.com/show/475656/google-color.svg"
-              alt="Google"
-              style={{ width: "18px", height: "18px" }}
+          <div style={{ marginTop: "18px", display: "flex", justifyContent: "center" }}>
+            <GoogleLogin
+              theme="outline"
+              size="large"
+              shape="pill"
+              text="continue_with"
+              width="360"
+              onSuccess={async (credentialResponse) => {
+                const res = await api.post("/auth/oauth/google", {
+                  idToken: credentialResponse.credential, // 👈 ID TOKEN (correct)
+                });
+
+                await loginWithToken(res.data.token);
+                navigate("/dashboard");
+              }}
+              onError={() => {
+                alert("Google login failed");
+              }}
             />
-            Continue with Google
-          </button>
+          </div>
 
 
 
