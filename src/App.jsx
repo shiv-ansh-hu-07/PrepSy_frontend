@@ -82,6 +82,15 @@ export default function App() {
           />
 
           <Route
+            path="/feature"
+            element={
+              <PublicRoute>
+                <Features />
+              </PublicRoute>
+            }
+          />
+
+          <Route
             path="/create-room"
             element={
               <ProtectedRoute>
