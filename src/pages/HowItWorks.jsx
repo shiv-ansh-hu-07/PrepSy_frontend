@@ -15,7 +15,7 @@ export default function HowItWorks() {
     {
       title: "Study Together",
       description:
-        "Join a 25-minute focused session. Others study alongside you — quietly and independently.",
+        "Join a 25-minute focused session. Others study alongside you. Collaborate with others",
     },
     {
       title: "Take a Real Break",
@@ -70,7 +70,8 @@ export default function HowItWorks() {
 
       {/* Footer note */}
       <div className="max-w-2xl mx-auto text-center mt-20 text-[#6b78a8] text-sm">
-        No streaks. No scores. No pressure.  
+        Collaborate with others, but without the pressure to perform. <br /> 
+          
         <br />
         Just a shared place to study — calmly and consistently.
       </div>
