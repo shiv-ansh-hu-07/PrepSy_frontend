@@ -12,6 +12,7 @@ import JoinRoom from "./pages/JoinRoom";
 import RoomPage from "./pages/RoomPage";
 import MyRooms from "./pages/myRooms";
 import Features from "./pages/feature";
+import HowItWorks from "./pages/HowItWorks";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
@@ -68,6 +69,15 @@ export default function App() {
             element={
               <PublicRoute>
                 <Register />
+              </PublicRoute>
+            }
+          />
+
+          <Route
+            path="/HowItWorks"
+            element={
+              <PublicRoute>
+                <HowItWorks />
               </PublicRoute>
             }
           />

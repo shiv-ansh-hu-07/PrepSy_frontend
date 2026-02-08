@@ -89,7 +89,7 @@ export default function Home() {
           </Link>
 
           <a
-            href="#how-it-works"
+            href="#HowItWorks"
             style={{
               backgroundColor: "#FFFFFF",
               border: "1px solid #E5E7EB",
