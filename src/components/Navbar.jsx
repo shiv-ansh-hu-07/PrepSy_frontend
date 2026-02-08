@@ -8,6 +8,8 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const isHomePage = location.pathname === "/";
+  const isFeaturePage = location.pathname === "/feature";
+  const isLoginPage = location.pathname === "/login";
 
   const handleLogout = () => {
     logout();
@@ -76,19 +78,33 @@ export default function Navbar() {
         {/* NAV */}
         <nav style={{ display: "flex", alignItems: "center", gap: "28px" }}>
           {/* FEATURES — always visible */}
-          <Link
-            to="/#features"
-            style={{
-              fontSize: "14px",
-              color: "#6b7bb0",
-              textDecoration: "none",
-            }}
-          >
-            Features
-          </Link>
+          {isFeaturePage ? (
+            <Link
+              to="/"
+              style={{
+                fontSize: "14px",
+                color: "#6b7bb0",
+                textDecoration: "none",
+                fontWeight: 500,
+              }}
+            >
+              Home
+            </Link>
+          ) : (
+            <Link
+              to="/feature"
+              style={{
+                fontSize: "14px",
+                color: "#6b7bb0",
+                textDecoration: "none",
+              }}
+            >
+              Features
+            </Link>
+          )}
 
           {/* HOME PAGE (logged out) → Login only */}
-          {isHomePage && !user && (
+          {(isHomePage || isFeaturePage) && !user && (
             <Link
               to="/login"
               style={{
@@ -106,7 +122,7 @@ export default function Navbar() {
             </Link>
           )}
 
-          {!isHomePage && user && (
+          {(!isHomePage || isLoginPage) && user && (
             <>
               <Link
                 to="/dashboard"
