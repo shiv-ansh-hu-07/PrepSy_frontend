@@ -11,6 +11,7 @@ import CreateRoom from "./pages/CreateRoom";
 import JoinRoom from "./pages/JoinRoom";
 import RoomPage from "./pages/RoomPage";
 import MyRooms from "./pages/myRooms";
+import Features from "./pages/feature";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
