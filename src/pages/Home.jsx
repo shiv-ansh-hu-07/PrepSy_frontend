@@ -88,21 +88,22 @@ export default function Home() {
             Start studying together
           </Link>
 
-          <a
-            href="#HowItWorks"
+          <Link
+            to="/HowItWorks"
             style={{
-              backgroundColor: "#FFFFFF",
-              border: "1px solid #E5E7EB",
+              backgroundColor: "#8a9bd6",
+              color: "#FFFFFF",
               padding: "13px 28px",
               borderRadius: "999px",
               fontSize: "14px",
               fontWeight: 500,
               textDecoration: "none",
-              color: "#4a5a85",
+              boxShadow:
+                "0 8px 22px rgba(99,102,241,0.28)",
             }}
           >
-            See how PrepSy works
-          </a>
+            How it works
+          </Link>
         </div>
       </section>
 
