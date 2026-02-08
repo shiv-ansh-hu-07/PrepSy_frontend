@@ -61,15 +61,18 @@ export default function Navbar() {
             PS
           </div>
 
-          <span
+          <Link
+            to="/"
             style={{
               fontFamily: "Georgia, serif",
               fontSize: "20px",
               color: "#3f4f7a",
+              textDecoration: "none",
+              cursor: "pointer",
             }}
           >
             PrepSy
-          </span>
+          </Link>
           <span className="mt-1 w-fit rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-600">
             beta
           </span>
