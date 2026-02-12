@@ -46,8 +46,7 @@ export default function ChatDrawer({ onClose, roomId, currentUser }) {
 
   useEffect(() => {
   const fetchMessages = async () => {
-    const res = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/messages?roomId=${roomId}`
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/messages?roomId=${roomId}`
     );
     const data = await res.json();
 
@@ -89,7 +88,7 @@ export default function ChatDrawer({ onClose, roomId, currentUser }) {
       { text: input, sender: currentUser.name, isMe: true },
     ]);
 
-    await fetch(`${import.meta.env.VITE_BACKEND_URL}/messages`, {
+    await fetch(`${import.meta.env.VITE_API_BASE_URL}/messages`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
