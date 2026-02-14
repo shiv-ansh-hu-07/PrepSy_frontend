@@ -12,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 import PomodoroTimer from "./PomodoroTimer";
 import { useParticipants } from "@livekit/components-react";
 import jsPDF from "jspdf";
-import {useState } from "react";
+import { useState } from "react";
 
 /* ================== INJECT ANIMATIONS ================== */
 const injectedStyles = `
@@ -137,35 +137,46 @@ export default function RoomLayout({ children, onToggleChat }) {
 
         {/* RIGHT – SIDE PANEL */}
         <div style={styles.sidePanel}>
-          <div
-            style={{
-              ...styles.card,
-              height: 260,
-              overflow: "hidden",
-              display: "grid",
-              gridTemplateRows: "auto 1fr auto",
-            }}
-          >
-            <PomodoroTimer />
-          </div>
+          {isChatOpen ? (
+            <div style={styles.fullPanel}>
+              <ChatDrawer
+                onClose={() => setIsChatOpen(false)}
+                currentUser={currentUser}
+              />
+            </div>
+          ) : (
+            <>
+              {/* POMODORO */}
+              <div
+                style={{
+                  ...styles.card,
+                  height: 260,
+                  overflow: "hidden",
+                  display: "grid",
+                  gridTemplateRows: "auto 1fr auto",
+                }}
+              >
+                <PomodoroTimer />
+              </div>
 
-
-          <div style={{ ...styles.card, minHeight: 340 }}>
-            <h3 style={styles.cardTitle}>Notes</h3>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Save you notes here..."
-              style={styles.notesBox}
-            />
-            <button
-              style={styles.saveBtn}
-              onClick={downloadNotesAsPDF}
-            >
-              Download Notes (PDF)
-            </button>
-
-          </div>
+              {/* NOTES */}
+              <div style={{ ...styles.card, minHeight: 340 }}>
+                <h3 style={styles.cardTitle}>Notes</h3>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Save your notes here..."
+                  style={styles.notesBox}
+                />
+                <button
+                  style={styles.saveBtn}
+                  onClick={downloadNotesAsPDF}
+                >
+                  Download Notes (PDF)
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -241,7 +252,7 @@ const styles = {
   },
 
   stage: {
-    flex: 1,  
+    flex: 1,
     width: "100%",
     height: "100%",
     borderRadius: 22,
@@ -257,19 +268,19 @@ const styles = {
   },
 
   bottomBar: {
-  position: "absolute",
-  bottom: 24,
-  left: "50%",
-  transform: "translateX(-50%)",
-  width: "fit-content",
-  display: "flex",
-  gap: 14,
-  padding: "10px 16px",
-  background: "#FFFFFF",
-  borderRadius: 18,
-  boxShadow: "0 10px 26px rgba(0,0,0,0.08)",
-  zIndex: 50,
-},
+    position: "absolute",
+    bottom: 24,
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: "fit-content",
+    display: "flex",
+    gap: 14,
+    padding: "10px 16px",
+    background: "#FFFFFF",
+    borderRadius: 18,
+    boxShadow: "0 10px 26px rgba(0,0,0,0.08)",
+    zIndex: 50,
+  },
 
   sidePanel: {
     display: "flex",
@@ -326,4 +337,16 @@ const styles = {
     boxShadow:
       "0 8px 22px rgba(99,102,241,0.28)",
   },
+
+  fullPanel: {
+  width: "100%",
+  height: "100%",
+  borderRadius: 22,
+  overflow: "hidden",
+  border: "1px solid #EEF2FF",
+  background: "#FFFFFF",
+  boxShadow: "0 12px 28px rgba(0,0,0,0.06)",
+  display: "flex",
+  flexDirection: "column",
+},
 };

@@ -144,10 +144,10 @@ export default function ChatDrawer({ onClose, currentUser }) {
   /* ================= UI ================= */
 
   return (
-    <div className="w-full h-full bg-white rounded-2xl border border-indigo-100 shadow-xl flex flex-col overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-white">
 
       {/* HEADER */}
-      <div className="px-5 py-4 border-b border-indigo-100 flex justify-between items-center bg-gradient-to-r from-indigo-500 to-indigo-600 text-white">
+      <div className="px-5 py-4 border-b border-indigo-100 flex justify-between items-center bg-linear-to-r from-indigo-500 to-indigo-600 text-white">
         <h2 className="font-semibold text-lg">Room Chat</h2>
         <button
           onClick={onClose}
@@ -158,7 +158,7 @@ export default function ChatDrawer({ onClose, currentUser }) {
       </div>
 
       {/* MESSAGES */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-gradient-to-b from-indigo-50 to-white">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-linear-to-b from-indigo-50 to-white">
         {messages.map((msg, index) => {
           const isMe = msg.senderId === currentUser?.id;
 
