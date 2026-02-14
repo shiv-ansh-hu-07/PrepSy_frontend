@@ -145,7 +145,7 @@ export default function ChatDrawer({ onClose, currentUser }) {
     <div className="fixed right-0 top-0 h-screen w-[380px] bg-white shadow-2xl border-l border-gray-200 flex flex-col z-50">
       
       {/* Header */}
-      <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-indigo-500 to-indigo-600 text-white">
+      <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r color - #8a9bd6 text-white">
         <h2 className="font-semibold text-lg">Room Chat</h2>
         <button
           onClick={onClose}
@@ -208,8 +208,9 @@ export default function ChatDrawer({ onClose, currentUser }) {
             className="flex-1 px-4 py-2 rounded-full border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"
           />
           <button
+            style={styles.saveBtn}
             onClick={sendMessage}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full text-sm transition"
+           
           >
             Send
           </button>
@@ -217,4 +218,22 @@ export default function ChatDrawer({ onClose, currentUser }) {
       </div>
     </div>
   );
+}
+
+const styles = {
+  saveBtn: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 14,
+    height: 40,
+    borderRadius: 14,
+    border: "none",
+    background: "#8a9bd6",
+    color: "#FFFFFF",
+    fontWeight: 500,
+    cursor: "pointer",
+    boxShadow:
+      "0 8px 22px rgba(99,102,241,0.28)",
+  },
 }
