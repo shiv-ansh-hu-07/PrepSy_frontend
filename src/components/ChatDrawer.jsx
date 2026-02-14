@@ -65,15 +65,22 @@ export default function ChatDrawer({ onClose, roomId, currentUser }) {
   /* ================= SEND MESSAGE ================= */
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
+  if (!input.trim()) return;
+  if (!room?.localParticipant) return;
 
-    const messagePayload = {
-      type: "chat",
-      text: input,
-      sender: currentUser.name,
-      senderId: currentUser.id,
-    };
+  // Fallback safe values
+  const senderName = currentUser?.name || room.localParticipant.name || "User";
+  const senderId = currentUser?.id || room.localParticipant.identity || null;
 
+  const messagePayload = {
+    type: "chat",
+    text: input,
+    sender: senderName,
+    senderId,
+  };
+
+  try {
+    // 1️⃣ Send via LiveKit (real-time)
     const encoded = new TextEncoder().encode(
       JSON.stringify(messagePayload)
     );
@@ -83,12 +90,14 @@ export default function ChatDrawer({ onClose, roomId, currentUser }) {
       DataPacket_Kind.RELIABLE
     );
 
+    // 2️⃣ Optimistic UI update
     setMessages((prev) => [
       ...prev,
-      { text: input, sender: currentUser.name, isMe: true },
+      { text: input, sender: senderName, isMe: true },
     ]);
 
-    await fetch(`${import.meta.env.VITE_API_BASE_URL}/messages`, {
+    // 3️⃣ Persist to backend (non-blocking safe)
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/messages`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -96,13 +105,18 @@ export default function ChatDrawer({ onClose, roomId, currentUser }) {
       body: JSON.stringify({
         roomId,
         text: input,
-        senderId: currentUser.id,
-        senderName: currentUser.name,
+        senderId,
+        senderName,
       }),
+    }).catch((err) => {
+      console.error("Message save failed:", err);
     });
 
     setInput("");
-  };
+  } catch (error) {
+    console.error("Send message failed:", error);
+  }
+};
 
   /* ================= UI ================= */
 
