@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRoomContext, useLocalParticipant } from "@livekit/components-react";
 import { DataPacket_Kind } from "livekit-client";
 
-export default function ChatDrawer({ onClose, roomId, currentUser }) {
+export default function ChatDrawer({ onClose, currentUser }) {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
 
@@ -11,12 +11,52 @@ export default function ChatDrawer({ onClose, roomId, currentUser }) {
 
   const messagesEndRef = useRef(null);
 
-  /* ================= RECEIVE MESSAGES ================= */
+  /* ================= FORMAT TIME ================= */
+
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  /* ================= FETCH HISTORY ================= */
+
+  useEffect(() => {
+    if (!room?.name) return;
+
+    const fetchMessages = async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/messages?roomId=${room.name}`
+        );
+        const data = await res.json();
+
+        setMessages(
+          data.map((msg) => ({
+            text: msg.text,
+            sender: msg.senderName,
+            senderId: msg.senderId,
+            createdAt: msg.createdAt,
+          }))
+        );
+      } catch (err) {
+        console.error("Failed to fetch messages:", err);
+      }
+    };
+
+    fetchMessages();
+  }, [room?.name]);
+
+  /* ================= RECEIVE REALTIME ================= */
 
   useEffect(() => {
     if (!room) return;
 
-    const handleData = (payload, participant) => {
+    const handleData = (payload) => {
       const data = JSON.parse(new TextDecoder().decode(payload));
 
       if (data.type === "chat") {
@@ -25,18 +65,16 @@ export default function ChatDrawer({ onClose, roomId, currentUser }) {
           {
             text: data.text,
             sender: data.sender,
-            isMe: data.senderId === currentUser.id,
+            senderId: data.senderId,
+            createdAt: new Date().toISOString(),
           },
         ]);
       }
     };
 
     room.on("dataReceived", handleData);
-
-    return () => {
-      room.off("dataReceived", handleData);
-    };
-  }, [room, currentUser]);
+    return () => room.off("dataReceived", handleData);
+  }, [room]);
 
   /* ================= AUTO SCROLL ================= */
 
@@ -44,153 +82,138 @@ export default function ChatDrawer({ onClose, roomId, currentUser }) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  useEffect(() => {
-  const fetchMessages = async () => {
-    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/messages?roomId=${roomId}`
-    );
-    const data = await res.json();
-
-    setMessages(
-      data.map((msg) => ({
-        text: msg.text,
-        sender: msg.senderName,
-        isMe: msg.senderId === currentUser.id,
-      }))
-    );
-  };
-
-  fetchMessages();
-}, [roomId]);
-
   /* ================= SEND MESSAGE ================= */
 
   const sendMessage = async () => {
     if (!input.trim()) return;
+    if (!room?.localParticipant) return;
+
+    const livekitRoomId = room.name;
+
+    const senderName =
+      currentUser?.name || localParticipant?.name || "User";
+    const senderId =
+      currentUser?.id || localParticipant?.identity || null;
 
     const messagePayload = {
       type: "chat",
       text: input,
-      sender: currentUser.name,
-      senderId: currentUser.id,
+      sender: senderName,
+      senderId,
     };
 
-    const encoded = new TextEncoder().encode(
-      JSON.stringify(messagePayload)
-    );
+    try {
+      const encoded = new TextEncoder().encode(
+        JSON.stringify(messagePayload)
+      );
 
-    await room.localParticipant.publishData(
-      encoded,
-      DataPacket_Kind.RELIABLE
-    );
+      await room.localParticipant.publishData(
+        encoded,
+        DataPacket_Kind.RELIABLE
+      );
 
-    setMessages((prev) => [
-      ...prev,
-      { text: input, sender: currentUser.name, isMe: true },
-    ]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          text: input,
+          sender: senderName,
+          senderId,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
 
-    await fetch(`${import.meta.env.VITE_API_BASE_URL}/messages`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        roomId,
-        text: input,
-        senderId: currentUser.id,
-        senderName: currentUser.name,
-      }),
-    });
+      fetch(`${import.meta.env.VITE_API_BASE_URL}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          roomId: livekitRoomId,
+          text: input,
+          senderId,
+          senderName,
+        }),
+      }).catch((err) => console.error("Save failed:", err));
 
-    setInput("");
+      setInput("");
+    } catch (error) {
+      console.error("Send failed:", error);
+    }
   };
 
   /* ================= UI ================= */
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        right: 0,
-        top: 0,
-        width: 320,
-        height: "100vh",
-        background: "#141026",
-        display: "flex",
-        flexDirection: "column",
-        borderLeft: "1px solid rgba(255,255,255,0.1)",
-        zIndex: 2000,
-      }}
-    >
-      <div
-        style={{
-          padding: 14,
-          borderBottom: "1px solid rgba(255,255,255,0.1)",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          fontWeight: 600,
-        }}
-      >
-        Chat
-        <span style={{ cursor: "pointer" }} onClick={onClose}>
+    <div className="fixed right-0 top-0 h-screen w-[380px] bg-white shadow-2xl border-l border-gray-200 flex flex-col z-50">
+      
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-indigo-500 to-indigo-600 text-white">
+        <h2 className="font-semibold text-lg">Room Chat</h2>
+        <button
+          onClick={onClose}
+          className="opacity-80 hover:opacity-100 transition"
+        >
           ✕
-        </span>
+        </button>
       </div>
 
-      <div
-        style={{
-          flex: 1,
-          padding: 12,
-          overflowY: "auto",
-          fontSize: 14,
-        }}
-      >
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            style={{
-              marginBottom: 10,
-              textAlign: msg.isMe ? "right" : "left",
-            }}
-          >
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-gray-50">
+        {messages.map((msg, index) => {
+          const isMe = msg.senderId === currentUser?.id;
+
+          return (
             <div
-              style={{
-                display: "inline-block",
-                padding: 8,
-                borderRadius: 8,
-                background: msg.isMe ? "#7c3aed" : "#2a2440",
-                color: "white",
-                maxWidth: "80%",
-              }}
+              key={index}
+              className={`flex ${isMe ? "justify-end" : "justify-start"}`}
             >
-              {!msg.isMe && (
-                <div style={{ fontSize: 10, opacity: 0.6 }}>
-                  {msg.sender}
+              <div
+                className={`max-w-[75%] rounded-2xl px-4 py-3 shadow-sm ${
+                  isMe
+                    ? "bg-indigo-600 text-white rounded-br-none"
+                    : "bg-white text-gray-800 border border-gray-200 rounded-bl-none"
+                }`}
+              >
+                {/* Sender Name */}
+                {!isMe && (
+                  <div className="text-xs font-semibold text-indigo-600 mb-1">
+                    {msg.sender}
+                  </div>
+                )}
+
+                {/* Text */}
+                <div className="text-sm">{msg.text}</div>
+
+                {/* Time */}
+                <div
+                  className={`text-[10px] mt-2 ${
+                    isMe ? "text-indigo-200" : "text-gray-400"
+                  } text-right`}
+                >
+                  {formatTime(msg.createdAt)}
                 </div>
-              )}
-              {msg.text}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         <div ref={messagesEndRef} />
       </div>
 
-      <div style={{ padding: 12 }}>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          placeholder="Type a message..."
-          style={{
-            width: "100%",
-            padding: 10,
-            borderRadius: 8,
-            border: "none",
-            outline: "none",
-            background: "rgba(0,0,0,0.4)",
-            color: "white",
-          }}
-        />
+      {/* Input */}
+      <div className="p-4 border-t border-gray-200 bg-white">
+        <div className="flex items-center gap-2">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            placeholder="Type your message..."
+            className="flex-1 px-4 py-2 rounded-full border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"
+          />
+          <button
+            onClick={sendMessage}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full text-sm transition"
+          >
+            Send
+          </button>
+        </div>
       </div>
     </div>
   );
