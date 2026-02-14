@@ -68,6 +68,13 @@ export default function ChatDrawer({ onClose, roomId, currentUser }) {
   if (!input.trim()) return;
   if (!room?.localParticipant) return;
 
+  const livekitRoomId = room?.name;
+
+if (!livekitRoomId) {
+  console.error("Room ID missing");
+  return;
+}
+
   // Fallback safe values
   const senderName = currentUser?.name || room.localParticipant.name || "User";
   const senderId = currentUser?.id || room.localParticipant.identity || null;
@@ -103,7 +110,7 @@ export default function ChatDrawer({ onClose, roomId, currentUser }) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        roomId,
+        roomId: livekitRoomId,
         text: input,
         senderId,
         senderName,
