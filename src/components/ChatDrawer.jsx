@@ -145,7 +145,8 @@ export default function ChatDrawer({ onClose, currentUser }) {
     <div className="fixed right-0 top-0 h-screen w-[380px] bg-white shadow-2xl border-l border-gray-200 flex flex-col z-50">
       
       {/* Header */}
-      <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r color - #8a9bd6 text-white">
+      <div style={{ background: "#8a9bd6" }}
+      className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r color - #8a9bd6 text-white">
         <h2 className="font-semibold text-lg">Room Chat</h2>
         <button
           onClick={onClose}
@@ -174,7 +175,7 @@ export default function ChatDrawer({ onClose, currentUser }) {
               >
                 {/* Sender Name */}
                 {!isMe && (
-                  <div className="text-xs font-semibold text-indigo-600 mb-1">
+                  <div style={{ color: "#8a9bd6", fontWeight: "500", marginBottom: 4 }}>
                     {msg.sender}
                   </div>
                 )}
@@ -225,8 +226,8 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 14,
-    height: 40,
+    padding: 5,
+    height: 23,
     borderRadius: 14,
     border: "none",
     background: "#8a9bd6",
