@@ -8,7 +8,6 @@ export default function ChatDrawer({ onClose, currentUser }) {
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-
   const messagesEndRef = useRef(null);
 
   /* ================= FORMAT TIME ================= */
@@ -103,6 +102,7 @@ export default function ChatDrawer({ onClose, currentUser }) {
     };
 
     try {
+      // Send via LiveKit
       const encoded = new TextEncoder().encode(
         JSON.stringify(messagePayload)
       );
@@ -112,6 +112,7 @@ export default function ChatDrawer({ onClose, currentUser }) {
         DataPacket_Kind.RELIABLE
       );
 
+      // Optimistic UI
       setMessages((prev) => [
         ...prev,
         {
@@ -122,6 +123,7 @@ export default function ChatDrawer({ onClose, currentUser }) {
         },
       ]);
 
+      // Persist to backend
       fetch(`${import.meta.env.VITE_API_BASE_URL}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -142,10 +144,10 @@ export default function ChatDrawer({ onClose, currentUser }) {
   /* ================= UI ================= */
 
   return (
-    <div className="fixed right-0 top-0 h-screen w-[380px] bg-white shadow-2xl border-l border-gray-200 flex flex-col z-50">
-      
-      {/* Header */}
-      <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-linear-to-r from-indigo-500 to-indigo-600 text-white">
+    <div className="w-full h-full bg-white rounded-2xl border border-indigo-100 shadow-xl flex flex-col overflow-hidden">
+
+      {/* HEADER */}
+      <div className="px-5 py-4 border-b border-indigo-100 flex justify-between items-center bg-gradient-to-r from-indigo-500 to-indigo-600 text-white">
         <h2 className="font-semibold text-lg">Room Chat</h2>
         <button
           onClick={onClose}
@@ -155,8 +157,8 @@ export default function ChatDrawer({ onClose, currentUser }) {
         </button>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-gray-50">
+      {/* MESSAGES */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-gradient-to-b from-indigo-50 to-white">
         {messages.map((msg, index) => {
           const isMe = msg.senderId === currentUser?.id;
 
@@ -166,23 +168,20 @@ export default function ChatDrawer({ onClose, currentUser }) {
               className={`flex ${isMe ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[75%] rounded-2xl px-4 py-3 shadow-sm ${
+                className={`max-w-[75%] rounded-2xl px-4 py-3 shadow-sm transition-all ${
                   isMe
                     ? "bg-indigo-600 text-white rounded-br-none"
                     : "bg-white text-gray-800 border border-gray-200 rounded-bl-none"
                 }`}
               >
-                {/* Sender Name */}
                 {!isMe && (
                   <div className="text-xs font-semibold text-indigo-600 mb-1">
                     {msg.sender}
                   </div>
                 )}
 
-                {/* Text */}
                 <div className="text-sm">{msg.text}</div>
 
-                {/* Time */}
                 <div
                   className={`text-[10px] mt-2 ${
                     isMe ? "text-indigo-200" : "text-gray-400"
@@ -197,8 +196,8 @@ export default function ChatDrawer({ onClose, currentUser }) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <div className="p-4 border-t border-gray-200 bg-white">
+      {/* INPUT */}
+      <div className="p-4 border-t border-indigo-100 bg-white">
         <div className="flex items-center gap-2">
           <input
             value={input}
