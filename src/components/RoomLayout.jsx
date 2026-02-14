@@ -14,6 +14,7 @@ import { useParticipants } from "@livekit/components-react";
 import jsPDF from "jspdf";
 import { useState } from "react";
 
+
 /* ================== INJECT ANIMATIONS ================== */
 const injectedStyles = `
 @keyframes ambientPulse {
@@ -57,7 +58,8 @@ export default function RoomLayout({ children, onToggleChat }) {
   const participantCount = participants.length;
 
   const [notes, setNotes] = useState("");
-
+  
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const downloadNotesAsPDF = () => {
     const doc = new jsPDF();

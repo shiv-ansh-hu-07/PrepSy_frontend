@@ -10,6 +10,8 @@ export default function ChatDrawer({ onClose, currentUser }) {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef(null);
 
+  
+
   /* ================= FORMAT TIME ================= */
 
   const formatTime = (dateString) => {
