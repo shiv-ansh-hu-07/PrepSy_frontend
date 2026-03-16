@@ -19,8 +19,13 @@ const FALLBACK_TIMEZONES = [
 
 const TIMEZONE_OPTIONS =
   typeof Intl !== "undefined" && typeof Intl.supportedValuesOf === "function"
-    ? Intl.supportedValuesOf("timeZone")
+    ? Intl.supportedValuesOf("timeZone").map((tz) =>
+        tz === "Asia/Calcutta" ? "Asia/Kolkata" : tz
+      )
     : FALLBACK_TIMEZONES;
+
+const normalizeTimeZone = (timeZone) =>
+  timeZone === "Asia/Calcutta" ? "Asia/Kolkata" : timeZone;
 
 export default function CreateRoom() {
   const navigate = useNavigate();
@@ -36,7 +41,9 @@ export default function CreateRoom() {
   const [scheduleTime, setScheduleTime] = useState("19:00");
   const [durationMinutes, setDurationMinutes] = useState("90");
   const [timezone, setTimezone] = useState(
-    Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata"
+    normalizeTimeZone(
+      Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata"
+    )
   );
   const [submitting, setSubmitting] = useState(false);
 
@@ -397,9 +404,9 @@ export default function CreateRoom() {
               <select
                 style={{ ...inputStyle, appearance: "auto" }}
                 value={timezone}
-                onChange={(e) => setTimezone(e.target.value)}
+                onChange={(e) => setTimezone(normalizeTimeZone(e.target.value))}
               >
-                {TIMEZONE_OPTIONS.map((tz) => (
+                {Array.from(new Set(TIMEZONE_OPTIONS)).map((tz) => (
                   <option key={tz} value={tz}>
                     {tz}
                   </option>
