@@ -15,9 +15,7 @@ export default function StageManager({ tracks = [] }) {
       track.source === "screen_share" &&
       hasEnabledTrack(track, track.participant?.isScreenShareEnabled)
   );
-  const cameraTracks = tracks.filter(
-    (track) => track.source === "camera" && hasEnabledTrack(track)
-  );
+  const cameraTracks = tracks.filter((track) => track.source === "camera");
   const count = participants.length;
 
   const columns =
