@@ -1,56 +1,50 @@
 import { MicOff } from "lucide-react";
 
+function getInitials(name) {
+  const parts = (name || "Guest").trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "G";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+}
+
 export default function AvatarTile({
   micMuted = true,
   large = false,
   full = false,
   name = "Guest",
 }) {
+  const initials = getInitials(name);
+  const size = full ? 156 : large ? 108 : 82;
+
   return (
     <div style={styles.wrapper}>
       <div
         style={{
           ...styles.tileBase,
-          width: full ? "100%" : "100%",
-          height: full ? "100%" : "100%",
+          width: "100%",
+          height: "100%",
           maxWidth: full ? "100%" : 260,
           maxHeight: full ? "100%" : 260,
           borderRadius: 16,
-          background: "#1e293b",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
         }}
       >
-
-        {/* silhouette */}
-        <svg
-          width={full ? 140 : large ? 96 : 72}
-          height={full ? 140 : large ? 96 : 72}
-          viewBox="0 0 24 24"
-          fill="none"
-          style={{ color: "#cbd5f5" }}
+        <div
+          style={{
+            ...styles.initialsCircle,
+            width: size,
+            height: size,
+            fontSize: full ? 48 : large ? 34 : 26,
+          }}
         >
+          {initials}
+        </div>
 
-          <path
-            d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5Z"
-            fill="currentColor"
-          />
-          <path
-            d="M4 20c0-3.314 3.582-6 8-6s8 2.686 8 6"
-            fill="currentColor"
-          />
-        </svg>
-
-        {/* mic muted badge */}
         {micMuted && (
           <div style={styles.micBadge}>
             <MicOff size={16} color="white" />
           </div>
         )}
 
-        {/* name tag */}
         <div style={styles.nameTag}>{name}</div>
       </div>
     </div>
@@ -69,12 +63,29 @@ const styles = {
 
   tileBase: {
     borderRadius: 16,
-    background: "#1e293b",
+    background:
+      "radial-gradient(circle at 30% 20%, rgba(138,155,214,0.28), transparent 40%), #1e293b",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
     transition: "all 0.4s ease",
+    overflow: "hidden",
+  },
+
+  initialsCircle: {
+    borderRadius: "50%",
+    background: "rgba(255,255,255,0.14)",
+    border: "1px solid rgba(255,255,255,0.18)",
+    color: "#e2e8f0",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: 700,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    boxShadow: "0 16px 40px rgba(15,23,42,0.28)",
+    backdropFilter: "blur(6px)",
   },
 
   micBadge: {
