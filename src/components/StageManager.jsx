@@ -7,11 +7,13 @@ export default function StageManager({ tracks = [] }) {
   const participants = useParticipants();
   const [fitMode, setFitMode] = useState("contain");
 
-  const hasEnabledTrack = (track) =>
-    Boolean(track?.publication?.isEnabled && track?.publication?.track);
+  const hasEnabledTrack = (track, enabled) =>
+    Boolean(enabled && track?.publication?.track);
 
   const screen = tracks.find(
-    (track) => track.source === "screen_share" && hasEnabledTrack(track)
+    (track) =>
+      track.source === "screen_share" &&
+      hasEnabledTrack(track, track.participant?.isScreenShareEnabled)
   );
   const cameraTracks = tracks.filter(
     (track) => track.source === "camera" && hasEnabledTrack(track)
@@ -48,10 +50,11 @@ export default function StageManager({ tracks = [] }) {
             const cam = cameraTracks.find(
               (track) => track.participant.identity === participant.identity
             );
+            const hasCamera = hasEnabledTrack(cam, participant.isCameraEnabled);
 
             return (
               <div key={participant.identity} style={styles.pipTile}>
-                {cam && cam.publication?.isEnabled ? (
+                {hasCamera ? (
                   <VideoTrack trackRef={cam} style={styles.pipVideo} />
                 ) : (
                   <AvatarTile
@@ -72,10 +75,11 @@ export default function StageManager({ tracks = [] }) {
     const cam = cameraTracks.find(
       (track) => track.participant.identity === participant.identity
     );
+    const hasCamera = hasEnabledTrack(cam, participant.isCameraEnabled);
 
     return (
       <div style={styles.singleParticipantWrap}>
-        {cam && cam.publication?.isEnabled ? (
+        {hasCamera ? (
           <div style={styles.singleVideoWrap}>
             <VideoTrack trackRef={cam} style={styles.singleVideo} />
             <NameTag name={participant.name} />
@@ -102,8 +106,9 @@ export default function StageManager({ tracks = [] }) {
         const cam = cameraTracks.find(
           (track) => track.participant.identity === participant.identity
         );
+        const hasCamera = hasEnabledTrack(cam, participant.isCameraEnabled);
 
-        return cam && cam.publication?.isEnabled ? (
+        return hasCamera ? (
           <div key={participant.identity} style={styles.gridItem}>
             <VideoTrack trackRef={cam} style={styles.gridVideo} />
             <NameTag name={participant.name} />
