@@ -47,6 +47,7 @@ export default function RoomLayout({ children, onToggleChat }) {
     micEnabled,
     camEnabled,
     screenEnabled,
+    screenShareSupported,
   } = useMediaControls();
 
   const navigate = useNavigate();
@@ -143,7 +144,21 @@ export default function RoomLayout({ children, onToggleChat }) {
         <Control
           icon={ScreenShare}
           active={screenEnabled}
-          onClick={toggleScreenShare}
+          disabled={!screenShareSupported}
+          title={
+            screenShareSupported
+              ? "Share screen"
+              : "Screen sharing is available on desktop browsers only"
+          }
+          onClick={() => {
+            if (!screenShareSupported) {
+              window.alert(
+                "Screen sharing is supported on desktop browsers only."
+              );
+              return;
+            }
+            toggleScreenShare();
+          }}
         />
         <Control icon={MessageSquare} onClick={onToggleChat} />
         <Control icon={LogOut} danger onClick={handleLeave} />
@@ -152,28 +167,40 @@ export default function RoomLayout({ children, onToggleChat }) {
   );
 }
 
-function Control({ icon: Icon, danger, active, onClick }) {
+function Control({ icon: Icon, danger, active, onClick, disabled, title }) {
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
+      title={title}
       style={{
         width: 52,
         height: 52,
         borderRadius: 16,
         border: "1px solid #E5E7EB",
-        background: danger ? "#F87171" : active ? "#8a9bd6" : "#FFFFFF",
+        background: disabled
+          ? "#F3F4F6"
+          : danger
+            ? "#F87171"
+            : active
+              ? "#8a9bd6"
+              : "#FFFFFF",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        cursor: "pointer",
+        cursor: disabled ? "not-allowed" : "pointer",
         boxShadow: active
           ? "0 6px 18px rgba(138,155,214,0.45)"
           : "0 4px 12px rgba(0,0,0,0.08)",
         transform: active ? "translateY(-1px)" : "none",
         transition: "all 0.2s ease",
+        opacity: disabled ? 0.6 : 1,
       }}
     >
-      <Icon size={22} color={danger ? "#FFFFFF" : "#4a5a85"} />
+      <Icon
+        size={22}
+        color={disabled ? "#94A3B8" : danger ? "#FFFFFF" : "#4a5a85"}
+      />
     </button>
   );
 }

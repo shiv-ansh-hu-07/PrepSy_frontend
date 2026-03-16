@@ -11,6 +11,23 @@ export default function useMediaControls() {
   const [micEnabled, setMicEnabled] = useState(false);
   const [camEnabled, setCamEnabled] = useState(false);
   const [screenEnabled, setScreenEnabled] = useState(false);
+  const [screenShareSupported, setScreenShareSupported] = useState(true);
+
+  useEffect(() => {
+    if (typeof navigator === "undefined" || typeof window === "undefined") {
+      setScreenShareSupported(false);
+      return;
+    }
+
+    const userAgent = navigator.userAgent || "";
+    const isMobileDevice =
+      /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(userAgent) ||
+      window.matchMedia("(max-width: 980px)").matches;
+    const hasDisplayMedia =
+      typeof navigator.mediaDevices?.getDisplayMedia === "function";
+
+    setScreenShareSupported(hasDisplayMedia && !isMobileDevice);
+  }, []);
 
   useEffect(() => {
     if (!room || !localParticipant) return;
@@ -42,6 +59,7 @@ export default function useMediaControls() {
 
   const toggleScreenShare = useCallback(async () => {
     if (!localParticipant || room?.state !== "connected") return;
+    if (!screenShareSupported) return;
 
     const next = !screenEnabled;
 
@@ -58,7 +76,7 @@ export default function useMediaControls() {
     }
 
     setScreenEnabled(next);
-  }, [localParticipant, screenEnabled, room]);
+  }, [localParticipant, screenEnabled, room, screenShareSupported]);
 
   const leaveRoom = useCallback(async () => {
     if (!room) return;
@@ -73,5 +91,6 @@ export default function useMediaControls() {
     micEnabled,
     camEnabled,
     screenEnabled,
+    screenShareSupported,
   };
 }
