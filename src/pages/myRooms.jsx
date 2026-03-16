@@ -14,16 +14,7 @@ function MyRooms() {
     axios
       .get("/rooms/my")
       .then((res) => {
-        const combined = [
-          ...res.data.createdRooms,
-          ...res.data.joinedRooms,
-        ];
-
-        const uniqueRooms = Array.from(
-          new Map(combined.map((room) => [room.roomId, room])).values()
-        );
-
-        setRooms(uniqueRooms);
+        setRooms(res.data.createdRooms || []);
       })
       .catch(console.error);
   }, [user]);
