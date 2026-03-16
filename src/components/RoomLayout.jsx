@@ -106,7 +106,7 @@ export default function RoomLayout({ children, onToggleChat }) {
           <div
             style={{
               ...styles.card,
-              height: isMobile ? "auto" : 260,
+              height: isMobile ? "auto" : 220,
               overflow: "hidden",
               display: "grid",
               gridTemplateRows: "auto 1fr auto",
@@ -115,7 +115,7 @@ export default function RoomLayout({ children, onToggleChat }) {
             <PomodoroTimer />
           </div>
 
-          <div style={{ ...styles.card, minHeight: isMobile ? 240 : 340 }}>
+          <div style={{ ...styles.card, minHeight: isMobile ? 240 : 300 }}>
             <h3 style={styles.cardTitle}>Notes</h3>
             <textarea
               value={notes}
@@ -223,10 +223,13 @@ const styles = {
   centerWrap: {
     width: "100%",
     minHeight: "calc(100vh - 140px)",
-    maxWidth: 1500,
+    maxWidth: 1440,
     alignItems: "stretch",
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+    gridTemplateColumns:
+      typeof window !== "undefined" && window.innerWidth < 980
+        ? "1fr"
+        : "minmax(0, 1.7fr) minmax(320px, 0.68fr)",
     gap: 18,
     boxSizing: "border-box",
   },
@@ -303,6 +306,10 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: 18,
+    maxWidth:
+      typeof window !== "undefined" && window.innerWidth < 980 ? "100%" : 420,
+    width: "100%",
+    justifySelf: "end",
   },
 
   card: {
