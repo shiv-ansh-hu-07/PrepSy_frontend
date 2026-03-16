@@ -14,30 +14,6 @@ import { useParticipants } from "@livekit/components-react";
 import jsPDF from "jspdf";
 import { useEffect, useState } from "react";
 
-const injectedStyles = `
-@keyframes ambientPulse {
-  0% { opacity: 0.95; }
-  50% { opacity: 1; }
-  100% { opacity: 0.95; }
-}
-
-@keyframes pulseDot {
-  0% { opacity: 0.4; }
-  50% { opacity: 1; }
-  100% { opacity: 0.4; }
-}
-`;
-
-if (typeof document !== "undefined") {
-  const existingStyle = document.getElementById("prepsy-room-layout-animations");
-  if (!existingStyle) {
-    const style = document.createElement("style");
-    style.id = "prepsy-room-layout-animations";
-    style.innerHTML = injectedStyles;
-    document.head.appendChild(style);
-  }
-}
-
 export default function RoomLayout({ children, onToggleChat }) {
   const {
     toggleMic,
@@ -73,36 +49,85 @@ export default function RoomLayout({ children, onToggleChat }) {
     navigate("/dashboard");
   };
 
+  const handleScreenShare = () => {
+    if (!screenShareSupported) {
+      window.alert("Screen sharing is supported on desktop browsers only.");
+      return;
+    }
+
+    toggleScreenShare();
+  };
+
   const downloadNotesAsPDF = () => {
     const doc = new jsPDF();
-
     doc.setFont("Times", "Normal");
     doc.setFontSize(16);
     doc.text("PrepSy Study Notes", 20, 20);
-
     doc.setFontSize(12);
     doc.text(notes || "No notes written.", 20, 40, {
       maxWidth: 170,
     });
-
     doc.save("prepsy-notes.pdf");
   };
 
+  const controls = (
+    <>
+      <Control
+        icon={micEnabled ? Mic : MicOff}
+        active={micEnabled}
+        onClick={toggleMic}
+      />
+      <Control
+        icon={camEnabled ? Video : VideoOff}
+        active={camEnabled}
+        onClick={toggleCamera}
+      />
+      <Control
+        icon={ScreenShare}
+        active={screenEnabled}
+        disabled={!screenShareSupported}
+        title={
+          screenShareSupported
+            ? "Share screen"
+            : "Screen sharing is available on desktop browsers only"
+        }
+        onClick={handleScreenShare}
+      />
+      <Control icon={MessageSquare} onClick={onToggleChat} />
+      <Control icon={LogOut} danger onClick={handleLeave} />
+    </>
+  );
+
   return (
     <div style={styles.page}>
-      <div style={styles.centerWrap}>
+      <div style={styles.centerWrap(isMobile)}>
         <div style={styles.stageWrap}>
-          <div style={styles.sessionBadge}>
-            <span style={styles.liveDot} />
-            {participantCount} {participantCount === 1 ? "person" : "people"} studying
-            <span style={styles.sessionDivider}>•</span>
-            Focus session
-          </div>
+          {isMobile ? (
+            <div style={styles.sessionBadge}>
+              <span style={styles.liveDot} />
+              {participantCount} {participantCount === 1 ? "person" : "people"} studying
+              <span style={styles.sessionDivider}>•</span>
+              Focus session
+            </div>
+          ) : null}
 
-          <div style={styles.stage}>{children}</div>
+          <div style={styles.stage}>
+            {!isMobile ? (
+              <div style={styles.sessionBadgeDesktop}>
+                <span style={styles.liveDot} />
+                {participantCount} {participantCount === 1 ? "person" : "people"} studying
+                <span style={styles.sessionDivider}>•</span>
+                Focus session
+              </div>
+            ) : null}
+
+            {children}
+
+            {!isMobile ? <div style={styles.bottomBarDesktop}>{controls}</div> : null}
+          </div>
         </div>
 
-        <div style={styles.sidePanel}>
+        <div style={styles.sidePanel(isMobile)}>
           <div
             style={{
               ...styles.card,
@@ -130,39 +155,7 @@ export default function RoomLayout({ children, onToggleChat }) {
         </div>
       </div>
 
-      <div style={styles.bottomBar}>
-        <Control
-          icon={micEnabled ? Mic : MicOff}
-          active={micEnabled}
-          onClick={toggleMic}
-        />
-        <Control
-          icon={camEnabled ? Video : VideoOff}
-          active={camEnabled}
-          onClick={toggleCamera}
-        />
-        <Control
-          icon={ScreenShare}
-          active={screenEnabled}
-          disabled={!screenShareSupported}
-          title={
-            screenShareSupported
-              ? "Share screen"
-              : "Screen sharing is available on desktop browsers only"
-          }
-          onClick={() => {
-            if (!screenShareSupported) {
-              window.alert(
-                "Screen sharing is supported on desktop browsers only."
-              );
-              return;
-            }
-            toggleScreenShare();
-          }}
-        />
-        <Control icon={MessageSquare} onClick={onToggleChat} />
-        <Control icon={LogOut} danger onClick={handleLeave} />
-      </div>
+      {isMobile ? <div style={styles.bottomBar}>{controls}</div> : null}
     </div>
   );
 }
@@ -215,29 +208,26 @@ const styles = {
     justifyContent: "flex-start",
     alignItems: "center",
     fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont",
-    padding: "10px 12px 24px",
+    padding: "12px 14px 24px",
     boxSizing: "border-box",
     gap: 14,
   },
 
-  centerWrap: {
+  centerWrap: (isMobile) => ({
     width: "100%",
     minHeight: "calc(100vh - 140px)",
-    maxWidth: 1440,
+    maxWidth: 1480,
     alignItems: "stretch",
     display: "grid",
-    gridTemplateColumns:
-      typeof window !== "undefined" && window.innerWidth < 980
-        ? "1fr"
-        : "minmax(0, 1.7fr) minmax(320px, 0.68fr)",
-    gap: 18,
+    gridTemplateColumns: isMobile
+      ? "1fr"
+      : "minmax(0, 1.85fr) minmax(320px, 0.72fr)",
+    gap: 22,
     boxSizing: "border-box",
-  },
+  }),
 
   stageWrap: {
     position: "relative",
-    height: "100%",
-    width: "100%",
     minHeight: 420,
     display: "flex",
     flexDirection: "column",
@@ -251,11 +241,30 @@ const styles = {
     alignItems: "center",
     flexWrap: "wrap",
     gap: 8,
-    background: "rgba(255,255,255,0.85)",
+    background: "rgba(255,255,255,0.88)",
     padding: "10px 14px",
     borderRadius: 18,
     boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
     backdropFilter: "blur(6px)",
+  },
+
+  sessionBadgeDesktop: {
+    position: "absolute",
+    top: 18,
+    left: "50%",
+    transform: "translateX(-50%)",
+    zIndex: 20,
+    fontSize: 13,
+    color: "#6B7280",
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
+    background: "rgba(255,255,255,0.9)",
+    padding: "10px 16px",
+    borderRadius: 999,
+    boxShadow: "0 8px 18px rgba(0,0,0,0.14)",
+    backdropFilter: "blur(8px)",
   },
 
   liveDot: {
@@ -263,7 +272,6 @@ const styles = {
     height: 8,
     borderRadius: "50%",
     background: "#22c55e",
-    animation: "pulseDot 1.6s ease-in-out infinite",
   },
 
   sessionDivider: {
@@ -271,19 +279,36 @@ const styles = {
   },
 
   stage: {
-    flex: 1,
     width: "100%",
+    minHeight: 420,
     height: "100%",
-    borderRadius: 22,
-    border: "1px solid #EEF2FF",
-    background:
-      "radial-gradient(circle at center, rgba(138,155,214,0.22), transparent 65%), #FFFFFF",
+    borderRadius: 28,
+    border: "1px solid rgba(238,242,255,0.8)",
+    background: "#05070b",
     overflow: "hidden",
     display: "flex",
-    alignItems: "center",
+    alignItems: "stretch",
+    justifyContent: "stretch",
+    position: "relative",
+    boxShadow: "0 20px 40px rgba(15,23,42,0.16)",
+  },
+
+  bottomBarDesktop: {
+    position: "absolute",
+    left: "50%",
+    bottom: 18,
+    transform: "translateX(-50%)",
+    width: "fit-content",
+    maxWidth: "100%",
+    display: "flex",
+    gap: 10,
+    flexWrap: "wrap",
     justifyContent: "center",
-    animation: "ambientPulse 8s ease-in-out infinite",
-    minHeight: 420,
+    padding: "10px 16px",
+    background: "#FFFFFF",
+    borderRadius: 24,
+    boxShadow: "0 10px 26px rgba(0,0,0,0.18)",
+    zIndex: 30,
   },
 
   bottomBar: {
@@ -302,21 +327,20 @@ const styles = {
     zIndex: 40,
   },
 
-  sidePanel: {
+  sidePanel: (isMobile) => ({
     display: "flex",
     flexDirection: "column",
     gap: 18,
-    maxWidth:
-      typeof window !== "undefined" && window.innerWidth < 980 ? "100%" : 420,
+    maxWidth: isMobile ? "100%" : 420,
     width: "100%",
     justifySelf: "end",
-  },
+  }),
 
   card: {
     background:
       "radial-gradient(circle at center, rgba(138,155,214,0.14), transparent 65%), #FFFFFF",
-    borderRadius: 22,
-    padding: 20,
+    borderRadius: 28,
+    padding: 24,
     border: "1px solid #EEF2FF",
     boxShadow: "0 12px 28px rgba(0,0,0,0.06)",
     display: "flex",
@@ -334,9 +358,9 @@ const styles = {
   notesBox: {
     flex: 1,
     minHeight: 170,
-    borderRadius: 14,
+    borderRadius: 20,
     border: "1px solid #E5E7EB",
-    padding: 10,
+    padding: 14,
     marginTop: 10,
     marginBottom: 12,
     fontSize: 14,
@@ -351,12 +375,12 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     marginTop: 14,
-    height: 40,
-    borderRadius: 14,
+    height: 50,
+    borderRadius: 18,
     border: "none",
     background: "#8a9bd6",
     color: "#FFFFFF",
-    fontWeight: 500,
+    fontWeight: 600,
     cursor: "pointer",
     boxShadow: "0 8px 22px rgba(99,102,241,0.28)",
   },

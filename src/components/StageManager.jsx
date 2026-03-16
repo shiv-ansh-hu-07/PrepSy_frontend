@@ -76,19 +76,20 @@ export default function StageManager({ tracks = [] }) {
     const hasCamera = hasEnabledTrack(cam, participant.isCameraEnabled);
 
     return (
-      <div style={styles.singleParticipantWrap}>
-        {hasCamera ? (
-          <div style={styles.singleVideoWrap}>
-            <VideoTrack trackRef={cam} style={styles.singleVideo} />
-            <NameTag name={participant.name} />
-          </div>
-        ) : (
-          <AvatarTile
-            full
-            name={participant.name || "Guest"}
-            micMuted={!participant.isMicrophoneEnabled}
-          />
-        )}
+      <div style={styles.singleParticipantStage}>
+        <div style={styles.singleDockTile}>
+          {hasCamera ? (
+            <div style={styles.singleDockVideoWrap}>
+              <VideoTrack trackRef={cam} style={styles.singleDockVideo} />
+              <NameTag name={participant.name} />
+            </div>
+          ) : (
+            <AvatarTile
+              name={participant.name || "Guest"}
+              micMuted={!participant.isMicrophoneEnabled}
+            />
+          )}
+        </div>
       </div>
     );
   }
@@ -162,24 +163,32 @@ const styles = {
     objectFit: "cover",
   },
 
-  singleParticipantWrap: {
-    width: "100%",
-    height: "100%",
-    display: "flex",
-    alignItems: "stretch",
-    justifyContent: "stretch",
-  },
-
-  singleVideoWrap: {
+  singleParticipantStage: {
     width: "100%",
     height: "100%",
     position: "relative",
-    borderRadius: 18,
-    overflow: "hidden",
-    background: "#0f172a",
+    background: "#05070b",
   },
 
-  singleVideo: {
+  singleDockTile: {
+    position: "absolute",
+    right: 18,
+    bottom: 18,
+    width: 226,
+    height: 150,
+    borderRadius: 20,
+    overflow: "hidden",
+    background: "#1e293b",
+    boxShadow: "0 18px 40px rgba(15,23,42,0.36)",
+  },
+
+  singleDockVideoWrap: {
+    width: "100%",
+    height: "100%",
+    position: "relative",
+  },
+
+  singleDockVideo: {
     width: "100%",
     height: "100%",
     objectFit: "cover",
