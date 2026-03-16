@@ -102,11 +102,12 @@ export default function StageManager({ tracks = [] }) {
             <NameTag name={participant.name} />
           </div>
         ) : (
-          <AvatarTile
-            key={participant.identity}
-            name={participant.name || "Guest"}
-            micMuted={!participant.isMicrophoneEnabled}
-          />
+          <div key={participant.identity} style={styles.gridItem}>
+            <AvatarTile
+              name={participant.name || "Guest"}
+              micMuted={!participant.isMicrophoneEnabled}
+            />
+          </div>
         );
       })}
     </div>
