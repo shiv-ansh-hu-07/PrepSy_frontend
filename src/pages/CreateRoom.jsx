@@ -428,6 +428,10 @@ export default function CreateRoom() {
               fontSize: "15px",
               cursor: submitting ? "not-allowed" : "pointer",
               boxShadow: "0 10px 24px rgba(138,155,214,0.34)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
             }}
           >
             {submitting ? "Creating..." : "Create & Join Room"}

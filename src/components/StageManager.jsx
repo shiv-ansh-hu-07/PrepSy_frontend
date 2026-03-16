@@ -7,8 +7,15 @@ export default function StageManager({ tracks = [] }) {
   const participants = useParticipants();
   const [fitMode, setFitMode] = useState("contain");
 
-  const screen = tracks.find((track) => track.source === "screen_share");
-  const cameraTracks = tracks.filter((track) => track.source === "camera");
+  const hasEnabledTrack = (track) =>
+    Boolean(track?.publication?.isEnabled && track?.publication?.track);
+
+  const screen = tracks.find(
+    (track) => track.source === "screen_share" && hasEnabledTrack(track)
+  );
+  const cameraTracks = tracks.filter(
+    (track) => track.source === "camera" && hasEnabledTrack(track)
+  );
   const count = participants.length;
 
   const columns =
