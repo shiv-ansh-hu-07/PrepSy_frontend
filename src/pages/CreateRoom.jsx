@@ -421,7 +421,7 @@ export default function CreateRoom() {
             style={{
               width: "100%",
               height: "48px",
-              padding: "0 16px",
+              padding: 0,
               margin: "0 auto",
               borderRadius: "999px",
               background: submitting ? "#aab5df" : "#8a9bd6",
@@ -439,7 +439,9 @@ export default function CreateRoom() {
               whiteSpace: "nowrap",
             }}
           >
-            {submitting ? "Creating..." : "Create & Join Room"}
+            <span style={{ display: "block", width: "100%", textAlign: "center" }}>
+              {submitting ? "Creating..." : "Create & Join Room"}
+            </span>
           </button>
         </form>
 
