@@ -14,7 +14,11 @@ import { useParticipants } from "@livekit/components-react";
 import jsPDF from "jspdf";
 import { useEffect, useState } from "react";
 
-export default function RoomLayout({ children, onToggleChat }) {
+export default function RoomLayout({
+  children,
+  onToggleChat,
+  hasUnreadMessages = false,
+}) {
   const {
     toggleMic,
     toggleCamera,
@@ -93,7 +97,12 @@ export default function RoomLayout({ children, onToggleChat }) {
         }
         onClick={handleScreenShare}
       />
-      <Control icon={MessageSquare} onClick={onToggleChat} />
+      <Control
+        icon={MessageSquare}
+        onClick={onToggleChat}
+        alert={hasUnreadMessages}
+        title={hasUnreadMessages ? "New messages" : "Open chat"}
+      />
       <Control icon={LogOut} danger onClick={handleLeave} />
     </>
   );
@@ -160,7 +169,15 @@ export default function RoomLayout({ children, onToggleChat }) {
   );
 }
 
-function Control({ icon: Icon, danger, active, onClick, disabled, title }) {
+function Control({
+  icon: Icon,
+  danger,
+  active,
+  onClick,
+  disabled,
+  title,
+  alert,
+}) {
   return (
     <button
       onClick={onClick}
@@ -188,12 +205,14 @@ function Control({ icon: Icon, danger, active, onClick, disabled, title }) {
         transform: active ? "translateY(-1px)" : "none",
         transition: "all 0.2s ease",
         opacity: disabled ? 0.6 : 1,
+        position: "relative",
       }}
     >
       <Icon
         size={22}
         color={disabled ? "#94A3B8" : danger ? "#FFFFFF" : "#4a5a85"}
       />
+      {alert && !disabled ? <span style={styles.alertDot} /> : null}
     </button>
   );
 }
@@ -383,5 +402,16 @@ const styles = {
     fontWeight: 600,
     cursor: "pointer",
     boxShadow: "0 8px 22px rgba(99,102,241,0.28)",
+  },
+
+  alertDot: {
+    position: "absolute",
+    top: 9,
+    right: 9,
+    width: 10,
+    height: 10,
+    borderRadius: "50%",
+    background: "#ef4444",
+    boxShadow: "0 0 0 3px rgba(239,68,68,0.18)",
   },
 };

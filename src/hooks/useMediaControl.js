@@ -41,13 +41,24 @@ export default function useMediaControls() {
     setScreenEnabled(false);
   }, [room, localParticipant]);
 
+  const ensureRoomAudioStarted = useCallback(async () => {
+    if (!room || typeof room.startAudio !== "function") return;
+
+    try {
+      await room.startAudio();
+    } catch (error) {
+      console.warn("Unable to start room audio automatically:", error);
+    }
+  }, [room]);
+
   const toggleMic = useCallback(async () => {
     if (!localParticipant || room?.state !== "connected") return;
 
     const next = !micEnabled;
+    await ensureRoomAudioStarted();
     await localParticipant.setMicrophoneEnabled(next);
     setMicEnabled(next);
-  }, [localParticipant, micEnabled, room]);
+  }, [ensureRoomAudioStarted, localParticipant, micEnabled, room]);
 
   const toggleCamera = useCallback(async () => {
     if (!localParticipant || room?.state !== "connected") return;
@@ -62,6 +73,7 @@ export default function useMediaControls() {
     if (!screenShareSupported) return;
 
     const next = !screenEnabled;
+    await ensureRoomAudioStarted();
 
     if (next) {
       await localParticipant.setScreenShareEnabled(true, {
@@ -76,7 +88,13 @@ export default function useMediaControls() {
     }
 
     setScreenEnabled(next);
-  }, [localParticipant, screenEnabled, room, screenShareSupported]);
+  }, [
+    ensureRoomAudioStarted,
+    localParticipant,
+    screenEnabled,
+    room,
+    screenShareSupported,
+  ]);
 
   const leaveRoom = useCallback(async () => {
     if (!room) return;

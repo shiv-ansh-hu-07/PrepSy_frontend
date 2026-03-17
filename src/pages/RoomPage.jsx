@@ -1,4 +1,9 @@
-import { LiveKitRoom, RoomAudioRenderer, StartAudio } from "@livekit/components-react";
+import {
+  LiveKitRoom,
+  RoomAudioRenderer,
+  useLocalParticipant,
+  useRoomContext,
+} from "@livekit/components-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
@@ -15,6 +20,7 @@ export default function RoomPage() {
   const [token, setToken] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [joinError, setJoinError] = useState(null);
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
 
   useEffect(() => {
     const identity = user?.id ?? crypto.randomUUID();
@@ -129,17 +135,95 @@ export default function RoomPage() {
         }}
       >
         <RoomAudioRenderer />
-        <StartAudio label="Tap to enable room audio" />
+        <RoomAudioBridge
+          chatOpen={chatOpen}
+          onUnreadMessage={() => setHasUnreadMessages(true)}
+        />
 
         <RoomLayout
-          onToggleChat={() => setChatOpen((value) => !value)}
+          onToggleChat={() =>
+            setChatOpen((value) => {
+              const next = !value;
+              if (next) {
+                setHasUnreadMessages(false);
+              }
+              return next;
+            })
+          }
           onLeave={() => navigate("/myRooms")}
+          hasUnreadMessages={hasUnreadMessages}
         >
           <TeamsRoom />
         </RoomLayout>
 
-        {chatOpen && <ChatDrawer onClose={() => setChatOpen(false)} />}
+        {chatOpen && (
+          <ChatDrawer
+            onClose={() => setChatOpen(false)}
+            currentUser={user}
+          />
+        )}
       </LiveKitRoom>
     </div>
   );
+}
+
+function RoomAudioBridge({ chatOpen, onUnreadMessage }) {
+  const room = useRoomContext();
+  const { localParticipant } = useLocalParticipant();
+
+  useEffect(() => {
+    if (!room) return;
+
+    let cancelled = false;
+
+    const startAudio = async () => {
+      if (cancelled || typeof room.startAudio !== "function") return;
+
+      try {
+        await room.startAudio();
+      } catch {
+        return;
+      }
+    };
+
+    const handleInteraction = () => {
+      void startAudio();
+    };
+
+    window.addEventListener("pointerdown", handleInteraction, {
+      passive: true,
+    });
+    window.addEventListener("keydown", handleInteraction);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("pointerdown", handleInteraction);
+      window.removeEventListener("keydown", handleInteraction);
+    };
+  }, [room]);
+
+  useEffect(() => {
+    if (!room) return;
+
+    const handleData = (payload) => {
+      try {
+        const data = JSON.parse(new TextDecoder().decode(payload));
+        const isOwnMessage =
+          data?.senderId &&
+          (data.senderId === localParticipant?.identity ||
+            data.senderId === localParticipant?.sid);
+
+        if (data?.type === "chat" && !chatOpen && !isOwnMessage) {
+          onUnreadMessage();
+        }
+      } catch (error) {
+        console.warn("Unable to parse room data packet:", error);
+      }
+    };
+
+    room.on("dataReceived", handleData);
+    return () => room.off("dataReceived", handleData);
+  }, [chatOpen, localParticipant, onUnreadMessage, room]);
+
+  return null;
 }
