@@ -421,17 +421,22 @@ export default function CreateRoom() {
             style={{
               width: "100%",
               height: "48px",
+              padding: "0 16px",
+              margin: "0 auto",
               borderRadius: "999px",
               background: submitting ? "#aab5df" : "#8a9bd6",
               color: "#ffffff",
               border: "none",
               fontSize: "15px",
+              fontWeight: 600,
+              lineHeight: 1,
               cursor: submitting ? "not-allowed" : "pointer",
               boxShadow: "0 10px 24px rgba(138,155,214,0.34)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               textAlign: "center",
+              whiteSpace: "nowrap",
             }}
           >
             {submitting ? "Creating..." : "Create & Join Room"}
