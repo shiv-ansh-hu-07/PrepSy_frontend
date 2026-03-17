@@ -4,77 +4,44 @@ import {
   useRoomContext,
 } from "@livekit/components-react";
 
-/* ================= CONSTANTS ================= */
-
 const SESSION_DURATION = 25 * 60;
-const BREAK_DURATION = 5 * 60;
-
 const RADIUS = 70;
 const STROKE = 10;
 const CIRCUMFERENCE = Math.PI * RADIUS * 2;
 
-/* ================= COMPONENT ================= */
-
-export default function PomodoroTimer() {
+export default function PomodoroTimer({ onLeaveRoom }) {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
 
   const [, forceTick] = useState(0);
-  const mountedRef = useRef(true);
+  const completionHandledRef = useRef(false);
 
-  /* ---------- HOST (TEMP: FORCED) ---------- */
-  const isHost = true;
-
-  /* ---------- SHARED STATE ---------- */
-  const [phase, setPhase] = useState("focus");
   const [phaseStartedAt, setPhaseStartedAt] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
-
-  const [pausedAt, setPausedAt] = useState(null);
-  const [pausedDuration, setPausedDuration] = useState(0);
-
   const [totalSessions, setTotalSessions] = useState(1);
   const [completedSessions, setCompletedSessions] = useState(0);
   const [statusMessage, setStatusMessage] = useState("");
+  const [showNextSessionPrompt, setShowNextSessionPrompt] = useState(false);
 
-  /* ---------- SAFE UNMOUNT ---------- */
-  useEffect(() => {
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  /* ---------- DERIVED TIME ---------- */
-  const phaseDuration =
-    phase === "focus" ? SESSION_DURATION : BREAK_DURATION;
-
-  let timeLeft = phaseDuration;
+  let timeLeft = SESSION_DURATION;
 
   if (phaseStartedAt) {
-    const now = Date.now();
-    const effectivePaused =
-      pausedDuration +
-      (pausedAt ? now - pausedAt : 0);
-
-    const elapsed = now - phaseStartedAt - effectivePaused;
-    timeLeft = Math.max(phaseDuration - Math.floor(elapsed / 1000), 0);
+    const elapsed = Date.now() - phaseStartedAt;
+    timeLeft = Math.max(SESSION_DURATION - Math.floor(elapsed / 1000), 0);
   }
 
-  const isUrgent =
-    phase === "focus" && timeLeft <= 60 && timeLeft > 0;
+  const isUrgent = timeLeft <= 60 && timeLeft > 0;
 
-  /* ---------- FORCE UI TICK ---------- */
   useEffect(() => {
     if (!isRunning) return;
 
     const id = setInterval(() => {
-      forceTick((t) => t + 1);
+      forceTick((tick) => tick + 1);
     }, 1000);
 
     return () => clearInterval(id);
   }, [isRunning]);
 
-  /* ---------- DATA RECEIVE ---------- */
   useEffect(() => {
     if (!room || !localParticipant) return;
 
@@ -90,28 +57,23 @@ export default function PomodoroTimer() {
 
       if (msg.type !== "POMODORO_SYNC") return;
 
-      setPhase(msg.phase);
       setPhaseStartedAt(msg.phaseStartedAt);
-      setPausedAt(msg.pausedAt);
-      setPausedDuration(msg.pausedDuration);
       setIsRunning(msg.isRunning);
       setTotalSessions(msg.totalSessions);
       setCompletedSessions(msg.completedSessions);
       setStatusMessage(msg.statusMessage || "");
+      setShowNextSessionPrompt(Boolean(msg.showNextSessionPrompt));
+      completionHandledRef.current = Boolean(msg.showNextSessionPrompt);
     };
 
     room.on("dataReceived", handler);
     return () => room.off("dataReceived", handler);
   }, [room, localParticipant]);
 
-  /* ---------- BROADCAST ---------- */
   const broadcast = (payload) => {
-    if (
-      !room ||
-      room.state !== "connected" ||
-      !localParticipant
-    )
+    if (!room || room.state !== "connected" || !localParticipant) {
       return;
+    }
 
     localParticipant.publishData(
       new TextEncoder().encode(
@@ -121,105 +83,72 @@ export default function PomodoroTimer() {
     );
   };
 
-  /* ---------- CONTROLS ---------- */
   const start = () => {
     const now = Date.now();
 
-    setPhase("focus");
     setPhaseStartedAt(now);
-    setPausedAt(null);
-    setPausedDuration(0);
     setIsRunning(true);
     setStatusMessage("");
+    setShowNextSessionPrompt(false);
+    completionHandledRef.current = false;
 
     broadcast({
-      phase: "focus",
       phaseStartedAt: now,
-      pausedAt: null,
-      pausedDuration: 0,
       isRunning: true,
       totalSessions,
       completedSessions,
       statusMessage: "",
+      showNextSessionPrompt: false,
     });
-
   };
 
-  const pause = () => {
-    const now = Date.now();
+  useEffect(() => {
+    if (!isRunning || timeLeft !== 0 || completionHandledRef.current) {
+      return;
+    }
 
-    setPausedAt(now);
-    setIsRunning(false);
+    completionHandledRef.current = true;
+    const nextCompletedSessions = completedSessions + 1;
+    const reachedTarget = nextCompletedSessions >= totalSessions;
+    const nextStatusMessage = reachedTarget
+      ? "Nice work. Session complete."
+      : `${nextCompletedSessions}/${totalSessions} sessions completed.`;
 
-    broadcast({
-      phase,
-      phaseStartedAt,
-      pausedAt: now,
-      pausedDuration,
-      isRunning: false,
-      totalSessions,
-      completedSessions,
-      statusMessage,
-    });
-
-  };
-
-  const resume = () => {
-    const now = Date.now();
-    const addedPause = now - pausedAt;
-
-    setPausedDuration((d) => d + addedPause);
-    setPausedAt(null);
-    setIsRunning(true);
-
-    broadcast({
-      phase,
-      phaseStartedAt,
-      pausedAt: null,
-      pausedDuration: pausedDuration + addedPause,
-      isRunning: true,
-      totalSessions,
-      completedSessions,
-      statusMessage,
-    });
-
-  };
-
-  const reset = () => {
     setIsRunning(false);
     setPhaseStartedAt(null);
-    setPausedAt(null);
-    setPausedDuration(0);
-    setCompletedSessions(0);
-    setStatusMessage("");
+    setCompletedSessions(nextCompletedSessions);
+    setStatusMessage(nextStatusMessage);
+    setShowNextSessionPrompt(true);
 
     broadcast({
-      phase: "focus",
       phaseStartedAt: null,
-      pausedAt: null,
-      pausedDuration: 0,
       isRunning: false,
       totalSessions,
-      completedSessions: 0,
-      statusMessage: "",
+      completedSessions: nextCompletedSessions,
+      statusMessage: nextStatusMessage,
+      showNextSessionPrompt: true,
     });
+  }, [completedSessions, isRunning, timeLeft, totalSessions]);
 
+  const handleStudyMore = () => {
+    start();
   };
 
-  /* ================= UI ================= */
+  const handleLeaveAfterSession = () => {
+    setShowNextSessionPrompt(false);
+    onLeaveRoom?.();
+  };
 
-  const formatTime = (s) =>
-    `${Math.floor(s / 60)
+  const formatTime = (seconds) =>
+    `${Math.floor(seconds / 60)
       .toString()
-      .padStart(2, "0")}:${(s % 60)
-        .toString()
-        .padStart(2, "0")}`;
+      .padStart(2, "0")}:${(seconds % 60)
+      .toString()
+      .padStart(2, "0")}`;
 
   return (
     <div style={styles.wrapper}>
-      <p style={styles.title}>
-        {phase === "break" ? "Break Timer" : "Pomodoro Timer"}
-      </p>
+      <p style={styles.title}>Pomodoro Timer</p>
 
       <div style={{ width: 180, margin: "0 auto" }}>
         <svg width="180" height="90" viewBox="0 0 180 90">
@@ -237,8 +166,8 @@ export default function PomodoroTimer() {
             strokeDasharray={CIRCUMFERENCE}
             strokeDashoffset={
               CIRCUMFERENCE -
-              ((phaseDuration - timeLeft) / phaseDuration) *
-              CIRCUMFERENCE
+              ((SESSION_DURATION - timeLeft) / SESSION_DURATION) *
+                CIRCUMFERENCE
             }
           />
         </svg>
@@ -246,77 +175,89 @@ export default function PomodoroTimer() {
         <div style={styles.time}>{formatTime(timeLeft)}</div>
       </div>
 
-      {statusMessage && (
-        <div style={styles.status}>{statusMessage}</div>
-      )}
+      {statusMessage ? <div style={styles.status}>{statusMessage}</div> : null}
 
       <div style={styles.controls}>
         <button
-          onClick={() => {
-            if (!phaseStartedAt) start();
-            else if (isRunning) pause();
-            else resume();
+          onClick={start}
+          style={{
+            ...buttonStyle,
+            ...(isRunning ? styles.runningButton : null),
           }}
-          style={buttonStyle}
+          disabled={isRunning}
         >
-          {!phaseStartedAt
-            ? "Start"
-            : isRunning
-              ? "Pause"
-              : "Resume"}
-        </button>
-
-        <button onClick={reset} style={buttonStyle}>
-          Reset
+          {isRunning ? "Session Running" : "Start Session"}
         </button>
       </div>
 
       <div style={styles.sessions}>
-        Sessions:&nbsp;
-        <button
-          onClick={() =>
-            setTotalSessions((s) => Math.max(1, s - 1))
-          }
-          style={sessionBtn}
-        >
-          –
-        </button>
-        &nbsp;{totalSessions}&nbsp;
-        <button
-          onClick={() => setTotalSessions((s) => s + 1)}
-          style={sessionBtn}
-        >
-          +
-        </button>
-
-        <div style={{ marginTop: 6 }}>
-          Completed: {completedSessions}
+        <div style={styles.sessionCountRow}>
+          <span>Sessions:</span>
+          <div style={styles.sessionStepper}>
+            <button
+              onClick={() => setTotalSessions((count) => Math.max(1, count - 1))}
+              style={sessionBtn}
+              disabled={isRunning}
+            >
+              -
+            </button>
+            <span style={styles.sessionCount}>{totalSessions}</span>
+            <button
+              onClick={() => setTotalSessions((count) => count + 1)}
+              style={sessionBtn}
+              disabled={isRunning}
+            >
+              +
+            </button>
+          </div>
         </div>
+
+        <div>Completed: {completedSessions}</div>
       </div>
+
+      {showNextSessionPrompt ? (
+        <div style={styles.overlay}>
+          <div style={styles.promptCard}>
+            <h4 style={styles.promptTitle}>One more session?</h4>
+            <p style={styles.promptText}>
+              You finished this session. Would you like to study for one more?
+            </p>
+            <div style={styles.promptActions}>
+              <button
+                onClick={handleStudyMore}
+                style={{ ...buttonStyle, ...styles.primaryPromptButton }}
+              >
+                Yes
+              </button>
+              <button onClick={handleLeaveAfterSession} style={buttonStyle}>
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
-
-/* ================= STYLES ================= */
 
 const styles = {
   wrapper: {
     width: "100%",
     height: "100%",
-    display: "grid",
-    gridTemplateRows: "auto 1fr auto",
-    gap: 6,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
     fontFamily: "Inter, system-ui",
     color: "#4a5a85",
+    position: "relative",
   },
   title: {
     textAlign: "center",
     fontSize: 16,
     fontWeight: 600,
-  },
-  hostNote: {
-    fontSize: 12,
-    color: "#6B7280",
+    margin: 0,
   },
   time: {
     textAlign: "center",
@@ -328,17 +269,88 @@ const styles = {
     textAlign: "center",
     fontSize: 13,
     color: "#22c55e",
+    minHeight: 18,
   },
   controls: {
     display: "flex",
-    justifyContent: "space-around",
-    marginTop: 8,
+    justifyContent: "center",
+    width: "100%",
+    marginTop: 6,
   },
   sessions: {
     marginTop: 8,
     fontSize: 13,
     color: "#6B7280",
     textAlign: "center",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 6,
+  },
+  sessionCountRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+  },
+  sessionStepper: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "4px 8px",
+    borderRadius: 999,
+    background: "rgba(138,155,214,0.1)",
+  },
+  sessionCount: {
+    minWidth: 18,
+    fontWeight: 600,
+    color: "#4a5a85",
+  },
+  runningButton: {
+    background: "#E5EAFB",
+    color: "#6B7280",
+    cursor: "default",
+    boxShadow: "none",
+  },
+  overlay: {
+    position: "absolute",
+    inset: 0,
+    background: "rgba(15, 23, 42, 0.28)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 28,
+    padding: 16,
+  },
+  promptCard: {
+    width: "100%",
+    maxWidth: 290,
+    background: "#FFFFFF",
+    borderRadius: 22,
+    padding: "18px 18px 16px",
+    boxShadow: "0 20px 40px rgba(15,23,42,0.18)",
+    textAlign: "center",
+  },
+  promptTitle: {
+    margin: 0,
+    fontSize: 18,
+    fontWeight: 700,
+    color: "#33406b",
+  },
+  promptText: {
+    margin: "10px 0 16px",
+    fontSize: 13,
+    lineHeight: 1.5,
+    color: "#6B7280",
+  },
+  promptActions: {
+    display: "flex",
+    justifyContent: "center",
+    gap: 10,
+  },
+  primaryPromptButton: {
+    background: "#8a9bd6",
+    borderColor: "#8a9bd6",
+    color: "#FFFFFF",
   },
 };
 
@@ -346,15 +358,21 @@ const buttonStyle = {
   background: "#FFFFFF",
   border: "1px solid #E5E7EB",
   color: "#4a5a85",
-  padding: "6px 14px",
-  borderRadius: 8,
+  padding: "10px 18px",
+  minWidth: 140,
+  borderRadius: 12,
   cursor: "pointer",
+  fontWeight: 600,
 };
 
 const sessionBtn = {
-  background: "transparent",
-  border: "none",
+  background: "#FFFFFF",
+  border: "1px solid #D9E0F2",
   color: "#4a5a85",
   fontSize: 16,
   cursor: "pointer",
+  width: 28,
+  height: 28,
+  borderRadius: "50%",
+  lineHeight: 1,
 };

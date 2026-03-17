@@ -146,7 +146,7 @@ export default function RoomLayout({
               gridTemplateRows: "auto 1fr auto",
             }}
           >
-            <PomodoroTimer />
+            <PomodoroTimer onLeaveRoom={handleLeave} />
           </div>
 
           <div style={{ ...styles.card, minHeight: isMobile ? 240 : 300 }}>
