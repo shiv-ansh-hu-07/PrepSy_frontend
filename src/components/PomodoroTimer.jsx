@@ -23,7 +23,7 @@ export default function PomodoroTimer({ onLeaveRoom }) {
   const [statusMessage, setStatusMessage] = useState("");
   const [showNextSessionPrompt, setShowNextSessionPrompt] = useState(false);
   const [showSettlePrompt, setShowSettlePrompt] = useState(true);
-  const [settleSecondsLeft, setSettleSecondsLeft] = useState(2 * 60);
+  const [settleSecondsLeft, setSettleSecondsLeft] = useState(60);
 
   let timeLeft = SESSION_DURATION;
 
@@ -265,8 +265,8 @@ export default function PomodoroTimer({ onLeaveRoom }) {
       ) : null}
 
       {showSettlePrompt ? (
-        <div style={styles.overlay}>
-          <div style={styles.promptCard}>
+        <div style={styles.settleOverlay}>
+          <div style={styles.settlePromptCard}>
             <h4 style={styles.promptTitle}>Settle down</h4>
             <p style={styles.promptText}>
               Get comfortable, open your notes, and get ready to focus.
@@ -362,6 +362,16 @@ const styles = {
     borderRadius: 28,
     padding: 16,
   },
+  settleOverlay: {
+    position: "absolute",
+    inset: 0,
+    background: "rgba(138, 155, 214, 0.18)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 28,
+    padding: 16,
+  },
   promptCard: {
     width: "100%",
     maxWidth: 290,
@@ -369,6 +379,17 @@ const styles = {
     borderRadius: 22,
     padding: "18px 18px 16px",
     boxShadow: "0 20px 40px rgba(15,23,42,0.18)",
+    textAlign: "center",
+  },
+  settlePromptCard: {
+    width: "100%",
+    maxWidth: 290,
+    background:
+      "radial-gradient(circle at top, rgba(138,155,214,0.18), transparent 70%), #FFFFFF",
+    border: "1px solid #E6EAF8",
+    borderRadius: 22,
+    padding: "18px 18px 16px",
+    boxShadow: "0 16px 34px rgba(74, 90, 133, 0.16)",
     textAlign: "center",
   },
   promptTitle: {
@@ -400,7 +421,7 @@ const styles = {
     minWidth: 170,
     padding: "10px 14px",
     borderRadius: 999,
-    background: "rgba(138,155,214,0.12)",
+    background: "#EEF2FF",
     color: "#4a5a85",
     fontWeight: 700,
     fontSize: 14,
