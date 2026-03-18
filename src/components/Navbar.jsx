@@ -128,7 +128,7 @@ export default function Navbar() {
             flexShrink: 1,
           }}
         >
-          {isFeaturePage ? (
+          {isFeaturePage && !user ? (
             <Link
               to="/"
               style={{
@@ -174,7 +174,7 @@ export default function Navbar() {
             </Link>
           )}
 
-          {(!isHomePage || isLoginPage) && user && (
+          {(user || !isHomePage || isLoginPage) && user && (
             <>
               <Link
                 to="/dashboard"
