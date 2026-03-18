@@ -140,8 +140,8 @@ export default function RoomLayout({
           <div
             style={{
               ...styles.card,
-              height: isMobile ? "auto" : 220,
-              overflow: "hidden",
+              minHeight: isMobile ? 240 : 252,
+              overflow: "visible",
               display: "grid",
               gridTemplateRows: "auto 1fr auto",
             }}

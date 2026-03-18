@@ -275,10 +275,10 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     width: "100%",
-    marginTop: 2,
+    marginTop: 0,
   },
   sessions: {
-    marginTop: 6,
+    marginTop: 4,
     fontSize: 12,
     color: "#6B7280",
     textAlign: "center",
@@ -358,12 +358,12 @@ const buttonStyle = {
   background: "#FFFFFF",
   border: "1px solid #E5E7EB",
   color: "#4a5a85",
-  padding: "8px 14px",
-  minWidth: 112,
+  padding: "6px 12px",
+  minWidth: 96,
   borderRadius: 10,
   cursor: "pointer",
   fontWeight: 600,
-  fontSize: 14,
+  fontSize: 13,
 };
 
 const sessionBtn = {
