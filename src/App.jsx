@@ -94,11 +94,7 @@ export default function App() {
 
           <Route
             path="/feature"
-            element={
-              <PublicRoute>
-                <Features />
-              </PublicRoute>
-            }
+            element={<Features />}
           />
 
           <Route
