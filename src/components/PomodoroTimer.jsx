@@ -5,6 +5,7 @@ import {
 } from "@livekit/components-react";
 
 const SESSION_DURATION = 25 * 60;
+const BREAK_DURATION = 5 * 60;
 const RADIUS = 70;
 const STROKE = 10;
 const CIRCUMFERENCE = Math.PI * RADIUS * 2;
@@ -22,6 +23,8 @@ export default function PomodoroTimer({ onLeaveRoom }) {
   const [completedSessions, setCompletedSessions] = useState(0);
   const [statusMessage, setStatusMessage] = useState("");
   const [showNextSessionPrompt, setShowNextSessionPrompt] = useState(false);
+  const [showBreakPrompt, setShowBreakPrompt] = useState(false);
+  const [breakSecondsLeft, setBreakSecondsLeft] = useState(BREAK_DURATION);
   const [showSettlePrompt, setShowSettlePrompt] = useState(true);
   const [settleSecondsLeft, setSettleSecondsLeft] = useState(60);
 
@@ -65,6 +68,8 @@ export default function PomodoroTimer({ onLeaveRoom }) {
       setCompletedSessions(msg.completedSessions);
       setStatusMessage(msg.statusMessage || "");
       setShowNextSessionPrompt(Boolean(msg.showNextSessionPrompt));
+      setShowBreakPrompt(Boolean(msg.showBreakPrompt));
+      setBreakSecondsLeft(msg.breakSecondsLeft ?? BREAK_DURATION);
       setShowSettlePrompt(false);
       completionHandledRef.current = Boolean(msg.showNextSessionPrompt);
     };
@@ -93,6 +98,8 @@ export default function PomodoroTimer({ onLeaveRoom }) {
     setIsRunning(true);
     setStatusMessage("");
     setShowNextSessionPrompt(false);
+    setShowBreakPrompt(false);
+    setBreakSecondsLeft(BREAK_DURATION);
     setShowSettlePrompt(false);
     completionHandledRef.current = false;
 
@@ -103,11 +110,19 @@ export default function PomodoroTimer({ onLeaveRoom }) {
       completedSessions,
       statusMessage: "",
       showNextSessionPrompt: false,
+      showBreakPrompt: false,
+      breakSecondsLeft: BREAK_DURATION,
     });
   };
 
   useEffect(() => {
-    if (!showSettlePrompt || isRunning || phaseStartedAt || showNextSessionPrompt) {
+    if (
+      !showSettlePrompt ||
+      isRunning ||
+      phaseStartedAt ||
+      showNextSessionPrompt ||
+      showBreakPrompt
+    ) {
       return;
     }
 
@@ -125,8 +140,47 @@ export default function PomodoroTimer({ onLeaveRoom }) {
     isRunning,
     phaseStartedAt,
     settleSecondsLeft,
+    showBreakPrompt,
     showNextSessionPrompt,
     showSettlePrompt,
+  ]);
+
+  useEffect(() => {
+    if (!showBreakPrompt || isRunning || phaseStartedAt || showNextSessionPrompt) {
+      return;
+    }
+
+    if (breakSecondsLeft <= 0) {
+      setShowBreakPrompt(false);
+      setShowNextSessionPrompt(true);
+      setStatusMessage("Break complete. Ready for the next session?");
+
+      broadcast({
+        phaseStartedAt: null,
+        isRunning: false,
+        totalSessions,
+        completedSessions,
+        statusMessage: "Break complete. Ready for the next session?",
+        showNextSessionPrompt: true,
+        showBreakPrompt: false,
+        breakSecondsLeft: 0,
+      });
+      return;
+    }
+
+    const timerId = setTimeout(() => {
+      setBreakSecondsLeft((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+
+    return () => clearTimeout(timerId);
+  }, [
+    breakSecondsLeft,
+    completedSessions,
+    isRunning,
+    phaseStartedAt,
+    showBreakPrompt,
+    showNextSessionPrompt,
+    totalSessions,
   ]);
 
   useEffect(() => {
@@ -138,14 +192,16 @@ export default function PomodoroTimer({ onLeaveRoom }) {
     const nextCompletedSessions = completedSessions + 1;
     const reachedTarget = nextCompletedSessions >= totalSessions;
     const nextStatusMessage = reachedTarget
-      ? "Nice work. Session complete."
-      : `${nextCompletedSessions}/${totalSessions} sessions completed.`;
+      ? "Nice work. Session complete. Time for a break."
+      : `${nextCompletedSessions}/${totalSessions} sessions completed. Break time.`;
 
     setIsRunning(false);
     setPhaseStartedAt(null);
     setCompletedSessions(nextCompletedSessions);
     setStatusMessage(nextStatusMessage);
-    setShowNextSessionPrompt(true);
+    setShowBreakPrompt(true);
+    setBreakSecondsLeft(BREAK_DURATION);
+    setShowNextSessionPrompt(false);
 
     broadcast({
       phaseStartedAt: null,
@@ -153,7 +209,9 @@ export default function PomodoroTimer({ onLeaveRoom }) {
       totalSessions,
       completedSessions: nextCompletedSessions,
       statusMessage: nextStatusMessage,
-      showNextSessionPrompt: true,
+      showNextSessionPrompt: false,
+      showBreakPrompt: true,
+      breakSecondsLeft: BREAK_DURATION,
     });
   }, [completedSessions, isRunning, timeLeft, totalSessions]);
 
@@ -259,6 +317,20 @@ export default function PomodoroTimer({ onLeaveRoom }) {
               <button onClick={handleLeaveAfterSession} style={buttonStyle}>
                 No
               </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showBreakPrompt ? (
+        <div style={styles.settleOverlay}>
+          <div style={styles.settlePromptCard}>
+            <h4 style={styles.promptTitle}>Break time</h4>
+            <p style={styles.promptText}>
+              Step away for a bit, stretch, and reset before the next round.
+            </p>
+            <div style={styles.settleTimer}>
+              Break ends in {formatTime(breakSecondsLeft)}
             </div>
           </div>
         </div>
