@@ -134,6 +134,8 @@ export default function RoomLayout({
 
             {!isMobile ? <div style={styles.bottomBarDesktop}>{controls}</div> : null}
           </div>
+
+          {isMobile ? <div style={styles.mobileControls}>{controls}</div> : null}
         </div>
 
         <div style={styles.sidePanel(isMobile)}>
@@ -164,7 +166,6 @@ export default function RoomLayout({
         </div>
       </div>
 
-      {isMobile ? <div style={styles.bottomBar}>{controls}</div> : null}
     </div>
   );
 }
@@ -330,11 +331,8 @@ const styles = {
     zIndex: 30,
   },
 
-  bottomBar: {
-    position: "sticky",
-    bottom: 8,
-    width: "fit-content",
-    maxWidth: "100%",
+  mobileControls: {
+    width: "100%",
     display: "flex",
     gap: 10,
     flexWrap: "wrap",
@@ -343,7 +341,6 @@ const styles = {
     background: "#FFFFFF",
     borderRadius: 18,
     boxShadow: "0 10px 26px rgba(0,0,0,0.08)",
-    zIndex: 40,
   },
 
   sidePanel: (isMobile) => ({
