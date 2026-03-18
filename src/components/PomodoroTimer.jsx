@@ -22,6 +22,8 @@ export default function PomodoroTimer({ onLeaveRoom }) {
   const [completedSessions, setCompletedSessions] = useState(0);
   const [statusMessage, setStatusMessage] = useState("");
   const [showNextSessionPrompt, setShowNextSessionPrompt] = useState(false);
+  const [showSettlePrompt, setShowSettlePrompt] = useState(true);
+  const [settleSecondsLeft, setSettleSecondsLeft] = useState(2 * 60);
 
   let timeLeft = SESSION_DURATION;
 
@@ -63,6 +65,7 @@ export default function PomodoroTimer({ onLeaveRoom }) {
       setCompletedSessions(msg.completedSessions);
       setStatusMessage(msg.statusMessage || "");
       setShowNextSessionPrompt(Boolean(msg.showNextSessionPrompt));
+      setShowSettlePrompt(false);
       completionHandledRef.current = Boolean(msg.showNextSessionPrompt);
     };
 
@@ -90,6 +93,7 @@ export default function PomodoroTimer({ onLeaveRoom }) {
     setIsRunning(true);
     setStatusMessage("");
     setShowNextSessionPrompt(false);
+    setShowSettlePrompt(false);
     completionHandledRef.current = false;
 
     broadcast({
@@ -101,6 +105,29 @@ export default function PomodoroTimer({ onLeaveRoom }) {
       showNextSessionPrompt: false,
     });
   };
+
+  useEffect(() => {
+    if (!showSettlePrompt || isRunning || phaseStartedAt || showNextSessionPrompt) {
+      return;
+    }
+
+    if (settleSecondsLeft <= 0) {
+      start();
+      return;
+    }
+
+    const timerId = setTimeout(() => {
+      setSettleSecondsLeft((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+
+    return () => clearTimeout(timerId);
+  }, [
+    isRunning,
+    phaseStartedAt,
+    settleSecondsLeft,
+    showNextSessionPrompt,
+    showSettlePrompt,
+  ]);
 
   useEffect(() => {
     if (!isRunning || timeLeft !== 0 || completionHandledRef.current) {
@@ -236,6 +263,20 @@ export default function PomodoroTimer({ onLeaveRoom }) {
           </div>
         </div>
       ) : null}
+
+      {showSettlePrompt ? (
+        <div style={styles.overlay}>
+          <div style={styles.promptCard}>
+            <h4 style={styles.promptTitle}>Settle down</h4>
+            <p style={styles.promptText}>
+              Get comfortable, open your notes, and get ready to focus.
+            </p>
+            <div style={styles.settleTimer}>
+              Pomodoro starts in {formatTime(settleSecondsLeft)}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -351,6 +392,18 @@ const styles = {
     background: "#8a9bd6",
     borderColor: "#8a9bd6",
     color: "#FFFFFF",
+  },
+  settleTimer: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 170,
+    padding: "10px 14px",
+    borderRadius: 999,
+    background: "rgba(138,155,214,0.12)",
+    color: "#4a5a85",
+    fontWeight: 700,
+    fontSize: 14,
   },
 };
 
