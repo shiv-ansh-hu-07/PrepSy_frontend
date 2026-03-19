@@ -15,7 +15,7 @@ import { useEffect, useState } from "react";
 export default function RoomPage() {
   const { roomId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
 
   const [token, setToken] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
@@ -38,6 +38,29 @@ export default function RoomPage() {
         );
       });
   }, [roomId, user]);
+
+  useEffect(() => {
+    if (!roomId || !user?.id || !token) return;
+
+    let cancelled = false;
+
+    const recordAttendance = async () => {
+      try {
+        await api.post("/rooms/join", { roomId });
+        if (!cancelled) {
+          await refreshUser();
+        }
+      } catch (error) {
+        console.warn("Unable to record attendance:", error);
+      }
+    };
+
+    void recordAttendance();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [roomId, token, user?.id, refreshUser]);
 
   if (joinError) {
     return (

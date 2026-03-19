@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import api from "../api";
 
 const AuthContext = createContext();
@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const loadUser = async () => {
+  const loadUser = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) {
       setLoading(false);
@@ -24,11 +24,11 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadUser();
-  }, []);
+  }, [loadUser]);
 
   // Email / password login
   const login = async (email, password) => {
@@ -62,6 +62,7 @@ export const AuthProvider = ({ children }) => {
         loginWithToken, 
         logout,
         loading,
+        refreshUser: loadUser,
       }}
     >
       {children}
