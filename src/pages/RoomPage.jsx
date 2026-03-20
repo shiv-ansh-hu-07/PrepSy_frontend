@@ -10,7 +10,7 @@ import api from "../services/api";
 import RoomLayout from "../components/RoomLayout";
 import TeamsRoom from "../components/teamsRoom";
 import ChatDrawer from "../components/ChatDrawer";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function RoomPage() {
   const { roomId } = useParams();
@@ -21,23 +21,36 @@ export default function RoomPage() {
   const [chatOpen, setChatOpen] = useState(false);
   const [joinError, setJoinError] = useState(null);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+  const guestIdentityRef = useRef(crypto.randomUUID());
+
+  const identity = user?.id ?? guestIdentityRef.current;
+  const name = user?.name || "Guest";
 
   useEffect(() => {
-    const identity = user?.id ?? crypto.randomUUID();
-    const name = user?.name || "Guest";
+    let cancelled = false;
 
     setToken(null);
     setJoinError(null);
 
     api
       .get(`/livekit/token?room=${roomId}&user=${identity}&name=${name}`)
-      .then((res) => setToken(res.data.token))
+      .then((res) => {
+        if (!cancelled) {
+          setToken(res.data.token);
+        }
+      })
       .catch((error) => {
-        setJoinError(
-          error?.response?.data?.error || "Unable to join this classroom right now."
-        );
+        if (!cancelled) {
+          setJoinError(
+            error?.response?.data?.error || "Unable to join this classroom right now."
+          );
+        }
       });
-  }, [roomId, user]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [identity, name, roomId]);
 
   useEffect(() => {
     if (!roomId || !user?.id || !token) return;
