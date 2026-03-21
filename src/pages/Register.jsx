@@ -19,7 +19,7 @@ export default function Register() {
       await register(name, email, password);
       alert("Account created! Please login.");
       navigate("/login");
-    } catch (err) {
+    } catch {
       setError("Registration failed. Please try again.");
     }
   }

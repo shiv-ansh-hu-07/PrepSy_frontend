@@ -4,6 +4,21 @@ import {
 } from "@livekit/components-react";
 import { useCallback, useEffect, useState } from "react";
 
+function getScreenShareSupport() {
+  if (typeof navigator === "undefined" || typeof window === "undefined") {
+    return false;
+  }
+
+  const userAgent = navigator.userAgent || "";
+  const isMobileDevice =
+    /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(userAgent) ||
+    window.matchMedia("(max-width: 980px)").matches;
+  const hasDisplayMedia =
+    typeof navigator.mediaDevices?.getDisplayMedia === "function";
+
+  return hasDisplayMedia && !isMobileDevice;
+}
+
 export default function useMediaControls() {
   const { localParticipant } = useLocalParticipant();
   const room = useRoomContext();
@@ -11,35 +26,40 @@ export default function useMediaControls() {
   const [micEnabled, setMicEnabled] = useState(false);
   const [camEnabled, setCamEnabled] = useState(false);
   const [screenEnabled, setScreenEnabled] = useState(false);
-  const [screenShareSupported, setScreenShareSupported] = useState(true);
-
-  useEffect(() => {
-    if (typeof navigator === "undefined" || typeof window === "undefined") {
-      setScreenShareSupported(false);
-      return;
-    }
-
-    const userAgent = navigator.userAgent || "";
-    const isMobileDevice =
-      /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(userAgent) ||
-      window.matchMedia("(max-width: 980px)").matches;
-    const hasDisplayMedia =
-      typeof navigator.mediaDevices?.getDisplayMedia === "function";
-
-    setScreenShareSupported(hasDisplayMedia && !isMobileDevice);
+  const [screenShareSupported] = useState(getScreenShareSupport);
+  const resetMediaState = useCallback(() => {
+    setMicEnabled(false);
+    setCamEnabled(false);
+    setScreenEnabled(false);
   }, []);
 
   useEffect(() => {
     if (!room || !localParticipant) return;
     if (room.state !== "connected") return;
 
-    localParticipant.setMicrophoneEnabled(false);
-    localParticipant.setCameraEnabled(false);
+    let active = true;
 
-    setMicEnabled(false);
-    setCamEnabled(false);
-    setScreenEnabled(false);
-  }, [room, localParticipant]);
+    const initializeParticipantMedia = async () => {
+      try {
+        await localParticipant.setMicrophoneEnabled(false);
+        await localParticipant.setCameraEnabled(false);
+      } catch (error) {
+        console.warn("Unable to initialize local media state:", error);
+      }
+
+      queueMicrotask(() => {
+        if (active) {
+          resetMediaState();
+        }
+      });
+    };
+
+    void initializeParticipantMedia();
+
+    return () => {
+      active = false;
+    };
+  }, [localParticipant, resetMediaState, room]);
 
   const ensureRoomAudioStarted = useCallback(async () => {
     if (!room || typeof room.startAudio !== "function") return;

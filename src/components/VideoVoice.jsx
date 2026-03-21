@@ -2,12 +2,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSocket } from "../context/SocketContext";
 import { useParams } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 
 export default function VideoVoice() {
-  const { id: roomId } = useParams();
-  const { user } = useAuth();
-  const { socket, startVideo, startVoice, stopLocalStream } = useSocket();
+  const { roomId } = useParams();
+  const { startVideo, startVoice, stopLocalStream } = useSocket();
   const localRef = useRef(null);
   const [mode, setMode] = useState(null); // 'video' | 'voice' | null
 
@@ -51,6 +49,9 @@ export default function VideoVoice() {
         <button onClick={stopCall} className="px-3 py-2 bg-red-600 text-white rounded">
           Stop
         </button>
+        <span className="text-sm text-slate-600">
+          {mode ? `Current mode: ${mode}` : "Idle"}
+        </span>
       </div>
 
       <video id="localVideo" ref={localRef} autoPlay muted playsInline className="w-full bg-black rounded h-60" />

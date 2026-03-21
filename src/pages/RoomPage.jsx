@@ -10,7 +10,7 @@ import api from "../services/api";
 import RoomLayout from "../components/RoomLayout";
 import TeamsRoom from "../components/teamsRoom";
 import ChatDrawer from "../components/ChatDrawer";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function RoomPage() {
   const { roomId } = useParams();
@@ -21,22 +21,20 @@ export default function RoomPage() {
   const [chatOpen, setChatOpen] = useState(false);
   const [joinError, setJoinError] = useState(null);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
-  const guestIdentityRef = useRef(crypto.randomUUID());
+  const [guestIdentity] = useState(() => crypto.randomUUID());
 
-  const identity = user?.id ?? guestIdentityRef.current;
+  const identity = user?.id ?? guestIdentity;
   const name = user?.name || "Guest";
 
   useEffect(() => {
     let cancelled = false;
-
-    setToken(null);
-    setJoinError(null);
 
     api
       .get(`/livekit/token?room=${roomId}&user=${identity}&name=${name}`)
       .then((res) => {
         if (!cancelled) {
           setToken(res.data.token);
+          setJoinError(null);
         }
       })
       .catch((error) => {

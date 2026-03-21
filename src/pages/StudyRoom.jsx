@@ -5,7 +5,7 @@ import { LiveKitRoom, VideoConference } from "@livekit/components-react";
 import "@livekit/components-styles";
 
 export default function StudyRoom({ roomId, user }) {
-  const { joinRoom, sendMessage, messages, pomodoro } = useSocket();
+  const { messages } = useSocket();
   const [token, setToken] = useState(null);
   const [loadingToken, setLoadingToken] = useState(true);
   const [tokenError, setTokenError] = useState(null);
@@ -43,7 +43,7 @@ export default function StudyRoom({ roomId, user }) {
     }
 
     fetchToken();
-  }, [roomId, user]);
+  }, [roomId, user?.email, user?.id]);
 
   if (!serverUrl) {
     return <div className="p-6 text-white">Missing VITE_LIVEKIT_WS_URL env var.</div>;

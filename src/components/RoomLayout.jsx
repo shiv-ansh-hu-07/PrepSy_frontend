@@ -11,12 +11,12 @@ import useMediaControls from "../hooks/useMediaControl";
 import { useNavigate } from "react-router-dom";
 import PomodoroTimer from "./PomodoroTimer";
 import { useParticipants } from "@livekit/components-react";
-import jsPDF from "jspdf";
 import { useEffect, useState } from "react";
 
 export default function RoomLayout({
   children,
   onToggleChat,
+  onLeave,
   hasUnreadMessages = false,
 }) {
   const {
@@ -48,8 +48,14 @@ export default function RoomLayout({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const handleLeave = () => {
-    leaveRoom();
+  const handleLeave = async () => {
+    await leaveRoom();
+
+    if (typeof onLeave === "function") {
+      onLeave();
+      return;
+    }
+
     navigate("/dashboard");
   };
 
@@ -62,7 +68,8 @@ export default function RoomLayout({
     toggleScreenShare();
   };
 
-  const downloadNotesAsPDF = () => {
+  const downloadNotesAsPDF = async () => {
+    const { default: jsPDF } = await import("jspdf");
     const doc = new jsPDF();
     doc.setFont("Times", "Normal");
     doc.setFontSize(16);
@@ -171,7 +178,7 @@ export default function RoomLayout({
 }
 
 function Control({
-  icon: Icon,
+  icon,
   danger,
   active,
   onClick,
@@ -179,6 +186,8 @@ function Control({
   title,
   alert,
 }) {
+  const IconComponent = icon;
+
   return (
     <button
       onClick={onClick}
@@ -209,7 +218,7 @@ function Control({
         position: "relative",
       }}
     >
-      <Icon
+      <IconComponent
         size={22}
         color={disabled ? "#94A3B8" : danger ? "#FFFFFF" : "#4a5a85"}
       />

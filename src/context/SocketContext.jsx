@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, {
   createContext,
   useContext,
@@ -15,52 +16,60 @@ const DEFAULT_POMODORO = {
 };
 
 export const SocketProvider = ({ children }) => {
-  const [socket, setSocket] = useState(null);
-  const [connected, setConnected] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const [pomodoro, setPomodoro] = useState(DEFAULT_POMODORO);
+  const [socket] = useState(() => {
+    const socketUrl = import.meta.env.VITE_API_BASE_URL;
+    if (!socketUrl) {
+      return null;
+    }
 
-  useEffect(() => {
-    const socketUrl =
-      import.meta.env.VITE_API_BASE_URL;
-      if (!socketUrl) return;
-
-    const s = io(socketUrl, {
+    return io(socketUrl, {
       transports: ["websocket"],
-      autoConnect: false,          
+      autoConnect: false,
       withCredentials: true,
       auth: {
         token: localStorage.getItem("token"),
       },
     });
+  });
+  const [connected, setConnected] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [pomodoro, setPomodoro] = useState(DEFAULT_POMODORO);
 
-    s.connect();
+  useEffect(() => {
+    if (!socket) return;
 
-    s.on("connect", () => {
-      console.log("Socket connected:", s.id);
+    socket.connect();
+
+    const handleConnect = () => {
+      console.log("Socket connected:", socket.id);
       setConnected(true);
-    });
+    };
 
-    s.on("disconnect", () => {
+    const handleDisconnect = () => {
       console.log("Socket disconnected");
       setConnected(false);
-    });
+    };
 
-    s.on("chat:message", (msg) => {
+    const handleMessage = (msg) => {
       setMessages((prev) => {
         if (prev.some((m) => m.id === msg.id)) {
           return prev;
         }
         return [...prev, msg];
       });
-    });
+    };
 
-    setSocket(s);
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("chat:message", handleMessage);
 
     return () => {
-      s.disconnect();
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("chat:message", handleMessage);
+      socket.disconnect();
     };
-  }, []);
+  }, [socket]);
 
   const joinRoom = (roomId) => {
     if (!socket) return;

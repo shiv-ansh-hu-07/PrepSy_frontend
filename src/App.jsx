@@ -1,21 +1,21 @@
 // src/App.jsx
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
-import CreateRoom from "./pages/CreateRoom";
-import JoinRoom from "./pages/JoinRoom";
-import RoomPage from "./pages/RoomPage";
-import MyRooms from "./pages/myRooms";
-import Features from "./pages/feature";
-import HowItWorks from "./pages/HowItWorks";
-
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
+
+const Home = lazy(() => import("./pages/Home"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const CreateRoom = lazy(() => import("./pages/CreateRoom"));
+const JoinRoom = lazy(() => import("./pages/JoinRoom"));
+const RoomPage = lazy(() => import("./pages/RoomPage"));
+const MyRooms = lazy(() => import("./pages/myRooms"));
+const Features = lazy(() => import("./pages/feature"));
+const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 
 export default function App() {
   return (
@@ -42,8 +42,9 @@ export default function App() {
       <Navbar />
 
       {/* Page content */}
-      <main >
-        <Routes>
+      <main>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
 
           {/* PUBLIC */}
           <Route
@@ -133,8 +134,26 @@ export default function App() {
             }
           />
 
-        </Routes>
+          </Routes>
+        </Suspense>
       </main>
+    </div>
+  );
+}
+
+function RouteFallback() {
+  return (
+    <div
+      style={{
+        minHeight: "calc(100vh - 76px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#5f6fa3",
+        fontSize: "15px",
+      }}
+    >
+      Loading...
     </div>
   );
 }

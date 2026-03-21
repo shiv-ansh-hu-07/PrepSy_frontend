@@ -4,20 +4,43 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 function MyRooms() {
-  const [rooms, setRooms] = useState([]);
-  const { user } = useAuth();
+  const [rooms, setRooms] = useState(null);
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const loadingRooms = loading || (user && rooms === null);
 
   useEffect(() => {
+    if (loading) return;
     if (!user) return;
+
+    let cancelled = false;
 
     axios
       .get("/rooms/my")
       .then((res) => {
-        setRooms(res.data.createdRooms || []);
+        if (cancelled) return;
+
+        const mergedRooms = [
+          ...(res.data.createdRooms || []),
+          ...(res.data.joinedRooms || []),
+        ];
+        const uniqueRooms = Array.from(
+          new Map(mergedRooms.map((room) => [room.roomId, room])).values()
+        );
+
+        setRooms(uniqueRooms);
       })
-      .catch(console.error);
-  }, [user]);
+      .catch((error) => {
+        if (!cancelled) {
+          console.error(error);
+          setRooms([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, user]);
 
   const joinRoom = (roomId) => {
     navigate(`/room/${roomId}`);
@@ -60,8 +83,14 @@ function MyRooms() {
         </p>
       </div>
 
+      {loadingRooms && (
+        <div className="mt-20 text-center">
+          <p className="text-slate-500">Loading your rooms...</p>
+        </div>
+      )}
+
       {/* Empty State */}
-      {rooms.length === 0 && (
+      {!loadingRooms && rooms?.length === 0 && (
         <div className="mt-20 text-center">
           <p className="text-slate-500">
             You haven’t joined or created any rooms yet.
@@ -82,7 +111,7 @@ function MyRooms() {
 
       {/* Rooms List */}
       <div className="space-y-4 max-w-4xl mx-auto">
-        {rooms.map((room) => (
+        {(rooms || []).map((room) => (
           <div
             key={room.roomId}
             className="

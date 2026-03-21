@@ -6,13 +6,20 @@ export default function LiveKitRoomWrapper({ roomId, userId }) {
   const [token, setToken] = useState(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     fetch(`${import.meta.env.VITE_API_BASE_URL}/livekit/token?room=${roomId}&user=${userId}`)
       .then(res => res.json())
       .then(data => {
-        setToken(data.token);
-        setServerUrl(data.url); 
-      });;
-  }, []);
+        if (!cancelled) {
+          setToken(data.token);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [roomId, userId]);
 
   if (!token) return <>Loading room...</>;
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   useLocalParticipant,
   useRoomContext,
@@ -14,7 +14,7 @@ export default function PomodoroTimer({ onLeaveRoom }) {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
 
-  const [, forceTick] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
   const completionHandledRef = useRef(false);
 
   const [phaseStartedAt, setPhaseStartedAt] = useState(null);
@@ -31,7 +31,7 @@ export default function PomodoroTimer({ onLeaveRoom }) {
   let timeLeft = SESSION_DURATION;
 
   if (phaseStartedAt) {
-    const elapsed = Date.now() - phaseStartedAt;
+    const elapsed = now - phaseStartedAt;
     timeLeft = Math.max(SESSION_DURATION - Math.floor(elapsed / 1000), 0);
   }
 
@@ -41,7 +41,7 @@ export default function PomodoroTimer({ onLeaveRoom }) {
     if (!isRunning) return;
 
     const id = setInterval(() => {
-      forceTick((tick) => tick + 1);
+      setNow(Date.now());
     }, 1000);
 
     return () => clearInterval(id);
@@ -78,7 +78,7 @@ export default function PomodoroTimer({ onLeaveRoom }) {
     return () => room.off("dataReceived", handler);
   }, [room, localParticipant]);
 
-  const broadcast = (payload) => {
+  const broadcast = useCallback((payload) => {
     if (!room || room.state !== "connected" || !localParticipant) {
       return;
     }
@@ -89,11 +89,12 @@ export default function PomodoroTimer({ onLeaveRoom }) {
       ),
       { reliable: true }
     );
-  };
+  }, [localParticipant, room]);
 
-  const start = () => {
+  const start = useCallback(() => {
     const now = Date.now();
 
+    setNow(now);
     setPhaseStartedAt(now);
     setIsRunning(true);
     setStatusMessage("");
@@ -113,82 +114,26 @@ export default function PomodoroTimer({ onLeaveRoom }) {
       showBreakPrompt: false,
       breakSecondsLeft: BREAK_DURATION,
     });
-  };
+  }, [broadcast, completedSessions, totalSessions]);
 
-  useEffect(() => {
-    if (
-      !showSettlePrompt ||
-      isRunning ||
-      phaseStartedAt ||
-      showNextSessionPrompt ||
-      showBreakPrompt
-    ) {
-      return;
-    }
+  const showNextSessionReady = useCallback(() => {
+    setShowBreakPrompt(false);
+    setShowNextSessionPrompt(true);
+    setStatusMessage("Break complete. Ready for the next session?");
 
-    if (settleSecondsLeft <= 0) {
-      start();
-      return;
-    }
+    broadcast({
+      phaseStartedAt: null,
+      isRunning: false,
+      totalSessions,
+      completedSessions,
+      statusMessage: "Break complete. Ready for the next session?",
+      showNextSessionPrompt: true,
+      showBreakPrompt: false,
+      breakSecondsLeft: 0,
+    });
+  }, [broadcast, completedSessions, totalSessions]);
 
-    const timerId = setTimeout(() => {
-      setSettleSecondsLeft((seconds) => Math.max(0, seconds - 1));
-    }, 1000);
-
-    return () => clearTimeout(timerId);
-  }, [
-    isRunning,
-    phaseStartedAt,
-    settleSecondsLeft,
-    showBreakPrompt,
-    showNextSessionPrompt,
-    showSettlePrompt,
-  ]);
-
-  useEffect(() => {
-    if (!showBreakPrompt || isRunning || phaseStartedAt || showNextSessionPrompt) {
-      return;
-    }
-
-    if (breakSecondsLeft <= 0) {
-      setShowBreakPrompt(false);
-      setShowNextSessionPrompt(true);
-      setStatusMessage("Break complete. Ready for the next session?");
-
-      broadcast({
-        phaseStartedAt: null,
-        isRunning: false,
-        totalSessions,
-        completedSessions,
-        statusMessage: "Break complete. Ready for the next session?",
-        showNextSessionPrompt: true,
-        showBreakPrompt: false,
-        breakSecondsLeft: 0,
-      });
-      return;
-    }
-
-    const timerId = setTimeout(() => {
-      setBreakSecondsLeft((seconds) => Math.max(0, seconds - 1));
-    }, 1000);
-
-    return () => clearTimeout(timerId);
-  }, [
-    breakSecondsLeft,
-    completedSessions,
-    isRunning,
-    phaseStartedAt,
-    showBreakPrompt,
-    showNextSessionPrompt,
-    totalSessions,
-  ]);
-
-  useEffect(() => {
-    if (!isRunning || timeLeft !== 0 || completionHandledRef.current) {
-      return;
-    }
-
-    completionHandledRef.current = true;
+  const completeSession = useCallback(() => {
     const nextCompletedSessions = completedSessions + 1;
     const reachedTarget = nextCompletedSessions >= totalSessions;
     const nextStatusMessage = reachedTarget
@@ -213,7 +158,71 @@ export default function PomodoroTimer({ onLeaveRoom }) {
       showBreakPrompt: true,
       breakSecondsLeft: BREAK_DURATION,
     });
-  }, [completedSessions, isRunning, timeLeft, totalSessions]);
+  }, [broadcast, completedSessions, totalSessions]);
+
+  useEffect(() => {
+    if (
+      !showSettlePrompt ||
+      isRunning ||
+      phaseStartedAt ||
+      showNextSessionPrompt ||
+      showBreakPrompt
+    ) {
+      return;
+    }
+
+    if (settleSecondsLeft <= 0) {
+      queueMicrotask(start);
+      return;
+    }
+
+    const timerId = setTimeout(() => {
+      setSettleSecondsLeft((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+
+    return () => clearTimeout(timerId);
+  }, [
+    isRunning,
+    phaseStartedAt,
+    settleSecondsLeft,
+    start,
+    showBreakPrompt,
+    showNextSessionPrompt,
+    showSettlePrompt,
+  ]);
+
+  useEffect(() => {
+    if (!showBreakPrompt || isRunning || phaseStartedAt || showNextSessionPrompt) {
+      return;
+    }
+
+    if (breakSecondsLeft <= 0) {
+      queueMicrotask(showNextSessionReady);
+      return;
+    }
+
+    const timerId = setTimeout(() => {
+      setBreakSecondsLeft((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+
+    return () => clearTimeout(timerId);
+  }, [
+    breakSecondsLeft,
+    isRunning,
+    phaseStartedAt,
+    showNextSessionReady,
+    showBreakPrompt,
+    showNextSessionPrompt,
+  ]);
+
+  useEffect(() => {
+    if (!isRunning || timeLeft !== 0 || completionHandledRef.current) {
+      return;
+    }
+
+    completionHandledRef.current = true;
+    queueMicrotask(completeSession);
+  }, [completeSession, isRunning, timeLeft]);
 
   const handleStudyMore = () => {
     start();

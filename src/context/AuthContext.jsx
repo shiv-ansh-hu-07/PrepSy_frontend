@@ -1,30 +1,57 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import api from "../api";
 
 const AuthContext = createContext();
+const USER_CACHE_KEY = "auth_user_cache";
+
+function readCachedUser() {
+  try {
+    const raw = localStorage.getItem(USER_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => readCachedUser());
+  const [loading, setLoading] = useState(() => {
+    const token = localStorage.getItem("token");
+    return token ? readCachedUser() === null : false;
+  });
+
+  const persistUser = useCallback((nextUser) => {
+    setUser(nextUser);
+
+    if (nextUser) {
+      localStorage.setItem(USER_CACHE_KEY, JSON.stringify(nextUser));
+      return;
+    }
+
+    localStorage.removeItem(USER_CACHE_KEY);
+  }, []);
 
   const loadUser = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) {
       setLoading(false);
+      persistUser(null);
       return;
     }
 
     try {
       const res = await api.get("/auth/me");
-      setUser(res.data);
-    } catch (err) {
+      persistUser(res.data);
+    } catch {
       localStorage.removeItem("token");
-      setUser(null);
+      persistUser(null);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [persistUser]);
 
   useEffect(() => {
     loadUser();
@@ -50,7 +77,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem("token");
-    setUser(null);
+    persistUser(null);
   };
 
   return (
