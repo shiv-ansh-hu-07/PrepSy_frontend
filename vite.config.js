@@ -24,14 +24,6 @@ export default defineConfig({
             return 'pdf-tools';
           }
 
-          if (
-            id.includes('react-router-dom') ||
-            id.includes('react-dom') ||
-            id.includes('/react/')
-          ) {
-            return 'react-core';
-          }
-
           return 'vendor';
         },
       },
