@@ -1,20 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api, { fetchStats } from "../services/api";
-import { useLocation } from "react-router-dom";
-
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, guestSessionActive } = useAuth();
   const navigate = useNavigate();
-
+  const location = useLocation();
   const [publicRooms, setPublicRooms] = useState([]);
   const [stats, setStats] = useState(null);
-  const location = useLocation();
+
+  const isGuestViewer = !user && guestSessionActive;
+  const displayName = user?.name || "Guest";
   const isActive = (path) => location.pathname === path;
-
-
 
   useEffect(() => {
     async function loadDashboard() {
@@ -27,16 +25,29 @@ export default function Dashboard() {
         console.error("Dashboard load error:", err);
       }
     }
+
     loadDashboard();
   }, []);
 
-  if (!user) {
+  if (!user && !guestSessionActive) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        Loading…
+        Loading...
       </div>
     );
   }
+
+  const menuItems = [
+    { label: "Home", path: "/dashboard", disabled: false },
+    {
+      label: "My Rooms",
+      path: "/myRooms",
+      disabled: isGuestViewer,
+      disabledHint: "Available after signing in",
+    },
+    { label: "Create Room", path: "/create-room", disabled: false },
+    { label: "Join Room", path: "/join-room", disabled: false },
+  ];
 
   return (
     <div
@@ -46,7 +57,6 @@ export default function Dashboard() {
           "radial-gradient(ellipse at top, #eef1fb 0%, #f3f5fc 45%, #f8f9fe 75%)",
       }}
     >
-      {/* HEADER */}
       <div className="max-w-7xl mx-auto mb-12">
         <h1
           style={{
@@ -55,14 +65,24 @@ export default function Dashboard() {
             color: "#4a5a85",
           }}
         >
-          Welcome back, {user.name} <span style={{ marginLeft: "6px" }}>👋</span>
+          Welcome back, {displayName}
         </h1>
+
+        {isGuestViewer ? (
+          <p
+            style={{
+              marginTop: "10px",
+              maxWidth: "620px",
+              color: "#6b78a0",
+              lineHeight: 1.6,
+            }}
+          >
+            Guest mode is active. My Rooms and streak-based account features stay disabled until you sign in.
+          </p>
+        ) : null}
       </div>
 
-
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 max-w-7xl mx-auto">
-
-        {/* SIDEBAR */}
         <aside
           className="
             bg-white/70 backdrop-blur-md
@@ -72,37 +92,41 @@ export default function Dashboard() {
             p-8
           "
         >
-          <p className="text-sm text-[#6b78a0] mb-6">
-            Dashboard Menu
-          </p>
+          <p className="text-sm text-[#6b78a0] mb-6">Dashboard Menu</p>
 
           <ul className="space-y-2 text-[15px]">
-            {[
-              { label: "Home", path: "/dashboard" },
-              { label: "My Rooms", path: "/myRooms" },
-              { label: "Create Room", path: "/create-room" },
-              { label: "Join Room", path: "/join-room" },
-            ].map(({ label, path }) => {
+            {menuItems.map(({ label, path, disabled, disabledHint }) => {
               const active = isActive(path);
 
               return (
                 <li
                   key={label}
-                  onClick={() => navigate(path)}
+                  onClick={() => {
+                    if (!disabled) {
+                      navigate(path);
+                    }
+                  }}
+                  title={disabled ? disabledHint : undefined}
+                  aria-disabled={disabled}
                   style={{
                     position: "relative",
                     padding: "10px 14px 10px 18px",
                     borderRadius: "12px",
-                    cursor: "pointer",
+                    cursor: disabled ? "not-allowed" : "pointer",
                     backgroundColor: active
                       ? "rgba(138,155,214,0.14)"
                       : "transparent",
-                    color: active ? "#5f6fa3" : "#475569",
+                    color: disabled
+                      ? "#94a3b8"
+                      : active
+                        ? "#5f6fa3"
+                        : "#475569",
                     fontWeight: active ? 500 : 400,
+                    opacity: disabled ? 0.7 : 1,
                     transition: "all 0.2s ease",
                   }}
                 >
-                  {active && (
+                  {active && !disabled ? (
                     <span
                       style={{
                         position: "absolute",
@@ -114,20 +138,17 @@ export default function Dashboard() {
                         backgroundColor: "#8a9bd6",
                       }}
                     />
-                  )}
+                  ) : null}
 
                   {label}
+                  {disabled ? " (Locked)" : ""}
                 </li>
               );
             })}
           </ul>
-
         </aside>
 
-        {/* MAIN */}
         <main className="lg:col-span-3 space-y-12">
-
-          {/* UPCOMING SESSIONS */}
           <section
             className="
               bg-white/70 backdrop-blur-md
@@ -137,9 +158,7 @@ export default function Dashboard() {
               p-8
             "
           >
-            <h3 className="font-medium text-[#4a5a85] mb-8">
-              Active Sessions
-            </h3>
+            <h3 className="font-medium text-[#4a5a85] mb-8">Active Sessions</h3>
 
             <div className="space-y-6">
               {publicRooms.map((room) => (
@@ -152,15 +171,13 @@ export default function Dashboard() {
                   "
                 >
                   <div>
-                    <p className="font-medium text-slate-700">
-                      {room.name}
-                    </p>
+                    <p className="font-medium text-slate-700">{room.name}</p>
 
-                    {room.tags?.length > 0 && (
+                    {room.tags?.length > 0 ? (
                       <p className="text-sm text-slate-500 mt-1">
-                        {room.tags.map((t) => `#${t}`).join(" ")}
+                        {room.tags.map((tag) => `#${tag}`).join(" ")}
                       </p>
-                    )}
+                    ) : null}
                   </div>
 
                   <button
@@ -168,7 +185,7 @@ export default function Dashboard() {
                     style={{
                       padding: "10px 18px",
                       borderRadius: "10px",
-                      backgroundColor: "#8a9bd6",        
+                      backgroundColor: "#8a9bd6",
                       color: "#ffffff",
                       fontSize: "14px",
                       fontWeight: 500,
@@ -192,25 +209,20 @@ export default function Dashboard() {
                   >
                     Join
                   </button>
-
                 </div>
               ))}
 
-              {publicRooms.length === 0 && (
-                <p className="text-sm text-[#6b78a0]">
-                  No upcoming sessions.
-                </p>
-              )}
+              {publicRooms.length === 0 ? (
+                <p className="text-sm text-[#6b78a0]">No upcoming sessions.</p>
+              ) : null}
             </div>
           </section>
 
-          {/* STATS */}
           <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <StatCard label="Active Rooms" value={stats?.activeRooms || 0} />
             <StatCard label="Online Users" value={stats?.activeUsers || 0} />
             <StatCard label="Avg Focus" value={`${stats?.avgFocus || 0}%`} />
           </section>
-
         </main>
       </div>
     </div>
@@ -228,12 +240,8 @@ function StatCard({ label, value }) {
         p-6 text-center
       "
     >
-      <p className="text-sm text-[#6b78a0] mb-1">
-        {label}
-      </p>
-      <p className="text-2xl font-medium text-slate-700">
-        {value}
-      </p>
+      <p className="text-sm text-[#6b78a0] mb-1">{label}</p>
+      <p className="text-2xl font-medium text-slate-700">{value}</p>
     </div>
   );
 }

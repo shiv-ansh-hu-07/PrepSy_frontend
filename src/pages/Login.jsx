@@ -30,7 +30,7 @@ export default function Login() {
 
   const handleGuestContinue = () => {
     markGuestSessionActive();
-    navigate("/join-room");
+    navigate("/dashboard", { replace: true });
   };
 
   return (
