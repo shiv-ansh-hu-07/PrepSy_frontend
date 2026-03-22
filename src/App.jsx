@@ -110,7 +110,7 @@ export default function App() {
           <Route
             path="/join-room"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowGuest>
                 <JoinRoom />
               </ProtectedRoute>
             }

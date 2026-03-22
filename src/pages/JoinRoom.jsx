@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function JoinRoom() {
   const [roomId, setRoomId] = useState("");
@@ -9,6 +10,10 @@ export default function JoinRoom() {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const canSearchRooms = Boolean(user);
+  const isMobile =
+    typeof window !== "undefined" ? window.innerWidth < 900 : false;
 
   const handleJoin = () => {
     if (!roomId.trim()) return alert("Enter a valid Room ID");
@@ -16,7 +21,7 @@ export default function JoinRoom() {
   };
 
   const searchByTags = async () => {
-    if (!tagQuery.trim()) return;
+    if (!canSearchRooms || !tagQuery.trim()) return;
 
     try {
       setLoading(true);
@@ -33,6 +38,8 @@ export default function JoinRoom() {
   };
 
   const handleTagClick = async (tag) => {
+    if (!canSearchRooms) return;
+
     setTagQuery(tag);
 
     try {
@@ -47,10 +54,6 @@ export default function JoinRoom() {
       setLoading(false);
     }
   };
-
-  const isMobile = window.innerWidth < 900;
-
-  /* ---------------- STYLES ---------------- */
 
   const pageStyle = {
     minHeight: "100vh",
@@ -149,6 +152,7 @@ export default function JoinRoom() {
   const mutedText = {
     fontSize: "12px",
     color: "#9aa4c7",
+    lineHeight: 1.6,
   };
 
   const resultCard = {
@@ -188,17 +192,15 @@ export default function JoinRoom() {
     filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.08))",
   };
 
-  /* ---------------- JSX ---------------- */
-
   return (
     <div style={pageStyle}>
       <div style={layoutStyle}>
-
-        {/* LEFT: JOIN CARD */}
         <div style={cardStyle}>
           <h2 style={headingStyle}>Join a Room</h2>
           <p style={subText}>
-            Enter a room ID or discover rooms by tags
+            {canSearchRooms
+              ? "Enter a room ID or discover rooms by tags"
+              : "Enter a room ID to join instantly as a guest"}
           </p>
 
           <label style={labelStyle}>Room ID</label>
@@ -213,56 +215,73 @@ export default function JoinRoom() {
             Join Room
           </button>
 
-          <div style={divider}>OR</div>
+          {canSearchRooms ? (
+            <>
+              <div style={divider}>OR</div>
 
-          <h3 style={sectionHeading}>Discover rooms by tags</h3>
+              <h3 style={sectionHeading}>Discover rooms by tags</h3>
 
-          <input
-            style={inputStyle}
-            placeholder="e.g. dsa, jee, react"
-            value={tagQuery}
-            onChange={(e) => setTagQuery(e.target.value)}
-          />
+              <input
+                style={inputStyle}
+                placeholder="e.g. dsa, jee, react"
+                value={tagQuery}
+                onChange={(e) => setTagQuery(e.target.value)}
+              />
 
-          <button onClick={searchByTags} style={secondaryButton}>
-            Search Rooms
-          </button>
+              <button onClick={searchByTags} style={secondaryButton}>
+                Search Rooms
+              </button>
 
-          <div style={{ marginTop: "20px" }}>
-            {loading && <p style={mutedText}>Searching…</p>}
-            {!loading && results.length === 0 && tagQuery && (
-              <p style={mutedText}>No rooms found</p>
-            )}
+              <div style={{ marginTop: "20px" }}>
+                {loading && <p style={mutedText}>Searching...</p>}
+                {!loading && results.length === 0 && tagQuery && (
+                  <p style={mutedText}>No rooms found</p>
+                )}
 
-            {results.map((room) => (
-              <div key={room.roomId} style={resultCard}>
-                <div>
-                  <p style={{ fontWeight: 600 }}>{room.name}</p>
-                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "6px" }}>
-                    {room.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        onClick={() => handleTagClick(tag)}
-                        style={tagChip}
+                {results.map((room) => (
+                  <div key={room.roomId} style={resultCard}>
+                    <div>
+                      <p style={{ fontWeight: 600 }}>{room.name}</p>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "8px",
+                          flexWrap: "wrap",
+                          marginTop: "6px",
+                        }}
                       >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                        {room.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            onClick={() => handleTagClick(tag)}
+                            style={tagChip}
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
 
-                <button
-                  onClick={() => navigate(`/room/${room.roomId}`)}
-                  style={joinMiniButton}
-                >
-                  Join
-                </button>
+                    <button
+                      onClick={() => navigate(`/room/${room.roomId}`)}
+                      style={joinMiniButton}
+                    >
+                      Join
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          ) : (
+            <div style={{ marginTop: "22px" }}>
+              <p style={mutedText}>
+                Guests can join directly with a room ID. Sign in if you want to
+                discover rooms by tags or save rooms to your account.
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* RIGHT: ILLUSTRATION */}
         {!isMobile && (
           <div style={{ display: "flex", justifyContent: "center" }}>
             <img
@@ -272,7 +291,6 @@ export default function JoinRoom() {
             />
           </div>
         )}
-
       </div>
     </div>
   );

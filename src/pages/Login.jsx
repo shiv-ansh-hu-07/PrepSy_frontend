@@ -6,7 +6,12 @@ import api from "../services/api";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, loginWithToken, guestSessionActive } = useAuth();
+  const {
+    login,
+    loginWithToken,
+    guestSessionActive,
+    markGuestSessionActive,
+  } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -22,6 +27,11 @@ export default function Login() {
       setError(err?.response?.data?.message || "Invalid email or password");
     }
   }
+
+  const handleGuestContinue = () => {
+    markGuestSessionActive();
+    navigate("/join-room");
+  };
 
   return (
     <div
@@ -192,6 +202,26 @@ export default function Login() {
             }}
           >
             Sign in
+          </button>
+
+          <button
+            type="button"
+            onClick={handleGuestContinue}
+            style={{
+              width: "90%",
+              padding: "14px",
+              marginTop: "12px",
+              borderRadius: "999px",
+              background: "#eef2ff",
+              color: "#4a5a85",
+              fontSize: "15px",
+              fontWeight: 500,
+              textAlign: "center",
+              border: "1px solid #d9e2ff",
+              cursor: "pointer",
+            }}
+          >
+            Continue as Guest
           </button>
 
           <div
