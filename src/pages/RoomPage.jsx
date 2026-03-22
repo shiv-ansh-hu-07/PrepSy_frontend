@@ -15,7 +15,7 @@ import { useEffect, useState } from "react";
 export default function RoomPage() {
   const { roomId } = useParams();
   const navigate = useNavigate();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, markGuestSessionActive } = useAuth();
 
   const [token, setToken] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
@@ -25,6 +25,12 @@ export default function RoomPage() {
 
   const identity = user?.id ?? guestIdentity;
   const name = user?.name || "Guest";
+
+  useEffect(() => {
+    if (user?.id) return;
+
+    markGuestSessionActive();
+  }, [markGuestSessionActive, user?.id]);
 
   useEffect(() => {
     let cancelled = false;

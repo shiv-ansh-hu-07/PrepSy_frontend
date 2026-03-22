@@ -31,6 +31,7 @@ export default function Navbar() {
 
   const isActive = (path) => location.pathname === path;
   const attendanceStreak = user?.attendanceStreak ?? 0;
+  const showAttendanceStreak = Boolean(user && !user?.streakDisabled);
 
   const greetingLabel = (() => {
     if (!user?.name) {
@@ -214,32 +215,34 @@ export default function Navbar() {
                 {isCompact ? greetingLabel : `Hi, ${greetingLabel}`}
               </span>
 
-              <div
-                title={`Daily attendance streak: ${attendanceStreak}`}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: isCompact ? "6px 10px" : "7px 12px",
-                  borderRadius: "999px",
-                  background:
-                    "linear-gradient(135deg, rgba(255,243,214,0.95), rgba(255,229,179,0.9))",
-                  border: "1px solid rgba(240,196,111,0.45)",
-                  color: "#8a5a12",
-                  whiteSpace: "nowrap",
-                  boxShadow: "0 8px 18px rgba(227, 180, 77, 0.16)",
-                }}
-              >
-                <span style={{ fontSize: isCompact ? "12px" : "14px" }}>🔥</span>
-                <span
+              {showAttendanceStreak ? (
+                <div
+                  title={`Daily attendance streak: ${attendanceStreak}`}
                   style={{
-                    fontSize: isCompact ? "12px" : "13px",
-                    fontWeight: 600,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: isCompact ? "6px 10px" : "7px 12px",
+                    borderRadius: "999px",
+                    background:
+                      "linear-gradient(135deg, rgba(255,243,214,0.95), rgba(255,229,179,0.9))",
+                    border: "1px solid rgba(240,196,111,0.45)",
+                    color: "#8a5a12",
+                    whiteSpace: "nowrap",
+                    boxShadow: "0 8px 18px rgba(227, 180, 77, 0.16)",
                   }}
                 >
-                  {attendanceStreak} day{attendanceStreak === 1 ? "" : "s"}
-                </span>
-              </div>
+                  <span style={{ fontSize: isCompact ? "12px" : "14px" }}>Streak</span>
+                  <span
+                    style={{
+                      fontSize: isCompact ? "12px" : "13px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {attendanceStreak} day{attendanceStreak === 1 ? "" : "s"}
+                  </span>
+                </div>
+              ) : null}
 
               <button
                 onClick={handleLogout}

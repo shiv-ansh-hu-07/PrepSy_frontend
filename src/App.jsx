@@ -119,7 +119,7 @@ export default function App() {
           <Route
             path="/room/:roomId"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowGuest>
                 <RoomPage />
               </ProtectedRoute>
             }

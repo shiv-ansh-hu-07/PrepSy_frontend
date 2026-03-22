@@ -4,6 +4,7 @@ import api from "../api";
 
 const AuthContext = createContext();
 const USER_CACHE_KEY = "auth_user_cache";
+const GUEST_SESSION_KEY = "guest_session_active";
 
 function readCachedUser() {
   try {
@@ -18,6 +19,9 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => readCachedUser());
+  const [guestSessionActive, setGuestSessionActive] = useState(
+    () => localStorage.getItem(GUEST_SESSION_KEY) === "true"
+  );
   const [loading, setLoading] = useState(() => {
     const token = localStorage.getItem("token");
     return token ? readCachedUser() === null : false;
@@ -32,6 +36,17 @@ export const AuthProvider = ({ children }) => {
     }
 
     localStorage.removeItem(USER_CACHE_KEY);
+  }, []);
+
+  const persistGuestSession = useCallback((active) => {
+    setGuestSessionActive(active);
+
+    if (active) {
+      localStorage.setItem(GUEST_SESSION_KEY, "true");
+      return;
+    }
+
+    localStorage.removeItem(GUEST_SESSION_KEY);
   }, []);
 
   const loadUser = useCallback(async () => {
@@ -59,9 +74,14 @@ export const AuthProvider = ({ children }) => {
 
   // Email / password login
   const login = async (email, password) => {
-    const res = await api.post("/auth/login", { email, password });
+    const res = await api.post("/auth/login", {
+      email,
+      password,
+      disableStreak: guestSessionActive,
+    });
     localStorage.setItem("token", res.data.token);
     await loadUser();
+    persistGuestSession(false);
   };
 
   // Register (no auto-login)
@@ -73,12 +93,18 @@ export const AuthProvider = ({ children }) => {
   const loginWithToken = async (token) => {
     localStorage.setItem("token", token);
     await loadUser();
+    persistGuestSession(false);
   };
 
   const logout = () => {
     localStorage.removeItem("token");
     persistUser(null);
+    persistGuestSession(false);
   };
+
+  const markGuestSessionActive = useCallback(() => {
+    persistGuestSession(true);
+  }, [persistGuestSession]);
 
   return (
     <AuthContext.Provider
@@ -89,6 +115,8 @@ export const AuthProvider = ({ children }) => {
         loginWithToken, 
         logout,
         loading,
+        guestSessionActive,
+        markGuestSessionActive,
         refreshUser: loadUser,
       }}
     >

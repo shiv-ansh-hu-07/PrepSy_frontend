@@ -2,18 +2,14 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { GoogleLogin } from "@react-oauth/google";
-
-import api from '../services/api';
+import api from "../services/api";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
-  const { loginWithToken } = useAuth();
+  const { login, loginWithToken, guestSessionActive } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
-
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -23,10 +19,7 @@ export default function Login() {
       await login(email, password);
       navigate("/dashboard", { replace: true });
     } catch (err) {
-      setError(
-        err?.response?.data?.message ||
-        "Invalid email or password"
-      );
+      setError(err?.response?.data?.message || "Invalid email or password");
     }
   }
 
@@ -40,8 +33,7 @@ export default function Login() {
         alignItems: "center",
         justifyContent: "center",
         padding: "24px",
-        fontFamily:
-          "'Inter', system-ui, -apple-system, BlinkMacSystemFont",
+        fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont",
       }}
     >
       <div
@@ -51,11 +43,9 @@ export default function Login() {
           backgroundColor: "#ffffff",
           borderRadius: "28px",
           padding: "36px 36px 32px",
-          boxShadow:
-            "0 30px 70px rgba(0,0,0,0.08)",
+          boxShadow: "0 30px 70px rgba(0,0,0,0.08)",
         }}
       >
-        {/* Header */}
         <h2
           style={{
             fontFamily: "Georgia, serif",
@@ -79,8 +69,25 @@ export default function Login() {
           Continue your focused study sessions.
         </p>
 
+        {guestSessionActive ? (
+          <div
+            style={{
+              backgroundColor: "#fff7ed",
+              border: "1px solid #fdba74",
+              color: "#9a3412",
+              fontSize: "13px",
+              padding: "12px 14px",
+              borderRadius: "14px",
+              marginBottom: "20px",
+              lineHeight: 1.5,
+            }}
+          >
+            You are signing in after joining as a guest. Your streak will stay disabled for this account.
+          </div>
+        ) : null}
+
         <form onSubmit={handleLogin}>
-          {error && (
+          {error ? (
             <div
               style={{
                 backgroundColor: "#fef2f2",
@@ -94,9 +101,8 @@ export default function Login() {
             >
               {error}
             </div>
-          )}
+          ) : null}
 
-          {/* Email */}
           <div style={{ marginBottom: "20px" }}>
             <label
               style={{
@@ -123,17 +129,15 @@ export default function Login() {
                 color: "#1f2937",
                 outline: "none",
               }}
-              onFocus={(e) =>
-              (e.target.style.boxShadow =
-                "0 0 0 3px rgba(109,106,248,0.22)")
-              }
-              onBlur={(e) =>
-                (e.target.style.boxShadow = "none")
-              }
+              onFocus={(e) => {
+                e.target.style.boxShadow = "0 0 0 3px rgba(109,106,248,0.22)";
+              }}
+              onBlur={(e) => {
+                e.target.style.boxShadow = "none";
+              }}
             />
           </div>
 
-          {/* Password */}
           <div style={{ marginBottom: "28px" }}>
             <label
               style={{
@@ -147,7 +151,7 @@ export default function Login() {
             </label>
             <input
               type="password"
-              placeholder="••••••••"
+              placeholder="********"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -160,25 +164,22 @@ export default function Login() {
                 color: "#1f2937",
                 outline: "none",
               }}
-              onFocus={(e) =>
-              (e.target.style.boxShadow =
-                "0 0 0 3px rgba(109,106,248,0.22)")
-              }
-              onBlur={(e) =>
-                (e.target.style.boxShadow = "none")
-              }
+              onFocus={(e) => {
+                e.target.style.boxShadow = "0 0 0 3px rgba(109,106,248,0.22)";
+              }}
+              onBlur={(e) => {
+                e.target.style.boxShadow = "none";
+              }}
             />
           </div>
 
-          {/* CTA */}
           <button
             type="submit"
             style={{
               width: "90%",
               padding: "14px",
               borderRadius: "999px",
-              background:
-                "#8a9bd6",
+              background: "#8a9bd6",
               color: "#ffffff",
               fontSize: "15px",
               fontWeight: 500,
@@ -187,32 +188,19 @@ export default function Login() {
               cursor: "pointer",
               boxShadow:
                 "0 18px 36px rgba(109,106,248,0.35), inset 0 1px 0 rgba(255,255,255,0.35)",
-              transition:
-                "transform 0.15s ease, box-shadow 0.15s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-1px)";
-              e.currentTarget.style.boxShadow =
-                "0 22px 44px rgba(109,106,248,0.45), inset 0 1px 0 rgba(255,255,255,0.4)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow =
-                "0 18px 36px rgba(109,106,248,0.35), inset 0 1px 0 rgba(255,255,255,0.35)";
-            }}
-            onMouseDown={(e) => {
-              e.currentTarget.style.transform = "translateY(1px)";
-              e.currentTarget.style.boxShadow =
-                "0 10px 22px rgba(109,106,248,0.3), inset 0 2px 4px rgba(0,0,0,0.15)";
-            }}
-            onMouseUp={(e) => {
-              e.currentTarget.style.transform = "translateY(-1px)";
+              transition: "transform 0.15s ease, box-shadow 0.15s ease",
             }}
           >
             Sign in
           </button>
 
-          <div style={{ marginTop: "18px", display: "flex", justifyContent: "center" }}>
+          <div
+            style={{
+              marginTop: "18px",
+              display: "flex",
+              justifyContent: "center",
+            }}
+          >
             <GoogleLogin
               theme="outline"
               size="large"
@@ -221,7 +209,8 @@ export default function Login() {
               width="360"
               onSuccess={async (credentialResponse) => {
                 const res = await api.post("/auth/oauth/google", {
-                  idToken: credentialResponse.credential, // 👈 ID TOKEN (correct)
+                  idToken: credentialResponse.credential,
+                  disableStreak: guestSessionActive,
                 });
 
                 await loginWithToken(res.data.token);
@@ -233,9 +222,6 @@ export default function Login() {
             />
           </div>
 
-
-
-          {/* Footer */}
           <div
             style={{
               marginTop: "20px",
@@ -244,7 +230,7 @@ export default function Login() {
               textAlign: "center",
             }}
           >
-            Don’t have an account?{" "}
+            Don't have an account?{" "}
             <Link
               to="/register"
               style={{
