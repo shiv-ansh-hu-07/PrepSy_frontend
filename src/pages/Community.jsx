@@ -421,11 +421,12 @@ export default function Community() {
                             display: "flex",
                             justifyContent: "space-between",
                             gap: "10px",
-                            alignItems: "flex-start",
+                            alignItems: "center",
                           }}
                         >
                           <strong
                             style={{
+                              flex: 1,
                               color: selected ? "#3f4f7a" : "#4a5a85",
                               fontSize: "15px",
                               lineHeight: 1.45,
@@ -436,24 +437,57 @@ export default function Community() {
                           <span
                             style={{
                               flexShrink: 0,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              minWidth: "28px",
+                              height: "28px",
+                              padding: "0 8px",
+                              borderRadius: "999px",
+                              background: selected
+                                ? "rgba(138,155,214,0.22)"
+                                : "#eef2ff",
+                              color: "#5f6fa3",
                               fontSize: "12px",
-                              color: "#7a89b8",
+                              fontWeight: 600,
                             }}
                           >
                             {post.replyCount}
                           </span>
                         </div>
 
-                        <p
+                        <div
                           style={{
                             margin: "10px 0 0",
-                            fontSize: "12px",
-                            color: "#7a89b8",
-                            lineHeight: 1.5,
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            gap: "8px",
+                            flexWrap: "wrap",
                           }}
                         >
-                          {post.author?.name} | {formatDate(post.createdAt)}
-                        </p>
+                          <p
+                            style={{
+                              margin: 0,
+                              fontSize: "12px",
+                              color: "#7a89b8",
+                              lineHeight: 1.5,
+                            }}
+                          >
+                            {post.author?.name}
+                          </p>
+                          <p
+                            style={{
+                              margin: 0,
+                              fontSize: "12px",
+                              color: "#7a89b8",
+                              lineHeight: 1.5,
+                              textAlign: "right",
+                            }}
+                          >
+                            {formatDate(post.createdAt)}
+                          </p>
+                        </div>
                       </button>
                     );
                   })}
