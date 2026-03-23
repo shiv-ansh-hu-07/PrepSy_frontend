@@ -76,12 +76,12 @@ export default function Community() {
         const nextPosts = response.data.posts || [];
         setPosts(nextPosts);
 
-        const selectedStillExists = nextPosts.some((post) => post.id === selectedPostId);
-        const nextSelectedId = selectedStillExists
-          ? selectedPostId
-          : nextPosts[0]?.id || "";
-
-        setSelectedPostId(nextSelectedId);
+        const selectedStillExists = nextPosts.some(
+          (post) => post.id === selectedPostId
+        );
+        setSelectedPostId(
+          selectedStillExists ? selectedPostId : nextPosts[0]?.id || ""
+        );
       } catch (error) {
         if (!cancelled) {
           setListError(
@@ -179,9 +179,12 @@ export default function Community() {
     setReplyLoading(true);
 
     try {
-      const response = await api.post(`/community/posts/${selectedPostId}/replies`, {
-        content: replyDraft,
-      });
+      const response = await api.post(
+        `/community/posts/${selectedPostId}/replies`,
+        {
+          content: replyDraft,
+        }
+      );
 
       const newReply = response.data.reply;
       setReplyDraft("");
@@ -215,282 +218,155 @@ export default function Community() {
       style={{
         minHeight: "calc(100vh - 76px)",
         background:
-          "radial-gradient(circle at top left, rgba(249, 214, 168, 0.38), transparent 28%), linear-gradient(180deg, #fbf7f1 0%, #f5efe7 48%, #f7f3ec 100%)",
+          "radial-gradient(ellipse at top, #eef1fb 0%, #f3f5fc 45%, #f8f9fe 75%)",
       }}
     >
       <div
         style={{
-          maxWidth: "1240px",
+          maxWidth: "1160px",
           margin: "0 auto",
-          padding: "40px 20px 56px",
+          padding: isNarrow ? "24px 16px 48px" : "32px 24px 56px",
         }}
       >
         <section
           style={{
             display: "grid",
-            gridTemplateColumns: isNarrow ? "1fr" : "1.2fr 0.8fr",
-            gap: "20px",
-            marginBottom: "24px",
+            gridTemplateColumns: isNarrow ? "1fr" : "1.7fr 1fr",
+            gap: "18px",
+            marginBottom: "20px",
           }}
         >
-          <div
-            style={{
-              background: "linear-gradient(135deg, #203245 0%, #324b63 100%)",
-              color: "#fff7ec",
-              borderRadius: "28px",
-              padding: "32px",
-              boxShadow: "0 24px 48px rgba(50, 75, 99, 0.22)",
-            }}
-          >
-            <p
-              style={{
-                margin: 0,
-                fontSize: "12px",
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: "rgba(255, 247, 236, 0.72)",
-              }}
-            >
-              Community
-            </p>
+          <div style={heroCardStyle}>
+            <p style={eyebrowStyle}>PrepSy Community</p>
             <h1
               style={{
-                margin: "14px 0 12px",
+                margin: "8px 0 10px",
                 fontFamily: "Georgia, serif",
-                fontSize: "38px",
-                lineHeight: 1.1,
+                fontSize: isNarrow ? "30px" : "36px",
+                lineHeight: 1.15,
+                color: "#4a5a85",
               }}
             >
-              Ask, share, debate, and help each other learn in public.
+              Ask doubts, share wins, and learn together.
             </h1>
             <p
               style={{
                 margin: 0,
-                maxWidth: "680px",
-                color: "rgba(255, 247, 236, 0.82)",
-                lineHeight: 1.7,
+                maxWidth: "720px",
+                color: "#6b78a0",
+                lineHeight: 1.65,
                 fontSize: "15px",
               }}
             >
-              This is your discuss space for study tactics, coding questions,
-              exam prep, resources, accountability, and anything the community
-              can help move forward.
+              A discussion space for coding help, study strategy, exam prep,
+              resources, accountability, and community updates.
             </p>
           </div>
 
-          <div
-            style={{
-              background: "rgba(255, 251, 245, 0.94)",
-              border: "1px solid rgba(158, 129, 91, 0.16)",
-              borderRadius: "28px",
-              padding: "24px",
-              boxShadow: "0 18px 36px rgba(134, 112, 85, 0.12)",
-            }}
-          >
-            <p
-              style={{
-                margin: 0,
-                fontSize: "13px",
-                fontWeight: 600,
-                color: "#7b5a36",
+          <div style={sideCardStyle}>
+            <p style={eyebrowStyle}>Quick filters</p>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                setActiveSearch(searchText);
               }}
+              style={{ display: "grid", gap: "10px" }}
             >
-              Jump in fast
-            </p>
+              <input
+                value={searchText}
+                onChange={(event) => setSearchText(event.target.value)}
+                placeholder="Search by title or content"
+                style={inputStyle}
+              />
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                <button type="submit" style={primaryButtonStyle}>
+                  Search
+                </button>
+                {(activeSearch || activeTag) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchText("");
+                      setActiveSearch("");
+                      setActiveTag("");
+                    }}
+                    style={secondaryButtonStyle}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </form>
+
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: isNarrow
-                  ? "1fr"
-                  : "repeat(3, minmax(0, 1fr))",
-                gap: "12px",
-                marginTop: "18px",
+                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                gap: "10px",
+                marginTop: "14px",
               }}
             >
-              <QuickStat label="Threads" value={String(posts.length)} />
-              <QuickStat
+              <MiniStat label="Posts" value={String(posts.length)} />
+              <MiniStat
                 label="Replies"
-                value={String(posts.reduce((sum, post) => sum + (post.replyCount || 0), 0))}
+                value={String(
+                  posts.reduce((sum, post) => sum + (post.replyCount || 0), 0)
+                )}
               />
-              <QuickStat label="Tags" value={String(allVisibleTags.length)} />
+              <MiniStat label="Tags" value={String(allVisibleTags.length)} />
             </div>
-
-            {!user ? (
-              <div
-                style={{
-                  marginTop: "18px",
-                  padding: "16px",
-                  borderRadius: "20px",
-                  background: "#fff4df",
-                  color: "#7a5830",
-                }}
-              >
-                <p style={{ margin: 0, lineHeight: 1.6, fontSize: "14px" }}>
-                  Browse freely. Sign in when you want to start a thread or join
-                  the conversation.
-                </p>
-                <Link
-                  to="/login"
-                  style={{
-                    display: "inline-block",
-                    marginTop: "12px",
-                    padding: "10px 16px",
-                    borderRadius: "999px",
-                    background: "#c77b39",
-                    color: "#fff",
-                    textDecoration: "none",
-                    fontSize: "14px",
-                    fontWeight: 600,
-                  }}
-                >
-                  Sign in to post
-                </Link>
-              </div>
-            ) : null}
           </div>
         </section>
 
         <section
           style={{
             display: "grid",
-            gridTemplateColumns: isNarrow ? "1fr" : "360px minmax(0, 1fr)",
+            gridTemplateColumns: isNarrow ? "1fr" : "300px minmax(0, 1fr)",
             gap: "20px",
             alignItems: "start",
           }}
         >
-          <div style={{ display: "grid", gap: "20px" }}>
-            <div
-              style={{
-                background: "rgba(255,255,255,0.82)",
-                border: "1px solid rgba(103, 81, 59, 0.12)",
-                borderRadius: "26px",
-                padding: "22px",
-                boxShadow: "0 16px 32px rgba(103, 81, 59, 0.08)",
-              }}
-            >
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  setActiveSearch(searchText);
-                }}
-              >
-                <label
-                  htmlFor="community-search"
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    color: "#6f5437",
-                    marginBottom: "10px",
-                  }}
-                >
-                  Search discussions
-                </label>
-                <input
-                  id="community-search"
-                  value={searchText}
-                  onChange={(event) => setSearchText(event.target.value)}
-                  placeholder="Search by title or content"
-                  style={inputStyle}
-                />
-
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "10px",
-                    marginTop: "12px",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <button type="submit" style={primaryButtonStyle}>
-                    Search
-                  </button>
-                  {(activeSearch || activeTag) && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSearchText("");
-                        setActiveSearch("");
-                        setActiveTag("");
-                      }}
-                      style={secondaryButtonStyle}
-                    >
-                      Clear filters
-                    </button>
-                  )}
-                </div>
-              </form>
-
-              {allVisibleTags.length > 0 ? (
-                <div style={{ marginTop: "16px" }}>
-                  <p
-                    style={{
-                      margin: "0 0 10px",
-                      fontSize: "12px",
-                      color: "#8f7150",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.08em",
-                    }}
-                  >
-                    Popular tags
-                  </p>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                    {allVisibleTags.map((tag) => (
+          <aside style={{ display: "grid", gap: "16px" }}>
+            <div style={sideCardStyle}>
+              <div style={{ marginBottom: "14px" }}>
+                <p style={eyebrowStyle}>Popular tags</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                  {allVisibleTags.length === 0 ? (
+                    <span style={mutedTextStyle}>No tags yet.</span>
+                  ) : (
+                    allVisibleTags.map((tag) => (
                       <button
                         key={tag}
                         type="button"
-                        onClick={() => setActiveTag((current) => (current === tag ? "" : tag))}
+                        onClick={() =>
+                          setActiveTag((current) => (current === tag ? "" : tag))
+                        }
                         style={{
-                          border: "none",
-                          borderRadius: "999px",
-                          padding: "7px 12px",
-                          background: activeTag === tag ? "#324b63" : "#f3e6d6",
-                          color: activeTag === tag ? "#fff" : "#7d5e3f",
-                          cursor: "pointer",
-                          fontSize: "13px",
+                          ...tagButtonStyle,
+                          backgroundColor:
+                            activeTag === tag ? "#8a9bd6" : "#eef2ff",
+                          color: activeTag === tag ? "#ffffff" : "#5f6fa3",
                         }}
                       >
                         #{tag}
                       </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-
-            <div
-              style={{
-                background: "rgba(255,255,255,0.88)",
-                border: "1px solid rgba(103, 81, 59, 0.12)",
-                borderRadius: "26px",
-                padding: "22px",
-                boxShadow: "0 16px 32px rgba(103, 81, 59, 0.08)",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: "12px",
-                  marginBottom: "14px",
-                }}
-              >
-                <div>
-                  <p style={{ margin: 0, fontSize: "12px", color: "#8f7150" }}>
-                    Live feed
-                  </p>
-                  <h2
-                    style={{
-                      margin: "4px 0 0",
-                      fontSize: "22px",
-                      color: "#2f3c49",
-                    }}
-                  >
-                    Recent posts
-                  </h2>
+                    ))
+                  )}
                 </div>
               </div>
+            </div>
+
+            <div style={sideCardStyle}>
+              <p style={eyebrowStyle}>Live feed</p>
+              <h2
+                style={{
+                  margin: "4px 0 14px",
+                  fontSize: "24px",
+                  color: "#4a5a85",
+                }}
+              >
+                Recent posts
+              </h2>
 
               {listLoading ? (
                 <p style={mutedTextStyle}>Loading discussions...</p>
@@ -501,7 +377,7 @@ export default function Community() {
                   No posts yet for this filter. Start the first conversation.
                 </p>
               ) : (
-                <div style={{ display: "grid", gap: "12px" }}>
+                <div style={{ display: "grid", gap: "10px" }}>
                   {posts.map((post) => {
                     const selected = post.id === selectedPostId;
 
@@ -511,122 +387,117 @@ export default function Community() {
                         type="button"
                         onClick={() => setSelectedPostId(post.id)}
                         style={{
+                          position: "relative",
+                          width: "100%",
                           textAlign: "left",
-                          border: selected
-                            ? "1px solid rgba(50, 75, 99, 0.36)"
-                            : "1px solid rgba(103, 81, 59, 0.12)",
-                          borderRadius: "20px",
-                          padding: "16px",
-                          background: selected ? "#eef2f4" : "#fffaf5",
+                          border: "1px solid rgba(190, 200, 235, 0.7)",
+                          borderRadius: "18px",
+                          padding: "14px 14px 14px 18px",
+                          background: selected
+                            ? "rgba(138, 155, 214, 0.14)"
+                            : "rgba(255, 255, 255, 0.72)",
                           cursor: "pointer",
+                          boxShadow: selected
+                            ? "0 10px 24px rgba(138,155,214,0.18)"
+                            : "none",
                         }}
                       >
+                        {selected ? (
+                          <span
+                            style={{
+                              position: "absolute",
+                              left: 0,
+                              top: "14%",
+                              height: "72%",
+                              width: "4px",
+                              borderRadius: "4px",
+                              backgroundColor: "#8a9bd6",
+                            }}
+                          />
+                        ) : null}
+
                         <div
                           style={{
                             display: "flex",
                             justifyContent: "space-between",
-                            gap: "12px",
+                            gap: "10px",
                             alignItems: "flex-start",
                           }}
                         >
                           <strong
                             style={{
-                              color: "#2f3c49",
+                              color: selected ? "#3f4f7a" : "#4a5a85",
                               fontSize: "15px",
-                              lineHeight: 1.4,
+                              lineHeight: 1.45,
                             }}
                           >
                             {post.title}
                           </strong>
                           <span
                             style={{
+                              flexShrink: 0,
                               fontSize: "12px",
-                              color: "#8f7150",
-                              whiteSpace: "nowrap",
+                              color: "#7a89b8",
                             }}
                           >
-                            {post.replyCount} repl{post.replyCount === 1 ? "y" : "ies"}
+                            {post.replyCount}
                           </span>
                         </div>
 
                         <p
                           style={{
-                            margin: "8px 0 10px",
-                            color: "#6f6254",
+                            margin: "10px 0 0",
+                            fontSize: "12px",
+                            color: "#7a89b8",
                             lineHeight: 1.5,
-                            fontSize: "14px",
                           }}
                         >
-                          {post.content.slice(0, 120)}
-                          {post.content.length > 120 ? "..." : ""}
+                          {post.author?.name} | {formatDate(post.createdAt)}
                         </p>
-
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            gap: "12px",
-                            alignItems: "center",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                            {(post.tags || []).map((tag) => (
-                              <span key={`${post.id}-${tag}`} style={tagStyle}>
-                                #{tag}
-                              </span>
-                            ))}
-                          </div>
-                          <span style={{ fontSize: "12px", color: "#8f7150" }}>
-                            {post.author?.name} · {formatDate(post.createdAt)}
-                          </span>
-                        </div>
                       </button>
                     );
                   })}
                 </div>
               )}
             </div>
-          </div>
+          </aside>
 
-          <div style={{ display: "grid", gap: "20px" }}>
-            <div
-              style={{
-                background: "rgba(255,250,243,0.9)",
-                border: "1px solid rgba(103, 81, 59, 0.12)",
-                borderRadius: "28px",
-                padding: "24px",
-                boxShadow: "0 18px 36px rgba(103, 81, 59, 0.08)",
-              }}
-            >
+          <main style={{ display: "grid", gap: "16px" }}>
+            <div style={{ ...mainCardStyle, padding: isNarrow ? "20px" : "22px" }}>
               <div
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
                   gap: "12px",
-                  marginBottom: "16px",
+                  marginBottom: "14px",
+                  flexWrap: "wrap",
                 }}
               >
                 <div>
-                  <p style={{ margin: 0, fontSize: "12px", color: "#8f7150" }}>
-                    Start a thread
-                  </p>
+                  <p style={eyebrowStyle}>Start a thread</p>
                   <h2
                     style={{
                       margin: "4px 0 0",
                       fontSize: "24px",
-                      color: "#2f3c49",
+                      color: "#4a5a85",
                     }}
                   >
                     New post
                   </h2>
                 </div>
+
+                {!user ? (
+                  <Link to="/login" style={secondaryButtonStyle}>
+                    Sign in to post
+                  </Link>
+                ) : null}
               </div>
 
               {!user ? (
                 <p style={mutedTextStyle}>
-                  Sign in to publish a question, insight, or resource for the community.
+                  Sign in to publish a question, insight, or resource for the
+                  PrepSy community.
                 </p>
               ) : (
                 <form onSubmit={handleCreatePost} style={{ display: "grid", gap: "12px" }}>
@@ -644,8 +515,12 @@ export default function Community() {
                       setCreateForm((prev) => ({ ...prev, content: event.target.value }))
                     }
                     placeholder="What do you want to ask or share?"
-                    rows={6}
-                    style={{ ...inputStyle, resize: "vertical", minHeight: "140px" }}
+                    rows={4}
+                    style={{
+                      ...inputStyle,
+                      resize: "vertical",
+                      minHeight: "108px",
+                    }}
                   />
                   <input
                     value={createForm.tags}
@@ -665,8 +540,8 @@ export default function Community() {
                       flexWrap: "wrap",
                     }}
                   >
-                    <span style={{ fontSize: "12px", color: "#8f7150" }}>
-                      Clear titles and specific questions usually get better replies.
+                    <span style={{ fontSize: "12px", color: "#7a89b8" }}>
+                      Keep the title clear and the body specific.
                     </span>
                     <button
                       type="submit"
@@ -686,11 +561,8 @@ export default function Community() {
 
             <div
               style={{
-                background: "rgba(255,255,255,0.88)",
-                border: "1px solid rgba(103, 81, 59, 0.12)",
-                borderRadius: "28px",
-                padding: "24px",
-                boxShadow: "0 18px 36px rgba(103, 81, 59, 0.08)",
+                ...mainCardStyle,
+                padding: isNarrow ? "22px 20px" : "26px 28px",
               }}
             >
               {threadLoading ? (
@@ -705,86 +577,90 @@ export default function Community() {
                 <>
                   <div
                     style={{
-                      paddingBottom: "18px",
-                      borderBottom: "1px solid rgba(103, 81, 59, 0.12)",
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "8px",
+                      marginBottom: "10px",
                     }}
                   >
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                      {(selectedPost.tags || []).map((tag) => (
-                        <button
-                          key={`${selectedPost.id}-${tag}`}
-                          type="button"
-                          onClick={() => setActiveTag(tag)}
-                          style={{ ...tagStyle, border: "none", cursor: "pointer" }}
-                        >
-                          #{tag}
-                        </button>
-                      ))}
-                    </div>
-                    <h3
-                      style={{
-                        margin: "14px 0 8px",
-                        fontFamily: "Georgia, serif",
-                        fontSize: "30px",
-                        lineHeight: 1.2,
-                        color: "#24313d",
-                      }}
-                    >
-                      {selectedPost.title}
-                    </h3>
-                    <p
-                      style={{
-                        margin: 0,
-                        color: "#5d5348",
-                        lineHeight: 1.8,
-                        whiteSpace: "pre-wrap",
-                      }}
-                    >
-                      {selectedPost.content}
-                    </p>
-                    <p
-                      style={{
-                        margin: "16px 0 0",
-                        fontSize: "13px",
-                        color: "#8f7150",
-                      }}
-                    >
-                      Posted by {selectedPost.author?.name} on{" "}
-                      {formatDate(selectedPost.createdAt)}
-                    </p>
-                  </div>
-
-                  <div style={{ marginTop: "22px" }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: "12px",
-                        marginBottom: "14px",
-                      }}
-                    >
-                      <h4
+                    {(selectedPost.tags || []).map((tag) => (
+                      <button
+                        key={`${selectedPost.id}-${tag}`}
+                        type="button"
+                        onClick={() => setActiveTag(tag)}
                         style={{
-                          margin: 0,
-                          fontSize: "20px",
-                          color: "#2f3c49",
+                          ...tagButtonStyle,
+                          backgroundColor: "#eef2ff",
+                          color: "#5f6fa3",
                         }}
                       >
-                        Replies ({selectedPost.replies?.length || 0})
-                      </h4>
-                    </div>
+                        #{tag}
+                      </button>
+                    ))}
+                  </div>
+
+                  <h3
+                    style={{
+                      margin: "0 0 10px",
+                      fontFamily: "Georgia, serif",
+                      fontSize: isNarrow ? "28px" : "32px",
+                      lineHeight: 1.2,
+                      color: "#4a5a85",
+                    }}
+                  >
+                    {selectedPost.title}
+                  </h3>
+
+                  <p
+                    style={{
+                      margin: 0,
+                      color: "#4c5d8a",
+                      lineHeight: 1.8,
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {selectedPost.content}
+                  </p>
+
+                  <p
+                    style={{
+                      margin: "16px 0 0",
+                      fontSize: "13px",
+                      color: "#7a89b8",
+                    }}
+                  >
+                    Posted by {selectedPost.author?.name} on{" "}
+                    {formatDate(selectedPost.createdAt)}
+                  </p>
+
+                  <div
+                    style={{
+                      marginTop: "22px",
+                      paddingTop: "20px",
+                      borderTop: "1px solid rgba(190,200,235,0.5)",
+                    }}
+                  >
+                    <h4
+                      style={{
+                        margin: "0 0 14px",
+                        fontSize: "20px",
+                        color: "#4a5a85",
+                      }}
+                    >
+                      Replies ({selectedPost.replies?.length || 0})
+                    </h4>
 
                     {selectedPost.replies?.length ? (
-                      <div style={{ display: "grid", gap: "12px", marginBottom: "18px" }}>
+                      <div style={{ display: "grid", gap: "12px", marginBottom: "16px" }}>
                         {selectedPost.replies.map((reply) => (
                           <article
                             key={reply.id}
                             style={{
-                              padding: "16px",
-                              borderRadius: "20px",
-                              background: "#fff9f2",
-                              border: "1px solid rgba(103, 81, 59, 0.12)",
+                              borderRadius: "18px",
+                              background: "rgba(244,247,255,0.85)",
+                              border: "1px solid rgba(190,200,235,0.55)",
+                              padding: "14px 16px",
                             }}
                           >
                             <div
@@ -796,19 +672,20 @@ export default function Community() {
                                 marginBottom: "8px",
                               }}
                             >
-                              <strong style={{ color: "#324b63" }}>
+                              <strong style={{ color: "#4a5a85" }}>
                                 {reply.author?.name}
                               </strong>
-                              <span style={{ fontSize: "12px", color: "#8f7150" }}>
+                              <span style={{ fontSize: "12px", color: "#7a89b8" }}>
                                 {formatDate(reply.createdAt)}
                               </span>
                             </div>
                             <p
                               style={{
                                 margin: 0,
-                                color: "#5d5348",
+                                color: "#4c5d8a",
                                 lineHeight: 1.7,
                                 whiteSpace: "pre-wrap",
+                                wordBreak: "break-word",
                               }}
                             >
                               {reply.content}
@@ -832,16 +709,15 @@ export default function Community() {
                           value={replyDraft}
                           onChange={(event) => setReplyDraft(event.target.value)}
                           placeholder="Add a thoughtful reply"
-                          rows={4}
-                          style={{ ...inputStyle, resize: "vertical", minHeight: "110px" }}
+                          rows={3}
+                          style={{
+                            ...inputStyle,
+                            resize: "vertical",
+                            minHeight: "92px",
+                          }}
                         />
                         {replyError ? <p style={errorTextStyle}>{replyError}</p> : null}
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "flex-end",
-                          }}
-                        >
+                        <div style={{ display: "flex", justifyContent: "flex-end" }}>
                           <button
                             type="submit"
                             disabled={replyLoading}
@@ -860,37 +736,78 @@ export default function Community() {
                 </>
               )}
             </div>
-          </div>
+          </main>
         </section>
       </div>
     </div>
   );
 }
 
-function QuickStat({ label, value }) {
+function MiniStat({ label, value }) {
   return (
     <div
       style={{
-        borderRadius: "20px",
-        background: "rgba(255, 247, 236, 0.12)",
-        border: "1px solid rgba(255, 247, 236, 0.18)",
-        padding: "14px",
+        borderRadius: "16px",
+        background: "rgba(138,155,214,0.12)",
+        border: "1px solid rgba(138,155,214,0.18)",
+        padding: "10px 12px",
+        textAlign: "center",
       }}
     >
-      <p style={{ margin: 0, fontSize: "12px", color: "rgba(255,247,236,0.7)" }}>
-        {label}
+      <p style={{ margin: 0, fontSize: "11px", color: "#7a89b8" }}>{label}</p>
+      <p
+        style={{
+          margin: "4px 0 0",
+          fontSize: "20px",
+          fontWeight: 600,
+          color: "#4a5a85",
+        }}
+      >
+        {value}
       </p>
-      <p style={{ margin: "6px 0 0", fontSize: "26px", fontWeight: 700 }}>{value}</p>
     </div>
   );
 }
 
+const heroCardStyle = {
+  background: "rgba(255,255,255,0.72)",
+  backdropFilter: "blur(10px)",
+  border: "1px solid rgba(255,255,255,0.45)",
+  borderRadius: "26px",
+  padding: "24px 26px",
+  boxShadow: "0 12px 40px rgba(0,0,0,0.06)",
+};
+
+const sideCardStyle = {
+  background: "rgba(255,255,255,0.72)",
+  backdropFilter: "blur(10px)",
+  border: "1px solid rgba(255,255,255,0.45)",
+  borderRadius: "24px",
+  padding: "20px",
+  boxShadow: "0 12px 40px rgba(0,0,0,0.06)",
+};
+
+const mainCardStyle = {
+  background: "rgba(255,255,255,0.72)",
+  backdropFilter: "blur(10px)",
+  border: "1px solid rgba(255,255,255,0.45)",
+  borderRadius: "24px",
+  boxShadow: "0 12px 40px rgba(0,0,0,0.06)",
+};
+
+const eyebrowStyle = {
+  margin: 0,
+  fontSize: "12px",
+  fontWeight: 600,
+  color: "#6b78a0",
+};
+
 const inputStyle = {
   width: "100%",
   borderRadius: "16px",
-  border: "1px solid rgba(103, 81, 59, 0.16)",
-  background: "#fffdf9",
-  color: "#2f3c49",
+  border: "1px solid rgba(190,200,235,0.7)",
+  background: "#ffffff",
+  color: "#4c5d8a",
   padding: "13px 14px",
   fontSize: "14px",
   outline: "none",
@@ -900,37 +817,38 @@ const inputStyle = {
 const primaryButtonStyle = {
   border: "none",
   borderRadius: "999px",
-  padding: "11px 18px",
-  background: "#c77b39",
-  color: "#fff",
+  padding: "10px 18px",
+  background: "#8a9bd6",
+  color: "#ffffff",
   fontSize: "14px",
   fontWeight: 600,
   cursor: "pointer",
+  textDecoration: "none",
+  boxShadow: "0 6px 20px rgba(138,155,214,0.34)",
 };
 
 const secondaryButtonStyle = {
-  border: "1px solid rgba(103, 81, 59, 0.16)",
+  border: "1px solid rgba(190,200,235,0.8)",
   borderRadius: "999px",
   padding: "10px 16px",
-  background: "#fffaf5",
-  color: "#6f5437",
+  background: "#eef2ff",
+  color: "#5f6fa3",
   fontSize: "14px",
   cursor: "pointer",
+  textDecoration: "none",
 };
 
-const tagStyle = {
-  display: "inline-flex",
-  alignItems: "center",
+const tagButtonStyle = {
+  border: "none",
   borderRadius: "999px",
-  padding: "6px 10px",
-  background: "#f3e6d6",
-  color: "#7d5e3f",
+  padding: "7px 12px",
   fontSize: "12px",
+  cursor: "pointer",
 };
 
 const mutedTextStyle = {
   margin: 0,
-  color: "#6f6254",
+  color: "#6b78a0",
   lineHeight: 1.6,
 };
 
