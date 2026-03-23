@@ -39,6 +39,7 @@ export default function Dashboard() {
 
   const menuItems = [
     { label: "Home", path: "/dashboard", disabled: false },
+    { label: "Community", path: "/community", disabled: false },
     {
       label: "My Rooms",
       path: "/myRooms",

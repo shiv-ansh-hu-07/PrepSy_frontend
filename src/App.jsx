@@ -16,6 +16,7 @@ const RoomPage = lazy(() => import("./pages/RoomPage"));
 const MyRooms = lazy(() => import("./pages/myRooms"));
 const Features = lazy(() => import("./pages/feature"));
 const HowItWorks = lazy(() => import("./pages/HowItWorks"));
+const Community = lazy(() => import("./pages/Community"));
 
 export default function App() {
   return (
@@ -96,6 +97,15 @@ export default function App() {
           <Route
             path="/feature"
             element={<Features />}
+          />
+
+          <Route
+            path="/community"
+            element={
+              <ProtectedRoute allowGuest>
+                <Community />
+              </ProtectedRoute>
+            }
           />
 
           <Route

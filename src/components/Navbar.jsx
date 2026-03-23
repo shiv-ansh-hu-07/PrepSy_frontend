@@ -157,6 +157,33 @@ export default function Navbar() {
             </Link>
           )}
 
+          <Link
+            to="/community"
+            style={{
+              fontSize: isCompact ? "13px" : "14px",
+              color: isActive("/community") ? "#3f4f7a" : "#6b7bb0",
+              fontWeight: isActive("/community") ? 500 : 400,
+              textDecoration: "none",
+              position: "relative",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Community
+            {isActive("/community") && (
+              <span
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  bottom: "-6px",
+                  height: "2px",
+                  backgroundColor: "#8a9bd6",
+                  borderRadius: "2px",
+                }}
+              />
+            )}
+          </Link>
+
           {(isHomePage || isFeaturePage) && !user && (
             <Link
               to="/login"
