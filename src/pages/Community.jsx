@@ -392,7 +392,7 @@ export default function Community() {
                           textAlign: "left",
                           border: "1px solid rgba(190, 200, 235, 0.7)",
                           borderRadius: "18px",
-                          padding: "14px 14px 14px 18px",
+                          padding: "14px 16px 14px 18px",
                           background: selected
                             ? "rgba(138, 155, 214, 0.14)"
                             : "rgba(255, 255, 255, 0.72)",
@@ -400,6 +400,8 @@ export default function Community() {
                           boxShadow: selected
                             ? "0 10px 24px rgba(138,155,214,0.18)"
                             : "none",
+                          boxSizing: "border-box",
+                          overflow: "hidden",
                         }}
                       >
                         {selected ? (
@@ -419,9 +421,9 @@ export default function Community() {
                         <div
                           style={{
                             display: "flex",
-                            justifyContent: "space-between",
-                            gap: "10px",
-                            alignItems: "center",
+                            gap: "12px",
+                            alignItems: "flex-start",
+                            marginBottom: "12px",
                           }}
                         >
                           <strong
@@ -430,6 +432,7 @@ export default function Community() {
                               color: selected ? "#3f4f7a" : "#4a5a85",
                               fontSize: "15px",
                               lineHeight: 1.45,
+                              minWidth: 0,
                             }}
                           >
                             {post.title}
@@ -440,8 +443,8 @@ export default function Community() {
                               display: "inline-flex",
                               alignItems: "center",
                               justifyContent: "center",
-                              minWidth: "28px",
-                              height: "28px",
+                              minWidth: "30px",
+                              height: "30px",
                               padding: "0 8px",
                               borderRadius: "999px",
                               background: selected
@@ -458,24 +461,46 @@ export default function Community() {
 
                         <div
                           style={{
-                            margin: "10px 0 0",
                             display: "flex",
                             justifyContent: "space-between",
                             alignItems: "center",
-                            gap: "8px",
+                            gap: "10px",
                             flexWrap: "wrap",
                           }}
                         >
-                          <p
+                          <div
                             style={{
                               margin: 0,
-                              fontSize: "12px",
-                              color: "#7a89b8",
-                              lineHeight: 1.5,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                              minWidth: 0,
+                              flex: 1,
                             }}
                           >
-                            {post.author?.name}
-                          </p>
+                            <p
+                              style={{
+                                margin: 0,
+                                fontSize: "12px",
+                                color: "#7a89b8",
+                                lineHeight: 1.5,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {post.author?.name}
+                            </p>
+                            <span
+                              style={{
+                                color: "#b1bbde",
+                                fontSize: "12px",
+                                flexShrink: 0,
+                              }}
+                            >
+                              |
+                            </span>
+                          </div>
                           <p
                             style={{
                               margin: 0,
@@ -483,6 +508,7 @@ export default function Community() {
                               color: "#7a89b8",
                               lineHeight: 1.5,
                               textAlign: "right",
+                              whiteSpace: "nowrap",
                             }}
                           >
                             {formatDate(post.createdAt)}
