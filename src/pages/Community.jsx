@@ -45,6 +45,7 @@ export default function Community() {
   const [createForm, setCreateForm] = useState({
     title: "",
     content: "",
+    applicationLink: "",
     tags: "",
   });
   const [replyDraft, setReplyDraft] = useState("");
@@ -155,12 +156,13 @@ export default function Community() {
       const response = await api.post("/community/posts", {
         title: createForm.title,
         content: createForm.content,
+        applicationLink: createForm.applicationLink,
         tags: parseTags(createForm.tags),
       });
 
       const newPost = response.data.post;
       setPosts((prev) => [newPost, ...prev.filter((post) => post.id !== newPost.id)]);
-      setCreateForm({ title: "", content: "", tags: "" });
+      setCreateForm({ title: "", content: "", applicationLink: "", tags: "" });
       setSelectedPostId(newPost.id);
     } catch (error) {
       setCreateError(
@@ -599,6 +601,17 @@ export default function Community() {
                     placeholder="Tags, comma separated. Example: dsa, interview, jee"
                     style={inputStyle}
                   />
+                  <input
+                    value={createForm.applicationLink}
+                    onChange={(event) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        applicationLink: event.target.value,
+                      }))
+                    }
+                    placeholder="Optional application link. Paste the job or resource URL here"
+                    style={inputStyle}
+                  />
                   {createError ? <p style={errorTextStyle}>{createError}</p> : null}
                   <div
                     style={{
@@ -691,6 +704,19 @@ export default function Community() {
                   >
                     {selectedPost.content}
                   </p>
+
+                  {selectedPost.applicationLink ? (
+                    <div style={{ marginTop: "18px" }}>
+                      <a
+                        href={selectedPost.applicationLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={applyButtonStyle}
+                      >
+                        Click here to apply
+                      </a>
+                    </div>
+                  ) : null}
 
                   <p
                     style={{
@@ -905,6 +931,20 @@ const secondaryButtonStyle = {
   fontSize: "14px",
   cursor: "pointer",
   textDecoration: "none",
+};
+
+const applyButtonStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "10px 18px",
+  borderRadius: "999px",
+  background: "#8a9bd6",
+  color: "#ffffff",
+  textDecoration: "none",
+  fontSize: "14px",
+  fontWeight: 600,
+  boxShadow: "0 6px 20px rgba(138,155,214,0.28)",
 };
 
 const tagButtonStyle = {
