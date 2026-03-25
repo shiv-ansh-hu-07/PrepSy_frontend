@@ -377,7 +377,15 @@ export default function Community() {
                   No posts yet for this filter. Start the first conversation.
                 </p>
               ) : (
-                <div style={{ display: "grid", gap: "10px" }}>
+                <div
+                  style={{
+                    display: "grid",
+                    border: "1px solid rgba(190,200,235,0.45)",
+                    borderRadius: "18px",
+                    overflow: "hidden",
+                    background: "rgba(244,247,255,0.58)",
+                  }}
+                >
                   {posts.map((post) => {
                     const selected = post.id === selectedPostId;
 
@@ -390,16 +398,16 @@ export default function Community() {
                           position: "relative",
                           width: "100%",
                           textAlign: "left",
-                          border: "1px solid rgba(190, 200, 235, 0.7)",
-                          borderRadius: "18px",
+                          border: "none",
+                          borderBottom:
+                            posts[posts.length - 1]?.id === post.id
+                              ? "none"
+                              : "1px solid rgba(190,200,235,0.45)",
                           padding: "14px 16px 14px 18px",
                           background: selected
                             ? "rgba(138, 155, 214, 0.14)"
-                            : "rgba(255, 255, 255, 0.72)",
+                            : "transparent",
                           cursor: "pointer",
-                          boxShadow: selected
-                            ? "0 10px 24px rgba(138,155,214,0.18)"
-                            : "none",
                           boxSizing: "border-box",
                           overflow: "hidden",
                         }}
@@ -422,8 +430,8 @@ export default function Community() {
                           style={{
                             display: "flex",
                             gap: "12px",
-                            alignItems: "flex-start",
-                            marginBottom: "12px",
+                            alignItems: "center",
+                            marginBottom: "8px",
                           }}
                         >
                           <strong
@@ -443,9 +451,9 @@ export default function Community() {
                               display: "inline-flex",
                               alignItems: "center",
                               justifyContent: "center",
-                              minWidth: "30px",
-                              height: "30px",
-                              padding: "0 8px",
+                              minWidth: "24px",
+                              height: "24px",
+                              padding: "0 6px",
                               borderRadius: "999px",
                               background: selected
                                 ? "rgba(138,155,214,0.22)"
@@ -465,7 +473,7 @@ export default function Community() {
                             justifyContent: "space-between",
                             alignItems: "center",
                             gap: "10px",
-                            flexWrap: "wrap",
+                            flexWrap: "nowrap",
                           }}
                         >
                           <div
@@ -502,17 +510,18 @@ export default function Community() {
                             </span>
                           </div>
                           <p
-                            style={{
-                              margin: 0,
-                              fontSize: "12px",
-                              color: "#7a89b8",
-                              lineHeight: 1.5,
-                              textAlign: "right",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {formatDate(post.createdAt)}
-                          </p>
+                              style={{
+                                margin: 0,
+                                fontSize: "12px",
+                                color: "#7a89b8",
+                                lineHeight: 1.5,
+                                textAlign: "right",
+                                whiteSpace: "nowrap",
+                                flexShrink: 0,
+                              }}
+                            >
+                              {formatDate(post.createdAt)}
+                            </p>
                         </div>
                       </button>
                     );
