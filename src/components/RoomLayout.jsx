@@ -183,7 +183,7 @@ export default function RoomLayout({
           <div
             style={{
               ...styles.card,
-              minHeight: isMobile ? 240 : 252,
+              minHeight: isMobile ? 210 : 224,
               overflow: "visible",
               display: "grid",
               gridTemplateRows: "auto 1fr auto",
@@ -192,7 +192,7 @@ export default function RoomLayout({
             <PomodoroTimer onLeaveRoom={handleLeave} />
           </div>
 
-          <div style={{ ...styles.card, minHeight: isMobile ? 240 : 300 }}>
+          <div style={{ ...styles.card, minHeight: isMobile ? 210 : 248 }}>
             <h3 style={styles.cardTitle}>Notes</h3>
             <textarea
               value={notes}
@@ -228,9 +228,9 @@ function Control({
       disabled={disabled}
       title={title}
       style={{
-        width: 52,
-        height: 52,
-        borderRadius: 16,
+        width: 48,
+        height: 48,
+        borderRadius: 14,
         border: "1px solid #E5E7EB",
         background: disabled
           ? "#F3F4F6"
@@ -253,7 +253,7 @@ function Control({
       }}
     >
       <IconComponent
-        size={22}
+        size={20}
         color={disabled ? "#94A3B8" : danger ? "#FFFFFF" : "#4a5a85"}
       />
       {alert && !disabled ? <span style={styles.alertDot} /> : null}
@@ -271,36 +271,36 @@ const styles = {
     justifyContent: "flex-start",
     alignItems: "center",
     fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont",
-    padding: "12px 14px 24px",
+    padding: "10px 12px 18px",
     boxSizing: "border-box",
-    gap: 14,
+    gap: 10,
   },
 
   centerWrap: (isMobile) => ({
     width: "100%",
-    minHeight: "calc(100vh - 140px)",
-    maxWidth: 1480,
+    minHeight: "calc(100vh - 118px)",
+    maxWidth: 1420,
     alignItems: "stretch",
     display: "grid",
     gridTemplateColumns: isMobile
       ? "1fr"
-      : "minmax(0, 1.85fr) minmax(320px, 0.72fr)",
-    gap: 22,
+      : "minmax(0, 1.92fr) minmax(300px, 0.68fr)",
+    gap: 16,
     boxSizing: "border-box",
   }),
 
   stageWrap: {
     position: "relative",
-    minHeight: 420,
+    minHeight: 360,
     display: "flex",
     flexDirection: "column",
-    gap: 12,
+    gap: 10,
   },
 
   roomHeaderBar: {
-    minHeight: 48,
-    padding: "10px 16px",
-    borderRadius: 18,
+    minHeight: 42,
+    padding: "8px 14px",
+    borderRadius: 16,
     border: "1px solid #E6EAF8",
     background: "rgba(255,255,255,0.92)",
     boxShadow: "0 8px 20px rgba(74,90,133,0.08)",
@@ -318,7 +318,7 @@ const styles = {
 
   roomHeaderName: {
     margin: 0,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 700,
     color: "#111827",
     overflow: "hidden",
@@ -328,8 +328,8 @@ const styles = {
   },
 
   roomHeaderButton: {
-    height: 32,
-    padding: "0 12px",
+    height: 30,
+    padding: "0 11px",
     borderRadius: 999,
     border: "1px solid #D7DDF2",
     background: "#F8FAFF",
@@ -341,44 +341,45 @@ const styles = {
     gap: 8,
     cursor: "pointer",
     flexShrink: 0,
+    fontSize: 14,
   },
 
   sessionBadge: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#6B7280",
     display: "flex",
     alignItems: "center",
     flexWrap: "wrap",
-    gap: 8,
+    gap: 7,
     background: "rgba(255,255,255,0.88)",
-    padding: "10px 14px",
-    borderRadius: 18,
+    padding: "8px 12px",
+    borderRadius: 16,
     boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
     backdropFilter: "blur(6px)",
   },
 
   sessionBadgeDesktop: {
     position: "absolute",
-    top: 18,
+    top: 14,
     left: "50%",
     transform: "translateX(-50%)",
     zIndex: 20,
-    fontSize: 13,
+    fontSize: 12,
     color: "#6B7280",
     display: "flex",
     alignItems: "center",
     flexWrap: "wrap",
-    gap: 8,
+    gap: 7,
     background: "rgba(255,255,255,0.9)",
-    padding: "10px 16px",
+    padding: "8px 14px",
     borderRadius: 999,
     boxShadow: "0 8px 18px rgba(0,0,0,0.14)",
     backdropFilter: "blur(8px)",
   },
 
   liveDot: {
-    width: 8,
-    height: 8,
+    width: 7,
+    height: 7,
     borderRadius: "50%",
     background: "#22c55e",
   },
@@ -389,9 +390,9 @@ const styles = {
 
   stage: {
     width: "100%",
-    minHeight: 420,
+    minHeight: 360,
     height: "100%",
-    borderRadius: 28,
+    borderRadius: 24,
     border: "1px solid rgba(238,242,255,0.8)",
     background: "#05070b",
     overflow: "hidden",
@@ -399,44 +400,44 @@ const styles = {
     alignItems: "stretch",
     justifyContent: "stretch",
     position: "relative",
-    boxShadow: "0 20px 40px rgba(15,23,42,0.16)",
+    boxShadow: "0 16px 32px rgba(15,23,42,0.14)",
   },
 
   bottomBarDesktop: {
     position: "absolute",
     left: "50%",
-    bottom: 18,
+    bottom: 14,
     transform: "translateX(-50%)",
     width: "fit-content",
     maxWidth: "100%",
     display: "flex",
-    gap: 10,
+    gap: 8,
     flexWrap: "wrap",
     justifyContent: "center",
-    padding: "10px 16px",
+    padding: "8px 14px",
     background: "#FFFFFF",
-    borderRadius: 24,
-    boxShadow: "0 10px 26px rgba(0,0,0,0.18)",
+    borderRadius: 20,
+    boxShadow: "0 8px 20px rgba(0,0,0,0.16)",
     zIndex: 30,
   },
 
   mobileControls: {
     width: "100%",
     display: "flex",
-    gap: 10,
+    gap: 8,
     flexWrap: "wrap",
     justifyContent: "center",
-    padding: "10px 16px",
+    padding: "8px 12px",
     background: "#FFFFFF",
-    borderRadius: 18,
-    boxShadow: "0 10px 26px rgba(0,0,0,0.08)",
+    borderRadius: 16,
+    boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
   },
 
   sidePanel: (isMobile) => ({
     display: "flex",
     flexDirection: "column",
-    gap: 18,
-    maxWidth: isMobile ? "100%" : 420,
+    gap: 14,
+    maxWidth: isMobile ? "100%" : 380,
     width: "100%",
     justifySelf: "end",
   }),
@@ -444,17 +445,17 @@ const styles = {
   card: {
     background:
       "radial-gradient(circle at center, rgba(138,155,214,0.14), transparent 65%), #FFFFFF",
-    borderRadius: 28,
-    padding: 24,
+    borderRadius: 22,
+    padding: 18,
     border: "1px solid #EEF2FF",
-    boxShadow: "0 12px 28px rgba(0,0,0,0.06)",
+    boxShadow: "0 10px 22px rgba(0,0,0,0.06)",
     display: "flex",
     flexDirection: "column",
   },
 
   cardTitle: {
-    marginBottom: 12,
-    fontSize: 16,
+    marginBottom: 10,
+    fontSize: 15,
     fontWeight: 600,
     fontFamily: "Georgia, serif",
     color: "#4a5a85",
@@ -462,13 +463,13 @@ const styles = {
 
   notesBox: {
     flex: 1,
-    minHeight: 170,
-    borderRadius: 20,
+    minHeight: 140,
+    borderRadius: 16,
     border: "1px solid #E5E7EB",
-    padding: 14,
-    marginTop: 10,
-    marginBottom: 12,
-    fontSize: 14,
+    padding: 12,
+    marginTop: 6,
+    marginBottom: 10,
+    fontSize: 13,
     fontFamily: "'Inter', system-ui, -apple-system",
     color: "#6B7280",
     resize: "vertical",
@@ -479,9 +480,9 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 14,
-    height: 50,
-    borderRadius: 18,
+    marginTop: 10,
+    height: 44,
+    borderRadius: 14,
     border: "none",
     background: "#8a9bd6",
     color: "#FFFFFF",
