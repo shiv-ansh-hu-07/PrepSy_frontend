@@ -181,6 +181,7 @@ export default function RoomPage() {
         />
 
         <RoomLayout
+          roomId={roomId}
           onToggleChat={() =>
             setChatOpen((value) => {
               const next = !value;
