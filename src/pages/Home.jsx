@@ -2,6 +2,33 @@ import React from "react";
 import { Link } from "react-router-dom";
 
 export default function Home() {
+  const challengeCards = [
+    {
+      icon: "01",
+      accent: "#E8EBFF",
+      title: "Nobody around you is preparing",
+      desc: "You're the only one in your hostel doing LeetCode at midnight.",
+    },
+    {
+      icon: "02",
+      accent: "#E4F7F4",
+      title: "No accountability",
+      desc: "You plan to study 4 hours but end up doing 45 minutes before giving up.",
+    },
+    {
+      icon: "03",
+      accent: "#FFF2DD",
+      title: "Don't know if you're on track",
+      desc: "Is your DSA level enough for a product company? No one to benchmark against.",
+    },
+    {
+      icon: "04",
+      accent: "#FFE8E4",
+      title: "Doubts go unanswered",
+      desc: "Stuck on a graph problem for 2 hours. No one to ask without feeling judged.",
+    },
+  ];
+
   return (
     <main
       style={{
@@ -159,10 +186,11 @@ export default function Home() {
       >
         <div
           style={{
-            background: "#302f2c",
+            background: "linear-gradient(180deg, #F7F9FF 0%, #EEF2FF 100%)",
             borderRadius: "28px",
-            padding: "36px 36px 24px",
-            boxShadow: "0 24px 48px rgba(26, 27, 31, 0.16)",
+            padding: "36px",
+            border: "1px solid #E4EAFE",
+            boxShadow: "0 24px 48px rgba(74, 90, 133, 0.08)",
           }}
         >
           <div
@@ -172,41 +200,16 @@ export default function Home() {
               gap: "14px",
             }}
           >
-            {[
-              {
-                icon: "😳",
-                accent: "#e7e6ff",
-                title: "Nobody around you is preparing",
-                desc: "You're the only one in your hostel doing LeetCode at midnight.",
-              },
-              {
-                icon: "📉",
-                accent: "#def7f4",
-                title: "No accountability",
-                desc: "You plan to study 4 hours but end up doing 45 minutes before giving up.",
-              },
-              {
-                icon: "❓",
-                accent: "#fff0d8",
-                title: "Don't know if you're on track",
-                desc: "Is your DSA level enough for a product company? No one to benchmark against.",
-              },
-              {
-                icon: "📐",
-                accent: "#ffe7e3",
-                title: "Doubts go unanswered",
-                desc: "Stuck on a graph problem for 2 hours. No one to ask without feeling judged.",
-              },
-            ].map((item, index) => (
+            {challengeCards.map((item) => (
               <div
-                key={index}
+                key={item.title}
                 style={{
                   minHeight: "206px",
-                  background: "#282724",
+                  background: "#FFFFFF",
                   borderRadius: "14px",
                   padding: "24px",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
+                  border: "1px solid #E8EDFB",
+                  boxShadow: "0 12px 26px rgba(74, 90, 133, 0.08)",
                 }}
               >
                 <div
@@ -216,7 +219,9 @@ export default function Home() {
                     borderRadius: "12px",
                     display: "grid",
                     placeItems: "center",
-                    fontSize: "23px",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    color: "#42527F",
                     background: item.accent,
                     marginBottom: "18px",
                   }}
@@ -229,7 +234,7 @@ export default function Home() {
                     fontSize: "18px",
                     fontWeight: 700,
                     lineHeight: 1.25,
-                    color: "#ffffff",
+                    color: "#2F3B63",
                     marginBottom: "10px",
                   }}
                 >
@@ -239,7 +244,7 @@ export default function Home() {
                 <p
                   style={{
                     fontSize: "15px",
-                    color: "#e2cba8",
+                    color: "#5E6C92",
                     lineHeight: "1.45",
                     maxWidth: "24ch",
                   }}
@@ -248,30 +253,6 @@ export default function Home() {
                 </p>
               </div>
             ))}
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              paddingTop: "22px",
-            }}
-          >
-            <div
-              style={{
-                width: "44px",
-                height: "44px",
-                borderRadius: "999px",
-                border: "1px solid rgba(255,255,255,0.14)",
-                display: "grid",
-                placeItems: "center",
-                color: "#d8d4cc",
-                fontSize: "24px",
-                lineHeight: 1,
-              }}
-            >
-              ↓
-            </div>
           </div>
         </div>
       </section>
