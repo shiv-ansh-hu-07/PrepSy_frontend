@@ -6,10 +6,8 @@ export default function Home() {
     <main
       style={{
         minHeight: "100vh",
-        background:
-          "linear-gradient(180deg, #F8FAFF 0%, #EEF2FF 100%)",
-        fontFamily:
-          "'Inter', system-ui, -apple-system, BlinkMacSystemFont",
+        background: "linear-gradient(180deg, #F8FAFF 0%, #EEF2FF 100%)",
+        fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont",
         color: "#1F2937",
       }}
     >
@@ -38,7 +36,7 @@ export default function Home() {
             marginBottom: "16px",
           }}
         >
-          🧠 Built for Smart Learning
+          Built for Placement-prep students
         </div>
 
         <h1
@@ -61,7 +59,8 @@ export default function Home() {
             marginBottom: "32px",
           }}
         >
-          Join live study rooms to focus, discuss, and learn with people preparing for the same goals.
+          Stop Griding alone.
+          Find your study squad.
         </p>
 
         <div
@@ -81,11 +80,10 @@ export default function Home() {
               fontSize: "14px",
               fontWeight: 500,
               textDecoration: "none",
-              boxShadow:
-                "0 8px 22px rgba(99,102,241,0.28)",
+              boxShadow: "0 8px 22px rgba(99,102,241,0.28)",
             }}
           >
-            Start studying together
+            Find a study room now.
           </Link>
 
           <Link
@@ -98,8 +96,7 @@ export default function Home() {
               fontSize: "14px",
               fontWeight: 500,
               textDecoration: "none",
-              boxShadow:
-                "0 8px 22px rgba(99,102,241,0.28)",
+              boxShadow: "0 8px 22px rgba(99,102,241,0.28)",
             }}
           >
             How it works
@@ -122,12 +119,13 @@ export default function Home() {
             fontSize: "18px",
             lineHeight: "1.6",
             color: "#4a5a85",
-
           }}
         >
-          PrepSy combines focused study sessions with meaningful peer discussions — so you don’t just study longer, you study smarter.
+          PrepSy combines focused study sessions with meaningful peer discussions so you
+          don't just study longer, you study smarter.
         </p>
       </section>
+
       <section
         style={{
           maxWidth: "760px",
@@ -143,7 +141,6 @@ export default function Home() {
             fontSize: "18px",
             lineHeight: "1.6",
             color: "#4a5a85",
-
           }}
         >
           Focus alone is hard. Learning together makes it easier.
@@ -153,7 +150,7 @@ export default function Home() {
       <section
         id="how-it-works"
         style={{
-          maxWidth: "1100px",
+          maxWidth: "1120px",
           margin: "0 auto",
           paddingBottom: "72px",
           paddingLeft: "24px",
@@ -162,77 +159,120 @@ export default function Home() {
       >
         <div
           style={{
-            color: "#4a5a85",
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit, minmax(230px, 1fr))",
-            gap: "24px",
+            background: "#302f2c",
+            borderRadius: "28px",
+            padding: "36px 36px 24px",
+            boxShadow: "0 24px 48px rgba(26, 27, 31, 0.16)",
           }}
         >
-          {[
-            {
-              icon: "🚪",
-              title: "Join a Study Room",
-              desc: "Enter a room with learners preparing for similar exams or topics.",
-            },
-            {
-              icon: "⏱️",
-              title: "Study in Focused Blocks",
-              desc: "Use structured timers (Pomodoro-style) to study seriously without distractions.",
-            },
-            {
-              icon: "👥",
-              title: "Discuss & Learn Together",
-              desc: "After each block, interact — ask doubts, explain concepts, share strategies.",
-            },
-            {
-              icon: "✅",
-              title: "Leave with progress",
-              desc: "Track time studied, topics covered, and consistency built over sessions.",
-            },
-          ].map((item, index) => (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+              gap: "14px",
+            }}
+          >
+            {[
+              {
+                icon: "😳",
+                accent: "#e7e6ff",
+                title: "Nobody around you is preparing",
+                desc: "You're the only one in your hostel doing LeetCode at midnight.",
+              },
+              {
+                icon: "📉",
+                accent: "#def7f4",
+                title: "No accountability",
+                desc: "You plan to study 4 hours but end up doing 45 minutes before giving up.",
+              },
+              {
+                icon: "❓",
+                accent: "#fff0d8",
+                title: "Don't know if you're on track",
+                desc: "Is your DSA level enough for a product company? No one to benchmark against.",
+              },
+              {
+                icon: "📐",
+                accent: "#ffe7e3",
+                title: "Doubts go unanswered",
+                desc: "Stuck on a graph problem for 2 hours. No one to ask without feeling judged.",
+              },
+            ].map((item, index) => (
+              <div
+                key={index}
+                style={{
+                  minHeight: "206px",
+                  background: "#282724",
+                  borderRadius: "14px",
+                  padding: "24px",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
+                }}
+              >
+                <div
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "12px",
+                    display: "grid",
+                    placeItems: "center",
+                    fontSize: "23px",
+                    background: item.accent,
+                    marginBottom: "18px",
+                  }}
+                >
+                  {item.icon}
+                </div>
+
+                <h3
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: 700,
+                    lineHeight: 1.25,
+                    color: "#ffffff",
+                    marginBottom: "10px",
+                  }}
+                >
+                  {item.title}
+                </h3>
+
+                <p
+                  style={{
+                    fontSize: "15px",
+                    color: "#e2cba8",
+                    lineHeight: "1.45",
+                    maxWidth: "24ch",
+                  }}
+                >
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              paddingTop: "22px",
+            }}
+          >
             <div
-              key={index}
               style={{
-                backgroundColor: "#FFFFFF",
-                borderRadius: "18px",
-                padding: "26px 22px",
-                textAlign: "center",
-                border: "1px solid #EEF2FF",
-                boxShadow:
-                  "0 12px 28px rgba(0,0,0,0.05)",
+                width: "44px",
+                height: "44px",
+                borderRadius: "999px",
+                border: "1px solid rgba(255,255,255,0.14)",
+                display: "grid",
+                placeItems: "center",
+                color: "#d8d4cc",
+                fontSize: "24px",
+                lineHeight: 1,
               }}
             >
-              <div
-                style={{
-                  fontSize: "26px",
-                  marginBottom: "10px",
-                }}
-              >
-                {item.icon}
-              </div>
-
-              <h3
-                style={{
-                  fontSize: "15px",
-                  fontWeight: 600,
-                  marginBottom: "8px",
-                }}
-              >
-                {item.title}
-              </h3>
-
-              <p
-                style={{
-                  fontSize: "13.5px",
-                  color: "#6B7280",
-                  lineHeight: "1.45",
-                }}
-              >
-                {item.desc}
-              </p>
+              ↓
             </div>
-          ))}
+          </div>
         </div>
       </section>
 
@@ -252,8 +292,7 @@ export default function Home() {
             borderRadius: "24px",
             padding: "40px 32px",
             border: "1px solid #EEF2FF",
-            boxShadow:
-              "0 22px 44px rgba(0,0,0,0.06)",
+            boxShadow: "0 22px 44px rgba(0,0,0,0.06)",
           }}
         >
           <p
@@ -281,8 +320,7 @@ export default function Home() {
               fontSize: "14px",
               fontWeight: 500,
               textDecoration: "none",
-              boxShadow:
-                "0 10px 24px rgba(99,102,241,0.3)",
+              boxShadow: "0 10px 24px rgba(99,102,241,0.3)",
             }}
           >
             Get Started
