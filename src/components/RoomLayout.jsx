@@ -143,8 +143,7 @@ export default function RoomLayout({
         <div style={styles.stageWrap}>
           <div style={styles.roomHeaderBar}>
             <div style={styles.roomHeaderTextWrap}>
-              <p style={styles.roomHeaderLabel}>Classroom</p>
-              <p style={styles.roomHeaderName}>{roomName || roomId || "Focus session"}</p>
+              <p style={styles.roomHeaderName}>{roomName || "Study Room"}</p>
             </div>
 
             <button type="button" style={styles.roomHeaderButton} onClick={copyRoomId}>
@@ -314,24 +313,14 @@ const styles = {
   roomHeaderTextWrap: {
     minWidth: 0,
     display: "flex",
-    alignItems: "baseline",
-    gap: 10,
-    flexWrap: "wrap",
-  },
-
-  roomHeaderLabel: {
-    margin: 0,
-    fontSize: 12,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-    color: "#7A88AF",
+    alignItems: "center",
   },
 
   roomHeaderName: {
     margin: 0,
-    fontSize: 15,
-    fontWeight: 600,
-    color: "#2F3B63",
+    fontSize: 16,
+    fontWeight: 700,
+    color: "#111827",
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
@@ -344,7 +333,7 @@ const styles = {
     borderRadius: 999,
     border: "1px solid #D7DDF2",
     background: "#F8FAFF",
-    color: "#4A5A85",
+    color: "#1F2937",
     fontWeight: 600,
     display: "inline-flex",
     alignItems: "center",

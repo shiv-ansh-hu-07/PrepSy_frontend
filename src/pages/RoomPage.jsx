@@ -41,7 +41,7 @@ export default function RoomPage() {
       .then((res) => {
         if (!cancelled) {
           setToken(res.data.token);
-          setRoomName(res.data.roomName || roomId);
+          setRoomName(res.data.roomName || "Study Room");
           setJoinError(null);
         }
       })
