@@ -6,7 +6,6 @@ import {
   ScreenShare,
   MessageSquare,
   LogOut,
-  Share2,
   Copy,
 } from "lucide-react";
 import useMediaControls from "../hooks/useMediaControl";
@@ -18,6 +17,7 @@ import { useEffect, useState } from "react";
 export default function RoomLayout({
   children,
   roomId,
+  roomName,
   onToggleChat,
   onLeave,
   hasUnreadMessages = false,
@@ -92,47 +92,15 @@ export default function RoomLayout({
     doc.save("prepsy-notes.pdf");
   };
 
-  const shareLink =
-    typeof window !== "undefined" && roomId
-      ? `${window.location.origin}/room/${roomId}`
-      : "";
-
-  const roomInviteText = roomId
-    ? `Join my classroom on PrepSy.\nRoom ID: ${roomId}\nLink: ${shareLink}`
-    : "";
-
-  const copyRoomInvite = async () => {
-    if (!roomInviteText) return;
+  const copyRoomId = async () => {
+    if (!roomId) return;
 
     try {
-      await navigator.clipboard.writeText(roomInviteText);
-      setShareStatus("Invite copied");
+      await navigator.clipboard.writeText(roomId);
+      setShareStatus("Room ID copied");
     } catch (error) {
-      console.warn("Unable to copy room invite:", error);
+      console.warn("Unable to copy room ID:", error);
       setShareStatus("Copy failed");
-    }
-  };
-
-  const shareRoomInvite = async () => {
-    if (!roomInviteText) return;
-
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: "PrepSy classroom invite",
-          text: `Join my classroom. Room ID: ${roomId}`,
-          url: shareLink,
-        });
-        setShareStatus("Invite shared");
-        return;
-      }
-
-      await copyRoomInvite();
-    } catch (error) {
-      if (error?.name !== "AbortError") {
-        console.warn("Unable to share room invite:", error);
-        setShareStatus("Share failed");
-      }
     }
   };
 
@@ -165,11 +133,6 @@ export default function RoomLayout({
         alert={hasUnreadMessages}
         title={hasUnreadMessages ? "New messages" : "Open chat"}
       />
-      <Control
-        icon={Share2}
-        onClick={shareRoomInvite}
-        title="Share room invite"
-      />
       <Control icon={LogOut} danger onClick={handleLeave} />
     </>
   );
@@ -178,6 +141,18 @@ export default function RoomLayout({
     <div style={styles.page}>
       <div style={styles.centerWrap(isMobile)}>
         <div style={styles.stageWrap}>
+          <div style={styles.roomHeaderBar}>
+            <div style={styles.roomHeaderTextWrap}>
+              <p style={styles.roomHeaderLabel}>Classroom</p>
+              <p style={styles.roomHeaderName}>{roomName || roomId || "Focus session"}</p>
+            </div>
+
+            <button type="button" style={styles.roomHeaderButton} onClick={copyRoomId}>
+              <Copy size={15} />
+              {shareStatus || "Share"}
+            </button>
+          </div>
+
           {isMobile ? (
             <div style={styles.sessionBadge}>
               <span style={styles.liveDot} />
@@ -206,31 +181,6 @@ export default function RoomLayout({
         </div>
 
         <div style={styles.sidePanel(isMobile)}>
-          <div style={styles.roomCard}>
-            <div style={styles.roomCardTop}>
-              <div>
-                <p style={styles.roomCardLabel}>Room ID</p>
-                <p style={styles.roomCardValue}>{roomId || "Unavailable"}</p>
-              </div>
-              {shareStatus ? <span style={styles.roomCardStatus}>{shareStatus}</span> : null}
-            </div>
-
-            <p style={styles.roomCardHint}>
-              Share this room ID or invite link so others can join this classroom anytime.
-            </p>
-
-            <div style={styles.roomCardActions}>
-              <button type="button" style={styles.roomActionButton} onClick={copyRoomInvite}>
-                <Copy size={16} />
-                Copy invite
-              </button>
-              <button type="button" style={styles.roomActionButtonPrimary} onClick={shareRoomInvite}>
-                <Share2 size={16} />
-                Share room
-              </button>
-            </div>
-          </div>
-
           <div
             style={{
               ...styles.card,
@@ -348,6 +298,62 @@ const styles = {
     gap: 12,
   },
 
+  roomHeaderBar: {
+    minHeight: 48,
+    padding: "10px 16px",
+    borderRadius: 18,
+    border: "1px solid #E6EAF8",
+    background: "rgba(255,255,255,0.92)",
+    boxShadow: "0 8px 20px rgba(74,90,133,0.08)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+
+  roomHeaderTextWrap: {
+    minWidth: 0,
+    display: "flex",
+    alignItems: "baseline",
+    gap: 10,
+    flexWrap: "wrap",
+  },
+
+  roomHeaderLabel: {
+    margin: 0,
+    fontSize: 12,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "#7A88AF",
+  },
+
+  roomHeaderName: {
+    margin: 0,
+    fontSize: 15,
+    fontWeight: 600,
+    color: "#2F3B63",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    maxWidth: "100%",
+  },
+
+  roomHeaderButton: {
+    height: 32,
+    padding: "0 12px",
+    borderRadius: 999,
+    border: "1px solid #D7DDF2",
+    background: "#F8FAFF",
+    color: "#4A5A85",
+    fontWeight: 600,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    cursor: "pointer",
+    flexShrink: 0,
+  },
+
   sessionBadge: {
     fontSize: 13,
     color: "#6B7280",
@@ -445,95 +451,6 @@ const styles = {
     width: "100%",
     justifySelf: "end",
   }),
-
-  roomCard: {
-    background:
-      "linear-gradient(135deg, rgba(138,155,214,0.18), rgba(255,255,255,0.95))",
-    borderRadius: 24,
-    padding: 20,
-    border: "1px solid #DCE3FB",
-    boxShadow: "0 12px 28px rgba(58,76,132,0.1)",
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-  },
-
-  roomCardTop: {
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-
-  roomCardLabel: {
-    margin: 0,
-    fontSize: 12,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-    color: "#6B78A0",
-  },
-
-  roomCardValue: {
-    margin: "6px 0 0",
-    fontSize: 15,
-    fontWeight: 700,
-    color: "#2F3B63",
-    wordBreak: "break-word",
-  },
-
-  roomCardStatus: {
-    alignSelf: "center",
-    fontSize: 12,
-    fontWeight: 600,
-    color: "#4A5A85",
-    background: "rgba(255,255,255,0.8)",
-    padding: "6px 10px",
-    borderRadius: 999,
-  },
-
-  roomCardHint: {
-    margin: 0,
-    fontSize: 13,
-    lineHeight: 1.6,
-    color: "#5C6D9C",
-  },
-
-  roomCardActions: {
-    display: "flex",
-    gap: 10,
-    flexWrap: "wrap",
-  },
-
-  roomActionButton: {
-    height: 42,
-    padding: "0 14px",
-    borderRadius: 14,
-    border: "1px solid #D7DDF2",
-    background: "#FFFFFF",
-    color: "#4A5A85",
-    fontWeight: 600,
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    cursor: "pointer",
-  },
-
-  roomActionButtonPrimary: {
-    height: 42,
-    padding: "0 14px",
-    borderRadius: 14,
-    border: "none",
-    background: "#8a9bd6",
-    color: "#FFFFFF",
-    fontWeight: 600,
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    cursor: "pointer",
-    boxShadow: "0 8px 18px rgba(138,155,214,0.28)",
-  },
 
   card: {
     background:

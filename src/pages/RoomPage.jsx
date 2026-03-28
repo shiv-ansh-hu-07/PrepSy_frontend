@@ -18,6 +18,7 @@ export default function RoomPage() {
   const { user, refreshUser, markGuestSessionActive } = useAuth();
 
   const [token, setToken] = useState(null);
+  const [roomName, setRoomName] = useState("");
   const [chatOpen, setChatOpen] = useState(false);
   const [joinError, setJoinError] = useState(null);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
@@ -40,6 +41,7 @@ export default function RoomPage() {
       .then((res) => {
         if (!cancelled) {
           setToken(res.data.token);
+          setRoomName(res.data.roomName || roomId);
           setJoinError(null);
         }
       })
@@ -182,6 +184,7 @@ export default function RoomPage() {
 
         <RoomLayout
           roomId={roomId}
+          roomName={roomName}
           onToggleChat={() =>
             setChatOpen((value) => {
               const next = !value;
