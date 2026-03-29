@@ -63,6 +63,7 @@ export default function Home() {
             marginBottom: "16px",
           }}
         >
+          🧠
           Built for Placement-prep students
         </div>
 
@@ -196,18 +197,19 @@ export default function Home() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-              gap: "14px",
+              gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+              gap: "12px",
+              overflowX: "auto",
             }}
           >
             {challengeCards.map((item) => (
               <div
                 key={item.title}
                 style={{
-                  minHeight: "206px",
+                  minHeight: "188px",
                   background: "#FFFFFF",
                   borderRadius: "14px",
-                  padding: "24px",
+                  padding: "20px",
                   border: "1px solid #E8EDFB",
                   boxShadow: "0 12px 26px rgba(74, 90, 133, 0.08)",
                 }}
@@ -223,7 +225,7 @@ export default function Home() {
                     fontWeight: 700,
                     color: "#42527F",
                     background: item.accent,
-                    marginBottom: "18px",
+                    marginBottom: "14px",
                   }}
                 >
                   {item.icon}
@@ -231,11 +233,11 @@ export default function Home() {
 
                 <h3
                   style={{
-                    fontSize: "18px",
+                    fontSize: "16px",
                     fontWeight: 700,
                     lineHeight: 1.25,
                     color: "#2F3B63",
-                    marginBottom: "10px",
+                    marginBottom: "8px",
                   }}
                 >
                   {item.title}
@@ -243,10 +245,10 @@ export default function Home() {
 
                 <p
                   style={{
-                    fontSize: "15px",
+                    fontSize: "13px",
                     color: "#5E6C92",
                     lineHeight: "1.45",
-                    maxWidth: "24ch",
+                    maxWidth: "22ch",
                   }}
                 >
                   {item.desc}
