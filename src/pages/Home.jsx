@@ -1,33 +1,47 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 export default function Home() {
+  const [isSmallScreen, setIsSmallScreen] = useState(
+    typeof window !== "undefined" ? window.innerWidth < 900 : false
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const handleResize = () => {
+      setIsSmallScreen(window.innerWidth < 900);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const challengeCards = [
     {
-      icon: "🧑‍💻",
-      accent: "#E8EBFF",
-      title: "Nobody around you is preparing",
-      desc: "You're the only one in your hostel doing LeetCode at midnight.",
+      icon: "🚪",
+      title: "Join a Study Room",
+      desc: "Enter a room with learners preparing for similar exams or topics.",
     },
     {
-      icon: "⏳",
-      accent: "#E4F7F4",
-      title: "No accountability",
-      desc: "You plan to study 4 hours but end up doing 45 minutes before giving up.",
+      icon: "⏱️",
+      title: "Study in Focused Blocks",
+      desc: "Use structured timers (Pomodoro-style) to study seriously without distractions.",
     },
     {
-      icon: "🧭",
-      accent: "#FFF2DD",
-      title: "Don't know if you're on track",
-      desc: "Is your DSA level enough for a product company? No one to benchmark against.",
+      icon: "👥",
+      title: "Discuss & Learn Together",
+      desc: "After each block, interact — ask doubts, explain concepts, share strategies.",
     },
     {
-      icon: "💬",
-      accent: "#FFE8E4",
-      title: "Doubts go unanswered",
-      desc: "Stuck on a graph problem for 2 hours. No one to ask without feeling judged.",
+      icon: "✅",
+      title: "Leave with progress",
+      desc: "Track time studied, topics covered, and consistency built over sessions.",
     },
   ];
+
+  const marqueeCards = [...challengeCards, ...challengeCards];
 
   return (
     <main
@@ -38,6 +52,32 @@ export default function Home() {
         color: "#1F2937",
       }}
     >
+      <style>{`
+        .home-marquee-shell {
+          overflow: hidden;
+        }
+
+        .home-marquee-track {
+          display: flex;
+          width: max-content;
+          animation: home-marquee-scroll 22s linear infinite;
+          will-change: transform;
+        }
+
+        .home-marquee-track:hover {
+          animation-play-state: paused;
+        }
+
+        @keyframes home-marquee-scroll {
+          from {
+            transform: translateX(0);
+          }
+          to {
+            transform: translateX(-50%);
+          }
+        }
+      `}</style>
+
       <section
         style={{
           maxWidth: "980px",
@@ -63,7 +103,7 @@ export default function Home() {
             marginBottom: "16px",
           }}
         >
-          🧠 Built for Placement-prep students
+          🧠 Built for Smart Learning
         </div>
 
         <h1
@@ -86,8 +126,7 @@ export default function Home() {
             marginBottom: "32px",
           }}
         >
-          Stop Griding alone.
-          Find your study squad.
+          Join live study rooms to focus, discuss, and learn with people preparing for the same goals.
         </p>
 
         <div
@@ -95,6 +134,7 @@ export default function Home() {
             display: "flex",
             justifyContent: "center",
             gap: "14px",
+            flexWrap: "wrap",
           }}
         >
           <Link
@@ -110,7 +150,7 @@ export default function Home() {
               boxShadow: "0 8px 22px rgba(99,102,241,0.28)",
             }}
           >
-            Find a study room now.
+            Start studying together
           </Link>
 
           <Link
@@ -148,8 +188,8 @@ export default function Home() {
             color: "#4a5a85",
           }}
         >
-          PrepSy combines focused study sessions with meaningful peer discussions so you
-          don't just study longer, you study smarter.
+          PrepSy combines focused study sessions with meaningful peer discussions — so you
+          don’t just study longer, you study smarter.
         </p>
       </section>
 
@@ -177,85 +217,49 @@ export default function Home() {
       <section
         id="how-it-works"
         style={{
-          maxWidth: "1120px",
+          maxWidth: "1340px",
           margin: "0 auto",
           paddingBottom: "72px",
-          paddingLeft: "24px",
-          paddingRight: "24px",
+          paddingLeft: isSmallScreen ? "16px" : "24px",
+          paddingRight: isSmallScreen ? "16px" : "24px",
         }}
       >
         <div
           style={{
             background: "linear-gradient(180deg, #F7F9FF 0%, #EEF2FF 100%)",
             borderRadius: "28px",
-            padding: "36px",
+            padding: isSmallScreen ? "18px 0" : "28px",
             border: "1px solid #E4EAFE",
             boxShadow: "0 24px 48px rgba(74, 90, 133, 0.08)",
+            overflow: "hidden",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              gap: "14px",
-              overflowX: "auto",
-              scrollSnapType: "x proximity",
-              paddingBottom: "6px",
-            }}
-          >
-            {challengeCards.map((item) => (
-              <div
-                key={item.title}
-                style={{
-                  flex: "0 0 clamp(220px, 24vw, 252px)",
-                  minHeight: "188px",
-                  background: "#FFFFFF",
-                  borderRadius: "14px",
-                  padding: "20px",
-                  border: "1px solid #E8EDFB",
-                  boxShadow: "0 12px 26px rgba(74, 90, 133, 0.08)",
-                  scrollSnapAlign: "start",
-                }}
-              >
-                <div
-                  style={{
-                    width: "42px",
-                    height: "42px",
-                    borderRadius: "14px",
-                    display: "grid",
-                    placeItems: "center",
-                    fontSize: "20px",
-                    background: item.accent,
-                    marginBottom: "14px",
-                  }}
-                >
-                  {item.icon}
-                </div>
-
-                <h3
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: 700,
-                    lineHeight: 1.25,
-                    color: "#2F3B63",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {item.title}
-                </h3>
-
-                <p
-                  style={{
-                    fontSize: "13px",
-                    color: "#5E6C92",
-                    lineHeight: "1.45",
-                    maxWidth: "22ch",
-                  }}
-                >
-                  {item.desc}
-                </p>
+          {isSmallScreen ? (
+            <div className="home-marquee-shell">
+              <div className="home-marquee-track">
+                {marqueeCards.map((item, index) => (
+                  <ChallengeCard
+                    key={`${item.title}-${index}`}
+                    item={item}
+                    smallScreen
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                gap: "18px",
+                alignItems: "stretch",
+              }}
+            >
+              {challengeCards.map((item) => (
+                <ChallengeCard key={item.title} item={item} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -311,5 +315,59 @@ export default function Home() {
         </div>
       </section>
     </main>
+  );
+}
+
+function ChallengeCard({ item, smallScreen = false }) {
+  return (
+    <div
+      style={{
+        flex: smallScreen ? "0 0 248px" : undefined,
+        minHeight: smallScreen ? "214px" : "244px",
+        background: "#FFFFFF",
+        borderRadius: "24px",
+        padding: smallScreen ? "22px 20px" : "28px 26px",
+        border: "1px solid #E8EDFB",
+        boxShadow: "0 12px 26px rgba(74, 90, 133, 0.08)",
+        textAlign: "center",
+        marginRight: smallScreen ? "14px" : 0,
+      }}
+    >
+      <div
+        style={{
+          fontSize: smallScreen ? "30px" : "34px",
+          lineHeight: 1,
+          marginBottom: "18px",
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        {item.icon}
+      </div>
+
+      <h3
+        style={{
+          fontSize: smallScreen ? "15px" : "16px",
+          fontWeight: 700,
+          lineHeight: 1.35,
+          color: "#2F3B63",
+          marginBottom: "12px",
+        }}
+      >
+        {item.title}
+      </h3>
+
+      <p
+        style={{
+          fontSize: smallScreen ? "13px" : "14px",
+          color: "#5E6C92",
+          lineHeight: "1.55",
+          maxWidth: smallScreen ? "20ch" : "22ch",
+          margin: "0 auto",
+        }}
+      >
+        {item.desc}
+      </p>
+    </div>
   );
 }
