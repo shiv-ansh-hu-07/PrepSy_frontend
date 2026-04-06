@@ -4,25 +4,25 @@ import { Link } from "react-router-dom";
 export default function Home() {
   const challengeCards = [
     {
-      icon: "01",
+      icon: "🧑‍💻",
       accent: "#E8EBFF",
       title: "Nobody around you is preparing",
       desc: "You're the only one in your hostel doing LeetCode at midnight.",
     },
     {
-      icon: "02",
+      icon: "⏳",
       accent: "#E4F7F4",
       title: "No accountability",
       desc: "You plan to study 4 hours but end up doing 45 minutes before giving up.",
     },
     {
-      icon: "03",
+      icon: "🧭",
       accent: "#FFF2DD",
       title: "Don't know if you're on track",
       desc: "Is your DSA level enough for a product company? No one to benchmark against.",
     },
     {
-      icon: "04",
+      icon: "💬",
       accent: "#FFE8E4",
       title: "Doubts go unanswered",
       desc: "Stuck on a graph problem for 2 hours. No one to ask without feeling judged.",
@@ -63,8 +63,7 @@ export default function Home() {
             marginBottom: "16px",
           }}
         >
-          🧠
-          Built for Placement-prep students
+          🧠 Built for Placement-prep students
         </div>
 
         <h1
@@ -196,34 +195,35 @@ export default function Home() {
         >
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-              gap: "12px",
+              display: "flex",
+              gap: "14px",
               overflowX: "auto",
+              scrollSnapType: "x proximity",
+              paddingBottom: "6px",
             }}
           >
             {challengeCards.map((item) => (
               <div
                 key={item.title}
                 style={{
+                  flex: "0 0 clamp(220px, 24vw, 252px)",
                   minHeight: "188px",
                   background: "#FFFFFF",
                   borderRadius: "14px",
                   padding: "20px",
                   border: "1px solid #E8EDFB",
                   boxShadow: "0 12px 26px rgba(74, 90, 133, 0.08)",
+                  scrollSnapAlign: "start",
                 }}
               >
                 <div
                   style={{
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "12px",
+                    width: "42px",
+                    height: "42px",
+                    borderRadius: "14px",
                     display: "grid",
                     placeItems: "center",
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    color: "#42527F",
+                    fontSize: "20px",
                     background: item.accent,
                     marginBottom: "14px",
                   }}
