@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 export default function Home() {
   const [isSmallScreen, setIsSmallScreen] = useState(
     typeof window !== "undefined" ? window.innerWidth < 900 : false
   );
+  const mobileCarouselRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -32,7 +33,7 @@ export default function Home() {
     {
       icon: "👥",
       title: "Discuss & Learn Together",
-      desc: "After each block, interact — ask doubts, explain concepts, share strategies.",
+      desc: "After each block, interact - ask doubts, explain concepts, share strategies.",
     },
     {
       icon: "✅",
@@ -41,7 +42,29 @@ export default function Home() {
     },
   ];
 
-  const marqueeCards = [...challengeCards, ...challengeCards];
+  const loopedCards = [...challengeCards, ...challengeCards, ...challengeCards];
+
+  useEffect(() => {
+    if (!isSmallScreen || !mobileCarouselRef.current) return;
+
+    const el = mobileCarouselRef.current;
+    const loopWidth = el.scrollWidth / 3;
+    el.scrollLeft = loopWidth;
+  }, [isSmallScreen]);
+
+  const handleMobileScroll = () => {
+    const el = mobileCarouselRef.current;
+    if (!el) return;
+
+    const loopWidth = el.scrollWidth / 3;
+    if (loopWidth <= 0) return;
+
+    if (el.scrollLeft < loopWidth * 0.25) {
+      el.scrollLeft += loopWidth;
+    } else if (el.scrollLeft > loopWidth * 1.75) {
+      el.scrollLeft -= loopWidth;
+    }
+  };
 
   return (
     <main
@@ -53,28 +76,17 @@ export default function Home() {
       }}
     >
       <style>{`
-        .home-marquee-shell {
-          overflow: hidden;
+        .home-mobile-carousel {
+          overflow-x: auto;
+          overflow-y: hidden;
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+          scroll-snap-type: x mandatory;
+          -webkit-overflow-scrolling: touch;
         }
 
-        .home-marquee-track {
-          display: flex;
-          width: max-content;
-          animation: home-marquee-scroll 22s linear infinite;
-          will-change: transform;
-        }
-
-        .home-marquee-track:hover {
-          animation-play-state: paused;
-        }
-
-        @keyframes home-marquee-scroll {
-          from {
-            transform: translateX(0);
-          }
-          to {
-            transform: translateX(-50%);
-          }
+        .home-mobile-carousel::-webkit-scrollbar {
+          display: none;
         }
       `}</style>
 
@@ -188,8 +200,8 @@ export default function Home() {
             color: "#4a5a85",
           }}
         >
-          PrepSy combines focused study sessions with meaningful peer discussions — so you
-          don’t just study longer, you study smarter.
+          PrepSy combines focused study sessions with meaningful peer discussions - so you
+          don't just study longer, you study smarter.
         </p>
       </section>
 
@@ -235,9 +247,20 @@ export default function Home() {
           }}
         >
           {isSmallScreen ? (
-            <div className="home-marquee-shell">
-              <div className="home-marquee-track">
-                {marqueeCards.map((item, index) => (
+            <div
+              ref={mobileCarouselRef}
+              className="home-mobile-carousel"
+              onScroll={handleMobileScroll}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  gap: "14px",
+                  width: "max-content",
+                  padding: "0 16px",
+                }}
+              >
+                {loopedCards.map((item, index) => (
                   <ChallengeCard
                     key={`${item.title}-${index}`}
                     item={item}
@@ -330,7 +353,7 @@ function ChallengeCard({ item, smallScreen = false }) {
         border: "1px solid #E8EDFB",
         boxShadow: "0 12px 26px rgba(74, 90, 133, 0.08)",
         textAlign: "center",
-        marginRight: smallScreen ? "14px" : 0,
+        scrollSnapAlign: smallScreen ? "start" : undefined,
       }}
     >
       <div
