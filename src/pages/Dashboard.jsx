@@ -9,6 +9,7 @@ export default function Dashboard() {
   const location = useLocation();
   const [publicRooms, setPublicRooms] = useState([]);
   const [stats, setStats] = useState(null);
+  const [now, setNow] = useState(Date.now());
 
   const isGuestViewer = !user && guestSessionActive;
   const displayName = user?.name || "Guest";
@@ -27,6 +28,14 @@ export default function Dashboard() {
     }
 
     loadDashboard();
+  }, []);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
   }, []);
 
   if (!user && !guestSessionActive) {
@@ -49,6 +58,14 @@ export default function Dashboard() {
     { label: "Create Room", path: "/create-room", disabled: false },
     { label: "Join Room", path: "/join-room", disabled: false },
   ];
+
+  const sessionRooms = [...publicRooms]
+    .map((room) => ({
+      ...room,
+      sessionMeta: getRoomSessionMeta(room, now),
+    }))
+    .filter((room) => room.sessionMeta.status !== "ended")
+    .sort((a, b) => a.sessionMeta.sortAt - b.sessionMeta.sortAt);
 
   return (
     <div
@@ -162,7 +179,7 @@ export default function Dashboard() {
             <h3 className="font-medium text-[#4a5a85] mb-8">Active Sessions</h3>
 
             <div className="space-y-6">
-              {publicRooms.map((room) => (
+              {sessionRooms.map((room) => (
                 <div
                   key={room.roomId}
                   className="
@@ -171,8 +188,21 @@ export default function Dashboard() {
                     pb-5 last:border-none
                   "
                 >
-                  <div>
+                  <div className="pr-4">
                     <p className="font-medium text-slate-700">{room.name}</p>
+
+                    <p
+                      className="text-sm mt-1"
+                      style={{
+                        color:
+                          room.sessionMeta.status === "live"
+                            ? "#3b82f6"
+                            : "#7c3aed",
+                        fontWeight: 500,
+                      }}
+                    >
+                      {room.sessionMeta.label}
+                    </p>
 
                     {room.tags?.length > 0 ? (
                       <p className="text-sm text-slate-500 mt-1">
@@ -182,38 +212,51 @@ export default function Dashboard() {
                   </div>
 
                   <button
-                    onClick={() => navigate(`/room/${room.roomId}`)}
+                    onClick={() => {
+                      if (room.sessionMeta.status === "live") {
+                        navigate(`/room/${room.roomId}`);
+                      }
+                    }}
+                    disabled={room.sessionMeta.status !== "live"}
                     style={{
                       padding: "10px 18px",
                       borderRadius: "10px",
-                      backgroundColor: "#8a9bd6",
+                      backgroundColor:
+                        room.sessionMeta.status === "live" ? "#8a9bd6" : "#d8def4",
                       color: "#ffffff",
                       fontSize: "14px",
                       fontWeight: 500,
                       border: "none",
-                      cursor: "pointer",
-                      boxShadow: "0 6px 20px rgba(138,155,214,0.45)",
+                      cursor:
+                        room.sessionMeta.status === "live" ? "pointer" : "not-allowed",
+                      boxShadow:
+                        room.sessionMeta.status === "live"
+                          ? "0 6px 20px rgba(138,155,214,0.45)"
+                          : "none",
                       transition: "all 0.2s ease",
+                      minWidth: "112px",
                     }}
                     onMouseEnter={(e) => {
+                      if (room.sessionMeta.status !== "live") return;
                       e.currentTarget.style.backgroundColor = "#7c8dcc";
                       e.currentTarget.style.boxShadow =
                         "0 8px 26px rgba(138,155,214,0.55)";
                       e.currentTarget.style.transform = "translateY(-1px)";
                     }}
                     onMouseLeave={(e) => {
+                      if (room.sessionMeta.status !== "live") return;
                       e.currentTarget.style.backgroundColor = "#8a9bd6";
                       e.currentTarget.style.boxShadow =
                         "0 6px 20px rgba(138,155,214,0.45)";
                       e.currentTarget.style.transform = "translateY(0)";
                     }}
                   >
-                    Join
+                    {room.sessionMeta.status === "live" ? "Join" : "Starts Soon"}
                   </button>
                 </div>
               ))}
 
-              {publicRooms.length === 0 ? (
+              {sessionRooms.length === 0 ? (
                 <p className="text-sm text-[#6b78a0]">No upcoming sessions.</p>
               ) : null}
             </div>
@@ -245,4 +288,166 @@ function StatCard({ label, value }) {
       <p className="text-2xl font-medium text-slate-700">{value}</p>
     </div>
   );
+}
+
+function getRoomSessionMeta(room, nowTs) {
+  const now = new Date(nowTs);
+  const startTime = room?.startTime ? new Date(room.startTime) : null;
+  const durationMinutes = Number(room?.durationMinutes || 0);
+  const durationMs = durationMinutes * 60 * 1000;
+
+  if (!startTime || !durationMinutes) {
+    return {
+      status: "ended",
+      label: "",
+      sortAt: Number.MAX_SAFE_INTEGER,
+    };
+  }
+
+  if (room.isRecurring) {
+    const nextWindow = getRecurringWindow(room, now);
+    if (!nextWindow) {
+      return {
+        status: "ended",
+        label: "",
+        sortAt: Number.MAX_SAFE_INTEGER,
+      };
+    }
+
+    if (now >= nextWindow.start && now <= nextWindow.end) {
+      return {
+        status: "live",
+        label: `Live now • ends in ${formatDuration(nextWindow.end.getTime() - nowTs)}`,
+        sortAt: nextWindow.start.getTime(),
+      };
+    }
+
+    return {
+      status: "scheduled",
+      label: `Starts in ${formatDuration(nextWindow.start.getTime() - nowTs)}`,
+      sortAt: nextWindow.start.getTime(),
+    };
+  }
+
+  const endTime = new Date(startTime.getTime() + durationMs);
+  if (now >= startTime && now <= endTime) {
+    return {
+      status: "live",
+      label: `Live now • ends in ${formatDuration(endTime.getTime() - nowTs)}`,
+      sortAt: startTime.getTime(),
+    };
+  }
+
+  if (now < startTime) {
+    return {
+      status: "scheduled",
+      label: `Starts in ${formatDuration(startTime.getTime() - nowTs)}`,
+      sortAt: startTime.getTime(),
+    };
+  }
+
+  return {
+    status: "ended",
+    label: "",
+    sortAt: Number.MAX_SAFE_INTEGER,
+  };
+}
+
+function getRecurringWindow(room, now) {
+  const recurrenceType = room?.recurrenceType || "";
+  const [, rawTimeZone] = recurrenceType.split("|");
+  const timeZone = rawTimeZone || "Asia/Kolkata";
+  const scheduled = getZonedParts(new Date(room.startTime), timeZone);
+  const today = getZonedParts(now, timeZone);
+
+  const startToday = zonedTimeToUtc(
+    today.year,
+    today.month,
+    today.day,
+    scheduled.hour,
+    scheduled.minute,
+    timeZone
+  );
+  const endToday = new Date(
+    startToday.getTime() + Number(room.durationMinutes) * 60 * 1000
+  );
+
+  if (now <= endToday) {
+    return {
+      start: startToday,
+      end: endToday,
+    };
+  }
+
+  const startTomorrow = zonedTimeToUtc(
+    today.year,
+    today.month,
+    today.day + 1,
+    scheduled.hour,
+    scheduled.minute,
+    timeZone
+  );
+
+  return {
+    start: startTomorrow,
+    end: new Date(startTomorrow.getTime() + Number(room.durationMinutes) * 60 * 1000),
+  };
+}
+
+function getZonedParts(date, timeZone) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  });
+
+  const parts = formatter.formatToParts(date);
+  const read = (type) => Number(parts.find((part) => part.type === type)?.value || 0);
+
+  return {
+    year: read("year"),
+    month: read("month"),
+    day: read("day"),
+    hour: read("hour"),
+    minute: read("minute"),
+    second: read("second"),
+  };
+}
+
+function getTimeZoneOffsetMs(date, timeZone) {
+  const parts = getZonedParts(date, timeZone);
+  const asUtc = Date.UTC(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute,
+    parts.second
+  );
+
+  return asUtc - date.getTime();
+}
+
+function zonedTimeToUtc(year, month, day, hour, minute, timeZone) {
+  const utcGuess = Date.UTC(year, month - 1, day, hour, minute, 0);
+  const offset = getTimeZoneOffsetMs(new Date(utcGuess), timeZone);
+  return new Date(utcGuess - offset);
+}
+
+function formatDuration(ms) {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
+  }
+
+  return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
 }
