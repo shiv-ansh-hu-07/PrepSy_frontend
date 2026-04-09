@@ -19,8 +19,21 @@ export default function Dashboard() {
     async function loadDashboard() {
       try {
         const roomsResp = await api.get("/rooms/public");
+        const myRoomsResp = user?.id
+          ? await api.get("/rooms/my")
+          : { data: { createdRooms: [], joinedRooms: [] } };
         const statsResp = await fetchStats();
-        setPublicRooms(roomsResp.data.rooms || []);
+        const publicRoomsList = roomsResp.data.rooms || [];
+        const personalRooms = [
+          ...(myRoomsResp.data.createdRooms || []),
+          ...(myRoomsResp.data.joinedRooms || []),
+        ];
+        const mergedRooms = Array.from(
+          new Map(
+            [...publicRoomsList, ...personalRooms].map((room) => [room.roomId, room])
+          ).values()
+        );
+        setPublicRooms(mergedRooms);
         setStats(statsResp.stats);
       } catch (err) {
         console.error("Dashboard load error:", err);
@@ -28,7 +41,7 @@ export default function Dashboard() {
     }
 
     loadDashboard();
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -317,14 +330,14 @@ function getRoomSessionMeta(room, nowTs) {
     if (now >= nextWindow.start && now <= nextWindow.end) {
       return {
         status: "live",
-        label: `Live now • ends in ${formatDuration(nextWindow.end.getTime() - nowTs)}`,
+        label: `Live Session • ends in ${formatDuration(nextWindow.end.getTime() - nowTs)}`,
         sortAt: nextWindow.start.getTime(),
       };
     }
 
     return {
       status: "scheduled",
-      label: `Starts in ${formatDuration(nextWindow.start.getTime() - nowTs)}`,
+      label: `Upcoming Session • starts in ${formatDuration(nextWindow.start.getTime() - nowTs)}`,
       sortAt: nextWindow.start.getTime(),
     };
   }
@@ -333,7 +346,7 @@ function getRoomSessionMeta(room, nowTs) {
   if (now >= startTime && now <= endTime) {
     return {
       status: "live",
-      label: `Live now • ends in ${formatDuration(endTime.getTime() - nowTs)}`,
+      label: `Live Session • ends in ${formatDuration(endTime.getTime() - nowTs)}`,
       sortAt: startTime.getTime(),
     };
   }
@@ -341,7 +354,7 @@ function getRoomSessionMeta(room, nowTs) {
   if (now < startTime) {
     return {
       status: "scheduled",
-      label: `Starts in ${formatDuration(startTime.getTime() - nowTs)}`,
+      label: `Upcoming Session • starts in ${formatDuration(startTime.getTime() - nowTs)}`,
       sortAt: startTime.getTime(),
     };
   }
