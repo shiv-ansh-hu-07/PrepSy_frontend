@@ -21,24 +21,24 @@ export default function Home() {
 
   const challengeCards = [
     {
-      icon: "🚪",
-      title: "Join a Study Room",
-      desc: "Enter a room with learners preparing for similar exams or topics.",
+      icon: "💼",
+      title: "Prepare with people targeting the same roles",
+      desc: "Join rooms for placements, SDE interviews, product roles, and job-switch prep instead of grinding alone.",
     },
     {
       icon: "⏱️",
-      title: "Study in Focused Blocks",
-      desc: "Use structured timers (Pomodoro-style) to study seriously without distractions.",
+      title: "Stay accountable every day",
+      desc: "Use focused study blocks for DSA, aptitude, system design, and interview prep so your plan actually happens.",
     },
     {
-      icon: "👥",
-      title: "Discuss & Learn Together",
-      desc: "After each block, interact - ask doubts, explain concepts, share strategies.",
+      icon: "🧠",
+      title: "Clear doubts faster",
+      desc: "Get unstuck on coding problems, resume decisions, interview questions, and revision topics with peers in real time.",
     },
     {
-      icon: "✅",
-      title: "Leave with progress",
-      desc: "Track time studied, topics covered, and consistency built over sessions.",
+      icon: "📈",
+      title: "Build interview-ready consistency",
+      desc: "Track what you covered, show up regularly, and turn scattered preparation into steady progress toward offers.",
     },
   ];
 
@@ -115,7 +115,7 @@ export default function Home() {
             marginBottom: "16px",
           }}
         >
-          🧠 Built for Smart Learning
+          💼 Built for placements and job switches
         </div>
 
         <h1
@@ -128,7 +128,7 @@ export default function Home() {
             letterSpacing: "-0.02em",
           }}
         >
-          Study together. Learn better. Stay consistent.
+          Prep smarter for interviews, placements, and your next role.
         </h1>
 
         <p
@@ -138,7 +138,7 @@ export default function Home() {
             marginBottom: "32px",
           }}
         >
-          Join live study rooms to focus, discuss, and learn with people preparing for the same goals.
+          Study DSA, system design, aptitude, and interview rounds with people aiming for the same outcomes.
         </p>
 
         <div
@@ -162,7 +162,7 @@ export default function Home() {
               boxShadow: "0 8px 22px rgba(99,102,241,0.28)",
             }}
           >
-            Start studying together
+            Join a prep room
           </Link>
 
           <Link
@@ -185,7 +185,7 @@ export default function Home() {
 
       <section
         style={{
-          maxWidth: "760px",
+          maxWidth: "820px",
           margin: "0 auto",
           paddingBottom: "48px",
           paddingLeft: "24px",
@@ -200,14 +200,13 @@ export default function Home() {
             color: "#4a5a85",
           }}
         >
-          PrepSy combines focused study sessions with meaningful peer discussions - so you
-          don't just study longer, you study smarter.
+          PrepSy combines focused work sessions with live peer accountability, so your interview prep stops feeling random and starts feeling structured.
         </p>
       </section>
 
       <section
         style={{
-          maxWidth: "760px",
+          maxWidth: "820px",
           margin: "0 auto",
           paddingBottom: "48px",
           paddingLeft: "24px",
@@ -222,7 +221,7 @@ export default function Home() {
             color: "#4a5a85",
           }}
         >
-          Focus alone is hard. Learning together makes it easier.
+          Whether you're a student chasing placements or a working professional switching jobs, the right prep company changes everything.
         </p>
       </section>
 
@@ -288,7 +287,7 @@ export default function Home() {
 
       <section
         style={{
-          maxWidth: "760px",
+          maxWidth: "820px",
           margin: "0 auto",
           paddingBottom: "96px",
           paddingLeft: "24px",
@@ -313,11 +312,11 @@ export default function Home() {
               color: "#4a5a85",
             }}
           >
-            Your best study sessions happen with the right people
+            Better interview prep is not just about more hours.
             <br />
-            PrepSy helps you find them
+            It's about better structure, better peers, and better momentum.
             <br />
-            study better together
+            Prep with people who are serious about landing roles.
           </p>
 
           <Link
@@ -333,7 +332,7 @@ export default function Home() {
               boxShadow: "0 10px 24px rgba(99,102,241,0.3)",
             }}
           >
-            Get Started
+            Start preparing now
           </Link>
         </div>
       </section>
