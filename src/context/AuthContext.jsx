@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
-import api from "../api";
+import api from "../services/api";
 
 const AuthContext = createContext();
 const USER_CACHE_KEY = "auth_user_cache";
@@ -80,8 +80,10 @@ export const AuthProvider = ({ children }) => {
       disableStreak: guestSessionActive,
     });
     localStorage.setItem("token", res.data.token);
-    await loadUser();
+    persistUser(res.data.user);
+    setLoading(false);
     persistGuestSession(false);
+    return res.data.user;
   };
 
   // Register (no auto-login)
@@ -90,9 +92,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   // ✅ ADD THIS (Google / OAuth login)
-  const loginWithToken = async (token) => {
+  const loginWithToken = async (token, nextUser = null) => {
     localStorage.setItem("token", token);
-    await loadUser();
+    if (nextUser) {
+      persistUser(nextUser);
+      setLoading(false);
+    } else {
+      await loadUser();
+    }
     persistGuestSession(false);
   };
 
