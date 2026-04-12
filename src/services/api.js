@@ -14,18 +14,9 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// -----------------------------
-// Mock Functions (Optional)
-// -----------------------------
-
 export async function fetchStats() {
-  return {
-    stats: {
-      activeRooms: 12,
-      activeUsers: 87,
-      avgFocus: 74,
-    },
-  };
+  const { data } = await api.get("/api/stats");
+  return data;
 }
 
 export async function fetchRooms() {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api, { fetchStats } from "../services/api";
@@ -9,7 +9,6 @@ export default function Dashboard() {
   const location = useLocation();
   const [publicRooms, setPublicRooms] = useState([]);
   const [stats, setStats] = useState(null);
-  const [now, setNow] = useState(Date.now());
 
   const isGuestViewer = !user && guestSessionActive;
   const displayName = user?.name || "Guest";
@@ -18,11 +17,13 @@ export default function Dashboard() {
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const roomsResp = await api.get("/rooms/public");
-        const myRoomsResp = user?.id
-          ? await api.get("/rooms/my")
-          : { data: { createdRooms: [], joinedRooms: [] } };
-        const statsResp = await fetchStats();
+        const [roomsResp, myRoomsResp, statsResp] = await Promise.all([
+          api.get("/rooms/public"),
+          user?.id
+            ? api.get("/rooms/my")
+            : Promise.resolve({ data: { createdRooms: [], joinedRooms: [] } }),
+          fetchStats(),
+        ]);
         const publicRoomsList = roomsResp.data.rooms || [];
         const personalRooms = [
           ...(myRoomsResp.data.createdRooms || []),
@@ -43,13 +44,14 @@ export default function Dashboard() {
     loadDashboard();
   }, [user?.id]);
 
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setNow(Date.now());
-    }, 1000);
-
-    return () => window.clearInterval(intervalId);
-  }, []);
+  const sessionRooms = useMemo(
+    () =>
+      [...publicRooms].sort(
+        (a, b) =>
+          new Date(a.startTime || 0).getTime() - new Date(b.startTime || 0).getTime()
+      ),
+    [publicRooms]
+  );
 
   if (!user && !guestSessionActive) {
     return (
@@ -71,14 +73,6 @@ export default function Dashboard() {
     { label: "Create Room", path: "/create-room", disabled: false },
     { label: "Join Room", path: "/join-room", disabled: false },
   ];
-
-  const sessionRooms = [...publicRooms]
-    .map((room) => ({
-      ...room,
-      sessionMeta: getRoomSessionMeta(room, now),
-    }))
-    .filter((room) => room.sessionMeta.status !== "ended")
-    .sort((a, b) => a.sessionMeta.sortAt - b.sessionMeta.sortAt);
 
   return (
     <div
@@ -192,82 +186,15 @@ export default function Dashboard() {
             <h3 className="font-medium text-[#4a5a85] mb-8">Active Sessions</h3>
 
             <div className="space-y-6">
-              {sessionRooms.map((room) => (
-                <div
-                  key={room.roomId}
-                  className="
-                    flex items-center justify-between
-                    border-b border-slate-200/60
-                    pb-5 last:border-none
-                  "
-                >
-                  <div className="pr-4">
-                    <p className="font-medium text-slate-700">{room.name}</p>
-
-                    <p
-                      className="text-sm mt-1"
-                      style={{
-                        color:
-                          room.sessionMeta.status === "live"
-                            ? "#3b82f6"
-                            : "#7c3aed",
-                        fontWeight: 500,
-                      }}
-                    >
-                      {room.sessionMeta.label}
-                    </p>
-
-                    {room.tags?.length > 0 ? (
-                      <p className="text-sm text-slate-500 mt-1">
-                        {room.tags.map((tag) => `#${tag}`).join(" ")}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      if (room.sessionMeta.status === "live") {
-                        navigate(`/room/${room.roomId}`);
-                      }
-                    }}
-                    disabled={room.sessionMeta.status !== "live"}
-                    style={{
-                      padding: "10px 18px",
-                      borderRadius: "10px",
-                      backgroundColor:
-                        room.sessionMeta.status === "live" ? "#8a9bd6" : "#d8def4",
-                      color: "#ffffff",
-                      fontSize: "14px",
-                      fontWeight: 500,
-                      border: "none",
-                      cursor:
-                        room.sessionMeta.status === "live" ? "pointer" : "not-allowed",
-                      boxShadow:
-                        room.sessionMeta.status === "live"
-                          ? "0 6px 20px rgba(138,155,214,0.45)"
-                          : "none",
-                      transition: "all 0.2s ease",
-                      minWidth: "112px",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (room.sessionMeta.status !== "live") return;
-                      e.currentTarget.style.backgroundColor = "#7c8dcc";
-                      e.currentTarget.style.boxShadow =
-                        "0 8px 26px rgba(138,155,214,0.55)";
-                      e.currentTarget.style.transform = "translateY(-1px)";
-                    }}
-                    onMouseLeave={(e) => {
-                      if (room.sessionMeta.status !== "live") return;
-                      e.currentTarget.style.backgroundColor = "#8a9bd6";
-                      e.currentTarget.style.boxShadow =
-                        "0 6px 20px rgba(138,155,214,0.45)";
-                      e.currentTarget.style.transform = "translateY(0)";
-                    }}
-                  >
-                    {room.sessionMeta.status === "live" ? "Join" : "Starts Soon"}
-                  </button>
-                </div>
-              ))}
+              {sessionRooms
+                .map((room) => (
+                  <SessionRoomCard
+                    key={room.roomId}
+                    room={room}
+                    onJoin={() => navigate(`/room/${room.roomId}`)}
+                  />
+                ))
+                .filter(Boolean)}
 
               {sessionRooms.length === 0 ? (
                 <p className="text-sm text-[#6b78a0]">No upcoming sessions.</p>
@@ -282,6 +209,81 @@ export default function Dashboard() {
           </section>
         </main>
       </div>
+    </div>
+  );
+}
+
+function SessionRoomCard({ room, onJoin }) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  const sessionMeta = getRoomSessionMeta(room, now);
+  if (sessionMeta.status === "ended") {
+    return null;
+  }
+
+  return (
+    <div
+      className="
+        flex items-center justify-between
+        border-b border-slate-200/60
+        pb-5 last:border-none
+      "
+    >
+      <div className="pr-4">
+        <p className="font-medium text-slate-700">{room.name}</p>
+
+        <p
+          className="text-sm mt-1"
+          style={{
+            color: sessionMeta.status === "live" ? "#3b82f6" : "#7c3aed",
+            fontWeight: 500,
+          }}
+        >
+          {sessionMeta.label}
+        </p>
+
+        {room.tags?.length > 0 ? (
+          <p className="text-sm text-slate-500 mt-1">
+            {room.tags.map((tag) => `#${tag}`).join(" ")}
+          </p>
+        ) : null}
+      </div>
+
+      <button
+        onClick={() => {
+          if (sessionMeta.status === "live") {
+            onJoin();
+          }
+        }}
+        disabled={sessionMeta.status !== "live"}
+        style={{
+          padding: "10px 18px",
+          borderRadius: "10px",
+          backgroundColor:
+            sessionMeta.status === "live" ? "#8a9bd6" : "#d8def4",
+          color: "#ffffff",
+          fontSize: "14px",
+          fontWeight: 500,
+          border: "none",
+          cursor: sessionMeta.status === "live" ? "pointer" : "not-allowed",
+          boxShadow:
+            sessionMeta.status === "live"
+              ? "0 6px 20px rgba(138,155,214,0.45)"
+              : "none",
+          transition: "all 0.2s ease",
+          minWidth: "112px",
+        }}
+      >
+        {sessionMeta.status === "live" ? "Join" : "Starts Soon"}
+      </button>
     </div>
   );
 }

@@ -21,10 +21,6 @@ export default function Navbar() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [location.pathname]);
-
   const isCompact = windowWidth < 760;
   const isMobileNav = windowWidth < 920;
   const isHomePage = location.pathname === "/";
@@ -52,6 +48,7 @@ export default function Navbar() {
   })();
 
   const handleLogout = () => {
+    setMenuOpen(false);
     logout();
     navigate("/login");
   };
@@ -270,6 +267,7 @@ export default function Navbar() {
                 <Link
                   key={item.path}
                   to={item.path}
+                  onClick={() => setMenuOpen(false)}
                   style={{
                     display: "block",
                     padding: "12px 14px",
