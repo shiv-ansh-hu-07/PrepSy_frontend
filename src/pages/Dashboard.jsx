@@ -173,7 +173,13 @@ export default function Dashboard() {
           </ul>
         </aside>
 
-        <main className="lg:col-span-3 space-y-12">
+        <main className="lg:col-span-3 space-y-8">
+          <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <StatCard label="Active Rooms" value={stats?.activeRooms || 0} />
+            <StatCard label="Online Users" value={stats?.activeUsers || 0} />
+            <StatCard label="Avg Focus" value={`${stats?.avgFocus || 0}%`} />
+          </section>
+
           <section
             className="
               bg-white/70 backdrop-blur-md
@@ -185,7 +191,7 @@ export default function Dashboard() {
           >
             <h3 className="font-medium text-[#4a5a85] mb-8">Active Sessions</h3>
 
-            <div className="space-y-6">
+            <div className="max-h-[440px] space-y-6 overflow-y-auto pr-2">
               {sessionRooms
                 .map((room) => (
                   <SessionRoomCard
@@ -200,12 +206,6 @@ export default function Dashboard() {
                 <p className="text-sm text-[#6b78a0]">No upcoming sessions.</p>
               ) : null}
             </div>
-          </section>
-
-          <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <StatCard label="Active Rooms" value={stats?.activeRooms || 0} />
-            <StatCard label="Online Users" value={stats?.activeUsers || 0} />
-            <StatCard label="Avg Focus" value={`${stats?.avgFocus || 0}%`} />
           </section>
         </main>
       </div>
@@ -228,6 +228,7 @@ function SessionRoomCard({ room, onJoin }) {
   if (sessionMeta.status === "ended") {
     return null;
   }
+  const memberCount = room?._count?.members ?? room?.memberCount ?? 0;
 
   return (
     <div
@@ -250,11 +251,9 @@ function SessionRoomCard({ room, onJoin }) {
           {sessionMeta.label}
         </p>
 
-        {room.tags?.length > 0 ? (
-          <p className="text-sm text-slate-500 mt-1">
-            {room.tags.map((tag) => `#${tag}`).join(" ")}
-          </p>
-        ) : null}
+        <p className="text-sm text-slate-500 mt-1">
+          {memberCount} {memberCount === 1 ? "user" : "users"} in this room
+        </p>
       </div>
 
       <button
