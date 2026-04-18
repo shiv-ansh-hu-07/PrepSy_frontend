@@ -1,11 +1,25 @@
 import { VideoTrack } from "@livekit/components-react";
 import AvatarTile from "./AvatarTile";
 import { useParticipants } from "@livekit/components-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function StageManager({ tracks = [] }) {
   const participants = useParticipants();
   const [fitMode, setFitMode] = useState("contain");
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+
+    const handleFullscreenChange = () => {
+      const stage = document.fullscreenElement?.closest?.("[data-room-stage]");
+      setIsFullscreen(Boolean(stage));
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
 
   const hasEnabledTrack = (track, enabled) =>
     Boolean(enabled && track?.publication?.track);
@@ -20,6 +34,22 @@ export default function StageManager({ tracks = [] }) {
 
   const columns =
     count <= 1 ? 1 : count === 2 ? 2 : count <= 4 ? 2 : 3;
+
+  const toggleFullscreen = async (event) => {
+    const stage = event.currentTarget.closest("[data-room-stage]");
+
+    if (!stage || typeof document === "undefined") return;
+
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else if (stage.requestFullscreen) {
+        await stage.requestFullscreen();
+      }
+    } catch (error) {
+      console.warn("Unable to toggle fullscreen:", error);
+    }
+  };
 
   if (screen) {
     return (
@@ -43,7 +73,11 @@ export default function StageManager({ tracks = [] }) {
           {fitMode === "contain" ? "Fit" : "Fill"}
         </button>
 
-        <div style={styles.pip}>
+        <button onClick={toggleFullscreen} style={styles.fullscreenToggle}>
+          {isFullscreen ? "Exit full screen" : "Full screen"}
+        </button>
+
+        <div style={styles.pip(isFullscreen)}>
           {participants.map((participant) => {
             const cam = cameraTracks.find(
               (track) => track.participant.identity === participant.identity
@@ -138,16 +172,18 @@ const styles = {
     background: "#000",
   },
 
-  pip: {
+  pip: (isFullscreen) => ({
     position: "absolute",
-    bottom: 16,
+    top: isFullscreen ? 56 : "auto",
+    bottom: isFullscreen ? "auto" : 16,
     right: 16,
     display: "flex",
-    gap: 12,
+    gap: isFullscreen ? 8 : 12,
     flexWrap: "wrap",
     justifyContent: "flex-end",
-    maxWidth: "min(100%, 420px)",
-  },
+    maxWidth: isFullscreen ? "min(100%, 360px)" : "min(100%, 420px)",
+    zIndex: 25,
+  }),
 
   pipTile: {
     width: 140,
@@ -239,6 +275,19 @@ const styles = {
     position: "absolute",
     top: 12,
     right: 12,
+    padding: "6px 10px",
+    borderRadius: 10,
+    border: "none",
+    background: "rgba(0,0,0,0.6)",
+    color: "white",
+    cursor: "pointer",
+    fontSize: 12,
+  },
+
+  fullscreenToggle: {
+    position: "absolute",
+    top: 12,
+    right: 62,
     padding: "6px 10px",
     borderRadius: 10,
     border: "none",

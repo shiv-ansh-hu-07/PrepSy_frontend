@@ -161,7 +161,7 @@ export default function RoomLayout({
             </div>
           ) : null}
 
-          <div style={styles.stage}>
+          <div style={styles.stage} data-room-stage>
             {!isMobile ? (
               <div style={styles.sessionBadgeDesktop}>
                 <span style={styles.liveDot} />
