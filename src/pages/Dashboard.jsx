@@ -13,6 +13,11 @@ export default function Dashboard() {
   const isGuestViewer = !user && guestSessionActive;
   const displayName = user?.name || "Guest";
   const isActive = (path) => location.pathname === path;
+  const streakValue = user
+    ? user.streakDisabled
+      ? "Paused"
+      : `${user.attendanceStreak ?? 0} day${(user.attendanceStreak ?? 0) === 1 ? "" : "s"}`
+    : "Locked";
 
   useEffect(() => {
     async function loadDashboard() {
@@ -174,10 +179,11 @@ export default function Dashboard() {
         </aside>
 
         <main className="lg:col-span-3 space-y-8">
-          <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
             <StatCard label="Active Rooms" value={stats?.activeRooms || 0} />
             <StatCard label="Online Users" value={stats?.activeUsers || 0} />
             <StatCard label="Avg Focus" value={stats?.avgFocusLabel || "0m"} />
+            <StatCard label="Streak" value={streakValue} />
           </section>
 
           <section

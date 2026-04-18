@@ -13,6 +13,8 @@ import { useNavigate } from "react-router-dom";
 import PomodoroTimer from "./PomodoroTimer";
 import { useParticipants } from "@livekit/components-react";
 import { useEffect, useState } from "react";
+import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function RoomLayout({
   children,
@@ -22,6 +24,7 @@ export default function RoomLayout({
   onLeave,
   hasUnreadMessages = false,
 }) {
+  const { user, refreshUser } = useAuth();
   const {
     toggleMic,
     toggleCamera,
@@ -39,9 +42,24 @@ export default function RoomLayout({
 
   const [notes, setNotes] = useState("");
   const [shareStatus, setShareStatus] = useState("");
+  const [leaveSummary, setLeaveSummary] = useState(null);
+  const [leaving, setLeaving] = useState(false);
+  const [enteredAt] = useState(() => Date.now());
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth < 980 : false
   );
+  const buildFallbackLeaveSummary = () => {
+    const totalMinutes = Math.max(0, Math.round((Date.now() - enteredAt) / 60000));
+    return {
+      roomName: roomName || "Study Room",
+      totalTimeLabel: formatMinutes(totalMinutes),
+      studiedWithCount: Math.max(0, participantCount - 1),
+      streak: user?.attendanceStreak ?? 0,
+      streakDisabled: user?.streakDisabled ?? false,
+      message:
+        "Great work today. Rest up, keep the rhythm alive, and come back tomorrow for the next focused session.",
+    };
+  };
 
   useEffect(() => {
     if (!shareStatus) return undefined;
@@ -59,7 +77,7 @@ export default function RoomLayout({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const handleLeave = async () => {
+  const finishLeave = async () => {
     await leaveRoom();
 
     if (typeof onLeave === "function") {
@@ -68,6 +86,26 @@ export default function RoomLayout({
     }
 
     navigate("/dashboard");
+  };
+
+  const handleLeave = async () => {
+    if (leaving || leaveSummary) return;
+
+    setLeaving(true);
+    try {
+      if (roomId && user?.id) {
+        const res = await api.post(`/rooms/${roomId}/leave`);
+        setLeaveSummary(res.data);
+        await refreshUser?.();
+      } else {
+        setLeaveSummary(buildFallbackLeaveSummary());
+      }
+    } catch (error) {
+      console.warn("Unable to load leave analytics:", error);
+      setLeaveSummary(buildFallbackLeaveSummary());
+    } finally {
+      setLeaving(false);
+    }
   };
 
   const handleScreenShare = () => {
@@ -207,6 +245,70 @@ export default function RoomLayout({
         </div>
       </div>
 
+      {leaveSummary ? (
+        <LeaveSummaryModal
+          summary={leaveSummary}
+          onLeave={finishLeave}
+          leaving={leaving}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function formatMinutes(minutes) {
+  if (minutes < 60) {
+    return `${minutes}m`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return remainingMinutes === 0
+    ? `${hours}h`
+    : `${hours}h ${remainingMinutes}m`;
+}
+
+function LeaveSummaryModal({ summary, onLeave, leaving }) {
+  const streakLabel = summary.streakDisabled
+    ? "Paused"
+    : `${summary.streak ?? 0} day${summary.streak === 1 ? "" : "s"}`;
+
+  return (
+    <div style={styles.modalBackdrop}>
+      <div style={styles.modalPanel}>
+        <p style={styles.modalEyebrow}>Session complete</p>
+        <h2 style={styles.modalTitle}>Nice work in {summary.roomName || "your room"}</h2>
+        <p style={styles.modalMessage}>{summary.message}</p>
+
+        <div style={styles.summaryGrid}>
+          <SummaryStat label="Time spent" value={summary.totalTimeLabel || "0m"} />
+          <SummaryStat
+            label="Studied with"
+            value={`${summary.studiedWithCount || 0} ${
+              summary.studiedWithCount === 1 ? "person" : "people"
+            }`}
+          />
+          <SummaryStat label="Streak" value={streakLabel} />
+        </div>
+
+        <button
+          type="button"
+          onClick={onLeave}
+          disabled={leaving}
+          style={styles.modalButton}
+        >
+          Leave room
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SummaryStat({ label, value }) {
+  return (
+    <div style={styles.summaryStat}>
+      <p style={styles.summaryLabel}>{label}</p>
+      <p style={styles.summaryValue}>{value}</p>
     </div>
   );
 }
@@ -500,5 +602,91 @@ const styles = {
     borderRadius: "50%",
     background: "#ef4444",
     boxShadow: "0 0 0 3px rgba(239,68,68,0.18)",
+  },
+
+  modalBackdrop: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 100,
+    background: "rgba(15,23,42,0.48)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+
+  modalPanel: {
+    width: "min(100%, 520px)",
+    borderRadius: 22,
+    border: "1px solid #E6EAF8",
+    background: "#FFFFFF",
+    boxShadow: "0 24px 70px rgba(15,23,42,0.28)",
+    padding: 24,
+    color: "#334155",
+  },
+
+  modalEyebrow: {
+    margin: 0,
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: 0,
+    color: "#8a9bd6",
+    textTransform: "uppercase",
+  },
+
+  modalTitle: {
+    margin: "8px 0 10px",
+    fontSize: 26,
+    lineHeight: 1.2,
+    color: "#2f3b63",
+    fontFamily: "Georgia, serif",
+  },
+
+  modalMessage: {
+    margin: 0,
+    color: "#5E6C92",
+    lineHeight: 1.6,
+  },
+
+  summaryGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    gap: 10,
+    marginTop: 18,
+  },
+
+  summaryStat: {
+    borderRadius: 14,
+    border: "1px solid #EEF2FF",
+    background: "#F8FAFF",
+    padding: "12px 10px",
+    minWidth: 0,
+  },
+
+  summaryLabel: {
+    margin: 0,
+    fontSize: 12,
+    color: "#6B7280",
+  },
+
+  summaryValue: {
+    margin: "6px 0 0",
+    fontSize: 18,
+    fontWeight: 700,
+    color: "#1F2937",
+    overflowWrap: "anywhere",
+  },
+
+  modalButton: {
+    marginTop: 20,
+    width: "100%",
+    height: 44,
+    borderRadius: 12,
+    border: "none",
+    background: "#8a9bd6",
+    color: "#FFFFFF",
+    fontWeight: 700,
+    cursor: "pointer",
+    boxShadow: "0 10px 24px rgba(138,155,214,0.34)",
   },
 };
