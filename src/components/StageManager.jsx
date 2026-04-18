@@ -77,27 +77,29 @@ export default function StageManager({ tracks = [] }) {
           {isFullscreen ? "Exit full screen" : "Full screen"}
         </button>
 
-        <div style={styles.pip(isFullscreen)}>
-          {participants.map((participant) => {
-            const cam = cameraTracks.find(
-              (track) => track.participant.identity === participant.identity
-            );
-            const hasCamera = hasEnabledTrack(cam, participant.isCameraEnabled);
+        {!isFullscreen ? (
+          <div style={styles.pip}>
+            {participants.map((participant) => {
+              const cam = cameraTracks.find(
+                (track) => track.participant.identity === participant.identity
+              );
+              const hasCamera = hasEnabledTrack(cam, participant.isCameraEnabled);
 
-            return (
-              <div key={participant.identity} style={styles.pipTile}>
-                {hasCamera ? (
-                  <VideoTrack trackRef={cam} style={styles.pipVideo} />
-                ) : (
-                  <AvatarTile
-                    name={participant.name || "Guest"}
-                    micMuted={!participant.isMicrophoneEnabled}
-                  />
-                )}
-              </div>
-            );
-          })}
-        </div>
+              return (
+                <div key={participant.identity} style={styles.pipTile}>
+                  {hasCamera ? (
+                    <VideoTrack trackRef={cam} style={styles.pipVideo} />
+                  ) : (
+                    <AvatarTile
+                      name={participant.name || "Guest"}
+                      micMuted={!participant.isMicrophoneEnabled}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -172,18 +174,17 @@ const styles = {
     background: "#000",
   },
 
-  pip: (isFullscreen) => ({
+  pip: {
     position: "absolute",
-    top: isFullscreen ? 56 : "auto",
-    bottom: isFullscreen ? "auto" : 16,
+    bottom: 16,
     right: 16,
     display: "flex",
-    gap: isFullscreen ? 8 : 12,
+    gap: 12,
     flexWrap: "wrap",
     justifyContent: "flex-end",
-    maxWidth: isFullscreen ? "min(100%, 360px)" : "min(100%, 420px)",
+    maxWidth: "min(100%, 420px)",
     zIndex: 25,
-  }),
+  },
 
   pipTile: {
     width: 140,
