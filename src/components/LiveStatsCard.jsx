@@ -24,7 +24,7 @@ export default function LiveStatsCard({ stats }) {
         </div>
         <div className="p-3 bg-gray-800 rounded">
           <div className="text-xs text-gray-400">Avg Focus</div>
-          <div className="mt-1 text-2xl font-semibold text-white">{stats.avgFocus}%</div>
+          <div className="mt-1 text-2xl font-semibold text-white">{stats.avgFocusLabel || "0m"}</div>
         </div>
       </div>
     </div>

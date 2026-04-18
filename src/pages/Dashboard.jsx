@@ -177,7 +177,7 @@ export default function Dashboard() {
           <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <StatCard label="Active Rooms" value={stats?.activeRooms || 0} />
             <StatCard label="Online Users" value={stats?.activeUsers || 0} />
-            <StatCard label="Avg Focus" value={`${stats?.avgFocus || 0}%`} />
+            <StatCard label="Avg Focus" value={stats?.avgFocusLabel || "0m"} />
           </section>
 
           <section
@@ -228,7 +228,7 @@ function SessionRoomCard({ room, onJoin }) {
   if (sessionMeta.status === "ended") {
     return null;
   }
-  const memberCount = room?._count?.members ?? room?.memberCount ?? 0;
+  const activeUserCount = room?.activeUsers ?? 0;
 
   return (
     <div
@@ -252,7 +252,7 @@ function SessionRoomCard({ room, onJoin }) {
         </p>
 
         <p className="text-sm text-slate-500 mt-1">
-          {memberCount} {memberCount === 1 ? "user" : "users"} in this room
+          {activeUserCount} {activeUserCount === 1 ? "user" : "users"} in this room
         </p>
       </div>
 
