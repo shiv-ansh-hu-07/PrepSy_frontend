@@ -9,14 +9,7 @@ function getScreenShareSupport() {
     return false;
   }
 
-  const userAgent = navigator.userAgent || "";
-  const isMobileDevice =
-    /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(userAgent) ||
-    window.matchMedia("(max-width: 980px)").matches;
-  const hasDisplayMedia =
-    typeof navigator.mediaDevices?.getDisplayMedia === "function";
-
-  return hasDisplayMedia && !isMobileDevice;
+  return typeof navigator.mediaDevices?.getDisplayMedia === "function";
 }
 
 export default function useMediaControls() {
