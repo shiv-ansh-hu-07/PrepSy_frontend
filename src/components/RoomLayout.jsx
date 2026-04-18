@@ -55,7 +55,6 @@ export default function RoomLayout({
       totalTimeLabel: formatMinutes(totalMinutes),
       studiedWithCount: Math.max(0, participantCount - 1),
       streak: user?.attendanceStreak ?? 0,
-      streakDisabled: user?.streakDisabled ?? false,
       message:
         "Great work today. Rest up, keep the rhythm alive, and come back tomorrow for the next focused session.",
     };
@@ -269,9 +268,9 @@ function formatMinutes(minutes) {
 }
 
 function LeaveSummaryModal({ summary, onLeave, leaving }) {
-  const streakLabel = summary.streakDisabled
-    ? "Paused"
-    : `${summary.streak ?? 0} day${summary.streak === 1 ? "" : "s"}`;
+  const streakLabel = `🔥 ${summary.streak ?? 0} day${
+    summary.streak === 1 ? "" : "s"
+  }`;
 
   return (
     <div style={styles.modalBackdrop}>

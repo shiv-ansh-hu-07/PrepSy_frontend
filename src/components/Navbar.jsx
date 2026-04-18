@@ -28,7 +28,7 @@ export default function Navbar() {
   const isLoginPage = location.pathname === "/login";
   const isActive = (path) => location.pathname === path;
   const attendanceStreak = user?.attendanceStreak ?? 0;
-  const showAttendanceStreak = Boolean(user && !user?.streakDisabled);
+  const showAttendanceStreak = Boolean(user);
 
   const greetingLabel = (() => {
     if (!user?.name) {
@@ -208,7 +208,7 @@ export default function Navbar() {
                       style={streakPillStyle(isCompact)}
                     >
                       <span style={{ fontSize: isCompact ? "12px" : "14px" }}>
-                        Streak
+                        🔥
                       </span>
                       <span
                         style={{
@@ -255,7 +255,7 @@ export default function Navbar() {
                 {showAttendanceStreak ? (
                   <div style={streakPillStyle(true)}>
                     <span style={{ fontSize: "12px", fontWeight: 600 }}>
-                      {attendanceStreak} day{attendanceStreak === 1 ? "" : "s"}
+                      🔥 {attendanceStreak} day{attendanceStreak === 1 ? "" : "s"}
                     </span>
                   </div>
                 ) : null}

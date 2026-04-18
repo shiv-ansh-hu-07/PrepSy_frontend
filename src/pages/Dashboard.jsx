@@ -13,11 +13,10 @@ export default function Dashboard() {
   const isGuestViewer = !user && guestSessionActive;
   const displayName = user?.name || "Guest";
   const isActive = (path) => location.pathname === path;
+  const streakDays = user?.attendanceStreak ?? 0;
   const streakValue = user
-    ? user.streakDisabled
-      ? "Paused"
-      : `${user.attendanceStreak ?? 0} day${(user.attendanceStreak ?? 0) === 1 ? "" : "s"}`
-    : "Locked";
+    ? `🔥 ${streakDays} day${streakDays === 1 ? "" : "s"}`
+    : "🔥 0 days";
 
   useEffect(() => {
     async function loadDashboard() {
@@ -107,7 +106,7 @@ export default function Dashboard() {
               lineHeight: 1.6,
             }}
           >
-            Guest mode is active. My Rooms and streak-based account features stay disabled until you sign in.
+            Guest mode is active. Sign in to save rooms and keep your daily session streak.
           </p>
         ) : null}
       </div>
