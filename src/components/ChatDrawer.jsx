@@ -146,7 +146,7 @@ export default function ChatDrawer({ onClose, currentUser }) {
       
       {/* Header */}
       <div style={{ background: "#8a9bd6" }}
-      className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r color - #8a9bd6 text-white">
+      className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-linear-to-r color - #8a9bd6 text-white">
         <h2 className="font-semibold text-lg">Room Chat</h2>
         <button
           onClick={onClose}

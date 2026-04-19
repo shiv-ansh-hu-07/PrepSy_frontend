@@ -15,16 +15,21 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
 
   async function handleLogin(e) {
     e.preventDefault();
     setError("");
+    setIsSubmitting(true);
 
     try {
       await login(email, password);
       navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err?.response?.data?.message || "Invalid email or password");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -130,6 +135,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
               style={{
                 width: "100%",
                 padding: "14px 16px",
@@ -165,6 +171,7 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
               style={{
                 width: "100%",
                 padding: "14px 16px",
@@ -185,6 +192,7 @@ export default function Login() {
 
           <button
             type="submit"
+            disabled={isSubmitting || isGoogleSubmitting}
             style={{
               width: "90%",
               padding: "14px",
@@ -195,18 +203,20 @@ export default function Login() {
               fontWeight: 500,
               textAlign: "center",
               border: "none",
-              cursor: "pointer",
+              cursor: isSubmitting || isGoogleSubmitting ? "wait" : "pointer",
+              opacity: isSubmitting || isGoogleSubmitting ? 0.75 : 1,
               boxShadow:
                 "0 18px 36px rgba(109,106,248,0.35), inset 0 1px 0 rgba(255,255,255,0.35)",
               transition: "transform 0.15s ease, box-shadow 0.15s ease",
             }}
           >
-            Sign in
+            {isSubmitting ? "Signing in..." : "Sign in"}
           </button>
 
           <button
             type="button"
             onClick={handleGuestContinue}
+            disabled={isSubmitting || isGoogleSubmitting}
             style={{
               width: "90%",
               padding: "14px",
@@ -218,11 +228,25 @@ export default function Login() {
               fontWeight: 500,
               textAlign: "center",
               border: "1px solid #d9e2ff",
-              cursor: "pointer",
+              cursor: isSubmitting || isGoogleSubmitting ? "wait" : "pointer",
+              opacity: isSubmitting || isGoogleSubmitting ? 0.7 : 1,
             }}
           >
             Continue as Guest
           </button>
+
+          {isGoogleSubmitting ? (
+            <p
+              style={{
+                marginTop: "12px",
+                textAlign: "center",
+                fontSize: "13px",
+                color: "#6b7280",
+              }}
+            >
+              Finishing Google sign-in...
+            </p>
+          ) : null}
 
           <div
             style={{
@@ -238,16 +262,27 @@ export default function Login() {
               text="continue_with"
               width="360"
               onSuccess={async (credentialResponse) => {
-                const res = await api.post("/auth/oauth/google", {
-                  idToken: credentialResponse.credential,
-                  disableStreak: guestSessionActive,
-                });
+                setError("");
+                setIsGoogleSubmitting(true);
 
-                await loginWithToken(res.data.token);
-                navigate("/dashboard");
+                try {
+                  const res = await api.post("/auth/oauth/google", {
+                    idToken: credentialResponse.credential,
+                    disableStreak: guestSessionActive,
+                  });
+
+                  await loginWithToken(res.data.token, res.data.user);
+                  navigate("/dashboard", { replace: true });
+                } catch (err) {
+                  setError(
+                    err?.response?.data?.message || "Google login failed"
+                  );
+                } finally {
+                  setIsGoogleSubmitting(false);
+                }
               }}
               onError={() => {
-                alert("Google login failed");
+                setError("Google login failed");
               }}
             />
           </div>

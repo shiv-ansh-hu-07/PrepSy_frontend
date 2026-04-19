@@ -29,7 +29,7 @@ export default function RoomLayout({
     toggleMic,
     toggleCamera,
     toggleScreenShare,
-    leaveRoom,
+    leaveRoom: leaveMediaRoom,
     micEnabled,
     camEnabled,
     screenEnabled,
@@ -45,20 +45,12 @@ export default function RoomLayout({
   const [leaveSummary, setLeaveSummary] = useState(null);
   const [leaving, setLeaving] = useState(false);
   const [enteredAt] = useState(() => Date.now());
+  const [showSummary, setShowSummary] = useState(false);
+  const [summary, setSummary] = useState(null);
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth < 980 : false
   );
-  const buildFallbackLeaveSummary = () => {
-    const totalMinutes = Math.max(0, Math.round((Date.now() - enteredAt) / 60000));
-    return {
-      roomName: roomName || "Study Room",
-      totalTimeLabel: formatMinutes(totalMinutes),
-      studiedWithCount: Math.max(0, participantCount - 1),
-      streak: user?.attendanceStreak ?? 0,
-      message:
-        "Great work today. Rest up, keep the rhythm alive, and come back tomorrow for the next focused session.",
-    };
-  };
+
 
   useEffect(() => {
     if (!shareStatus) return undefined;
@@ -88,24 +80,28 @@ export default function RoomLayout({
   };
 
   const handleLeave = async () => {
-    if (leaving || leaveSummary) return;
+  if (leaving) return;
 
-    setLeaving(true);
-    try {
-      if (roomId && user?.id) {
-        const res = await api.post(`/rooms/${roomId}/leave`);
-        setLeaveSummary(res.data);
-        await refreshUser?.();
-      } else {
-        setLeaveSummary(buildFallbackLeaveSummary());
-      }
-    } catch (error) {
-      console.warn("Unable to load leave analytics:", error);
-      setLeaveSummary(buildFallbackLeaveSummary());
-    } finally {
-      setLeaving(false);
-    }
-  };
+  setLeaving(true);
+
+  // ✅ show popup instantly
+  setShowSummary(true);
+
+  try {
+    const res = await api.post(`/rooms/${roomId}/leave`);
+
+    console.log("Leave response:", res.data);
+
+    setSummary(res.data);
+
+    await leaveMediaRoom();
+
+  } catch (err) {
+    console.error("Leave error:", err);
+  } finally {
+    setLeaving(false);
+  }
+};
 
   const handleScreenShare = () => {
     if (!screenShareSupported) {
@@ -244,13 +240,13 @@ export default function RoomLayout({
         </div>
       </div>
 
-      {leaveSummary ? (
+      {showSummary && (
         <LeaveSummaryModal
-          summary={leaveSummary}
-          onLeave={finishLeave}
-          leaving={leaving}
+          summary={summary}
+          loading={!summary}
+          onClose={() => setShowSummary(false)}
         />
-      ) : null}
+      )}
     </div>
   );
 }
@@ -267,38 +263,26 @@ function formatMinutes(minutes) {
     : `${hours}h ${remainingMinutes}m`;
 }
 
-function LeaveSummaryModal({ summary, onLeave, leaving }) {
-  const streakLabel = `🔥 ${summary.streak ?? 0} day${
-    summary.streak === 1 ? "" : "s"
-  }`;
+function LeaveSummaryModal({ summary, loading, onClose }) {
+  if (loading) {
+    return (
+      <div className="modal">
+        <p>Loading your session summary...</p>
+      </div>
+    );
+  }
 
   return (
-    <div style={styles.modalBackdrop}>
-      <div style={styles.modalPanel}>
-        <p style={styles.modalEyebrow}>Session complete</p>
-        <h2 style={styles.modalTitle}>Nice work in {summary.roomName || "your room"}</h2>
-        <p style={styles.modalMessage}>{summary.message}</p>
+    <div className="modal">
+      <h2>Session Summary</h2>
 
-        <div style={styles.summaryGrid}>
-          <SummaryStat label="Time spent" value={summary.totalTimeLabel || "0m"} />
-          <SummaryStat
-            label="Studied with"
-            value={`${summary.studiedWithCount || 0} ${
-              summary.studiedWithCount === 1 ? "person" : "people"
-            }`}
-          />
-          <SummaryStat label="Streak" value={streakLabel} />
-        </div>
+      <p>🔥 {summary.streak} day{summary.streak === 1 ? "" : "s"}</p>
+      <p>⏱ {summary.totalTimeLabel}</p>
+      <p>👥 Studied with {summary.studiedWithCount} people</p>
 
-        <button
-          type="button"
-          onClick={onLeave}
-          disabled={leaving}
-          style={styles.modalButton}
-        >
-          Leave room
-        </button>
-      </div>
+      <p>{summary.message}</p>
+
+      <button onClick={onClose}>Close</button>
     </div>
   );
 }
