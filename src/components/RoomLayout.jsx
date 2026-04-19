@@ -84,20 +84,20 @@ export default function RoomLayout({
 
   setLeaving(true);
 
-  // ✅ show popup instantly
   setShowSummary(true);
 
   try {
     const res = await api.post(`/rooms/${roomId}/leave`);
 
-    console.log("Leave response:", res.data);
-
     setSummary(res.data);
 
-    await leaveMediaRoom();
+    setTimeout(async () => {
+      await leaveMediaRoom(); 
+      navigate("/dashboard"); 
+    }, 1500);
 
   } catch (err) {
-    console.error("Leave error:", err);
+    console.error(err);
   } finally {
     setLeaving(false);
   }
@@ -263,29 +263,109 @@ function formatMinutes(minutes) {
     : `${hours}h ${remainingMinutes}m`;
 }
 
-function LeaveSummaryModal({ summary, loading, onClose }) {
-  if (loading) {
-    return (
-      <div className="modal">
-        <p>Loading your session summary...</p>
-      </div>
-    );
-  }
-
+function LeaveSummaryModal({ summary, loading }) {
   return (
-    <div className="modal">
-      <h2>Session Summary</h2>
+    <div style={modalStyles.overlay}>
+      <div style={modalStyles.card}>
+        {loading ? (
+          <>
+            <p style={modalStyles.tag}>SESSION COMPLETE</p>
+            <h2 style={modalStyles.title}>Wrapping up your session...</h2>
+            <p style={modalStyles.text}>Calculating your study insights...</p>
+          </>
+        ) : (
+          <>
+            <p style={modalStyles.tag}>SESSION COMPLETE</p>
 
-      <p>🔥 {summary.streak} day{summary.streak === 1 ? "" : "s"}</p>
-      <p>⏱ {summary.totalTimeLabel}</p>
-      <p>👥 Studied with {summary.studiedWithCount} people</p>
+            <h2 style={modalStyles.title}>
+              Nice work in {summary.roomName}
+            </h2>
 
-      <p>{summary.message}</p>
+            <p style={modalStyles.text}>
+              {summary.message}
+            </p>
 
-      <button onClick={onClose}>Close</button>
+            <div style={modalStyles.stats}>
+              <div style={modalStyles.stat}>
+                <p style={modalStyles.label}>Time spent</p>
+                <p style={modalStyles.value}>{summary.totalTimeLabel}</p>
+              </div>
+
+              <div style={modalStyles.stat}>
+                <p style={modalStyles.label}>Studied with</p>
+                <p style={modalStyles.value}>
+                  {summary.studiedWithCount} people
+                </p>
+              </div>
+
+              <div style={modalStyles.stat}>
+                <p style={modalStyles.label}>Streak</p>
+                <p style={modalStyles.value}>
+                  🔥 {summary.streak} day{summary.streak === 1 ? "" : "s"}
+                </p>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
+
+const modalStyles = {
+  overlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0,0,0,0.5)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 9999,
+  },
+  card: {
+    width: 420,
+    background: "#fff",
+    borderRadius: 16,
+    padding: 24,
+    boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+    textAlign: "center",
+  },
+  tag: {
+    fontSize: 12,
+    color: "#8a9bd6",
+    marginBottom: 8,
+    fontWeight: 600,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 600,
+    marginBottom: 10,
+  },
+  text: {
+    fontSize: 14,
+    color: "#6b7280",
+    marginBottom: 20,
+  },
+  stats: {
+    display: "flex",
+    gap: 12,
+    justifyContent: "space-between",
+  },
+  stat: {
+    flex: 1,
+    background: "#f3f4f6",
+    borderRadius: 12,
+    padding: 12,
+  },
+  label: {
+    fontSize: 12,
+    color: "#6b7280",
+  },
+  value: {
+    fontSize: 16,
+    fontWeight: 600,
+  },
+};
 
 function SummaryStat({ label, value }) {
   return (
