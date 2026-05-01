@@ -14,19 +14,32 @@ export default function Dashboard() {
   const displayName = user?.name || "Guest";
   const isActive = (path) => location.pathname === path;
   const streakDays = user?.attendanceStreak ?? 0;
+  const fire = "\uD83D\uDD25";
   const streakValue = user
-    ? `🔥 ${streakDays} day${streakDays === 1 ? "" : "s"}`
-    : "🔥 0 days";
+    ? `${fire} ${streakDays} day${streakDays === 1 ? "" : "s"}`
+    : `${fire} 0 days`;
 
   useEffect(() => {
-    async function loadDashboard() {
+    let cancelled = false;
+
+    async function loadStats() {
       try {
-        const [roomsResp, myRoomsResp, statsResp] = await Promise.all([
+        const statsResp = await fetchStats();
+        if (!cancelled) {
+          setStats(statsResp.stats);
+        }
+      } catch (err) {
+        console.error("Dashboard stats load error:", err);
+      }
+    }
+
+    async function loadRooms() {
+      try {
+        const [roomsResp, myRoomsResp] = await Promise.all([
           api.get("/rooms/public"),
           user?.id
             ? api.get("/rooms/my")
             : Promise.resolve({ data: { createdRooms: [], joinedRooms: [] } }),
-          fetchStats(),
         ]);
         const publicRoomsList = roomsResp.data.rooms || [];
         const personalRooms = [
@@ -38,24 +51,28 @@ export default function Dashboard() {
             [...publicRoomsList, ...personalRooms].map((room) => [room.roomId, room])
           ).values()
         );
-        setPublicRooms(mergedRooms);
-        setStats(statsResp.stats);
+
+        if (!cancelled) {
+          setPublicRooms(mergedRooms);
+        }
       } catch (err) {
-        console.error("Dashboard load error:", err);
+        console.error("Dashboard rooms load error:", err);
       }
     }
 
-    loadDashboard();
+    loadStats();
+    loadRooms();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user?.id]);
 
-  const sessionRooms = useMemo(
-    () =>
-      [...publicRooms].sort(
-        (a, b) =>
-          new Date(a.startTime || 0).getTime() - new Date(b.startTime || 0).getTime()
-      ),
-    [publicRooms]
-  );
+  const sessionRooms = useMemo(() => {
+    return [...publicRooms].sort(
+      (a, b) => new Date(a.startTime || 0).getTime() - new Date(b.startTime || 0).getTime()
+    );
+  }, [publicRooms]);
 
   if (!user && !guestSessionActive) {
     return (
@@ -145,11 +162,7 @@ export default function Dashboard() {
                     backgroundColor: active
                       ? "rgba(138,155,214,0.14)"
                       : "transparent",
-                    color: disabled
-                      ? "#94a3b8"
-                      : active
-                        ? "#5f6fa3"
-                        : "#475569",
+                    color: disabled ? "#94a3b8" : active ? "#5f6fa3" : "#475569",
                     fontWeight: active ? 500 : 400,
                     opacity: disabled ? 0.7 : 1,
                     transition: "all 0.2s ease",
@@ -179,9 +192,9 @@ export default function Dashboard() {
 
         <main className="lg:col-span-3 space-y-8">
           <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-            <StatCard label="Active Rooms" value={stats?.activeRooms || 0} />
-            <StatCard label="Online Users" value={stats?.activeUsers || 0} />
-            <StatCard label="Avg Focus" value={stats?.avgFocusLabel || "0m"} />
+            <StatCard label="Active Rooms" value={stats?.activeRooms ?? 0} />
+            <StatCard label="Online Users" value={stats?.activeUsers ?? 0} />
+            <StatCard label="Avg Focus" value={stats?.avgFocusLabel ?? "0m"} />
             <StatCard label="Streak" value={streakValue} />
           </section>
 
@@ -336,14 +349,18 @@ function getRoomSessionMeta(room, nowTs) {
     if (now >= nextWindow.start && now <= nextWindow.end) {
       return {
         status: "live",
-        label: `Live Session • ends in ${formatDuration(nextWindow.end.getTime() - nowTs)}`,
+        label: `Live Session \u2022 ends in ${formatDuration(
+          nextWindow.end.getTime() - nowTs
+        )}`,
         sortAt: nextWindow.start.getTime(),
       };
     }
 
     return {
       status: "scheduled",
-      label: `Upcoming Session • starts in ${formatDuration(nextWindow.start.getTime() - nowTs)}`,
+      label: `Upcoming Session \u2022 starts in ${formatDuration(
+        nextWindow.start.getTime() - nowTs
+      )}`,
       sortAt: nextWindow.start.getTime(),
     };
   }
@@ -352,7 +369,7 @@ function getRoomSessionMeta(room, nowTs) {
   if (now >= startTime && now <= endTime) {
     return {
       status: "live",
-      label: `Live Session • ends in ${formatDuration(endTime.getTime() - nowTs)}`,
+      label: `Live Session \u2022 ends in ${formatDuration(endTime.getTime() - nowTs)}`,
       sortAt: startTime.getTime(),
     };
   }
@@ -360,7 +377,9 @@ function getRoomSessionMeta(room, nowTs) {
   if (now < startTime) {
     return {
       status: "scheduled",
-      label: `Upcoming Session • starts in ${formatDuration(startTime.getTime() - nowTs)}`,
+      label: `Upcoming Session \u2022 starts in ${formatDuration(
+        startTime.getTime() - nowTs
+      )}`,
       sortAt: startTime.getTime(),
     };
   }

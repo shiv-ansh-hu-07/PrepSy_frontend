@@ -8,7 +8,7 @@ const SESSION_DURATION = 25 * 60;
 const BREAK_DURATION = 5 * 60;
 const RADIUS = 70;
 const STROKE = 10;
-const CIRCUMFERENCE = Math.PI * RADIUS * 2;
+const ARC_LENGTH = Math.PI * RADIUS;
 
 export default function PomodoroTimer({ onLeaveRoom }) {
   const room = useRoomContext();
@@ -257,11 +257,10 @@ export default function PomodoroTimer({ onLeaveRoom }) {
             fill="none"
             stroke={isUrgent ? "#fb7185" : "#8a9bd6"}
             strokeWidth={STROKE}
-            strokeDasharray={CIRCUMFERENCE}
+            strokeDasharray={ARC_LENGTH}
             strokeDashoffset={
-              CIRCUMFERENCE -
-              ((SESSION_DURATION - timeLeft) / SESSION_DURATION) *
-                CIRCUMFERENCE
+              ARC_LENGTH -
+              ((SESSION_DURATION - timeLeft) / SESSION_DURATION) * ARC_LENGTH
             }
           />
         </svg>
@@ -286,24 +285,8 @@ export default function PomodoroTimer({ onLeaveRoom }) {
 
       <div style={styles.sessions}>
         <div style={styles.sessionCountRow}>
-          <span>Sessions:</span>
-          <div style={styles.sessionStepper}>
-            <button
-              onClick={() => setTotalSessions((count) => Math.max(1, count - 1))}
-              style={sessionBtn}
-              disabled={isRunning}
-            >
-              -
-            </button>
-            <span style={styles.sessionCount}>{totalSessions}</span>
-            <button
-              onClick={() => setTotalSessions((count) => count + 1)}
-              style={sessionBtn}
-              disabled={isRunning}
-            >
-              +
-            </button>
-          </div>
+          <span>Sessions: </span>
+          <span style={styles.sessionCount}>{totalSessions}</span>
         </div>
 
         <div>Completed: {completedSessions}</div>
@@ -412,18 +395,10 @@ const styles = {
   sessionCountRow: {
     display: "flex",
     alignItems: "center",
-    gap: 10,
-  },
-  sessionStepper: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    padding: "4px 8px",
-    borderRadius: 999,
-    background: "rgba(138,155,214,0.1)",
+    justifyContent: "center",
+    gap: 4,
   },
   sessionCount: {
-    minWidth: 18,
     fontWeight: 600,
     color: "#4a5a85",
   },
@@ -519,16 +494,4 @@ const buttonStyle = {
   cursor: "pointer",
   fontWeight: 600,
   fontSize: 13,
-};
-
-const sessionBtn = {
-  background: "#FFFFFF",
-  border: "1px solid #D9E0F2",
-  color: "#4a5a85",
-  fontSize: 14,
-  cursor: "pointer",
-  width: 24,
-  height: 24,
-  borderRadius: "50%",
-  lineHeight: 1,
 };

@@ -9,7 +9,6 @@ export default function Login() {
   const {
     login,
     loginWithToken,
-    guestSessionActive,
     markGuestSessionActive,
   } = useAuth();
   const [email, setEmail] = useState("");
@@ -83,23 +82,6 @@ export default function Login() {
         >
           Continue your focused study sessions.
         </p>
-
-        {guestSessionActive ? (
-          <div
-            style={{
-              backgroundColor: "#fff7ed",
-              border: "1px solid #fdba74",
-              color: "#9a3412",
-              fontSize: "13px",
-              padding: "12px 14px",
-              borderRadius: "14px",
-              marginBottom: "20px",
-              lineHeight: 1.5,
-            }}
-          >
-            You are signing in after joining as a guest. Your streak will stay disabled for this account.
-          </div>
-        ) : null}
 
         <form onSubmit={handleLogin}>
           {error ? (
@@ -268,10 +250,9 @@ export default function Login() {
                 try {
                   const res = await api.post("/auth/oauth/google", {
                     idToken: credentialResponse.credential,
-                    disableStreak: guestSessionActive,
                   });
 
-                  await loginWithToken(res.data.token, res.data.user);
+                  loginWithToken(res.data.token, res.data.user);
                   navigate("/dashboard", { replace: true });
                 } catch (err) {
                   setError(

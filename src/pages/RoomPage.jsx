@@ -194,7 +194,6 @@ export default function RoomPage() {
               return next;
             })
           }
-          onLeave={() => navigate("/myRooms")}
           hasUnreadMessages={hasUnreadMessages}
         >
           <TeamsRoom />

@@ -14,17 +14,14 @@ import PomodoroTimer from "./PomodoroTimer";
 import { useParticipants } from "@livekit/components-react";
 import { useEffect, useState } from "react";
 import api from "../services/api";
-import { useAuth } from "../context/AuthContext";
 
 export default function RoomLayout({
   children,
   roomId,
   roomName,
   onToggleChat,
-  onLeave,
   hasUnreadMessages = false,
 }) {
-  const { user, refreshUser } = useAuth();
   const {
     toggleMic,
     toggleCamera,
@@ -43,7 +40,6 @@ export default function RoomLayout({
   const [notes, setNotes] = useState("");
   const [shareStatus, setShareStatus] = useState("");
   const [leaving, setLeaving] = useState(false);
-  const [enteredAt] = useState(() => Date.now());
   const [showSummary, setShowSummary] = useState(false);
   const [summary, setSummary] = useState(null);
   const [isMobile, setIsMobile] = useState(
@@ -67,17 +63,6 @@ export default function RoomLayout({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const finishLeave = async () => {
-  await leaveMediaRoom();
-
-  if (typeof onLeave === "function") {
-    onLeave();
-    return;
-  }
-
-  navigate("/dashboard");
-};
-
   const handleLeave = async () => {
   if (leaving) return;
 
@@ -95,12 +80,12 @@ export default function RoomLayout({
   } finally {
     setLeaving(false);
   }
-};
+  };
 
-const handleCloseSummary = async () => {
-  await leaveMediaRoom();
-  navigate("/dashboard");
-};
+  const handleCloseSummary = async () => {
+    await leaveMediaRoom();
+    navigate("/dashboard");
+  };
 
   const handleScreenShare = () => {
     if (!screenShareSupported) {
@@ -248,18 +233,6 @@ const handleCloseSummary = async () => {
 )}
     </div>
   );
-}
-
-function formatMinutes(minutes) {
-  if (minutes < 60) {
-    return `${minutes}m`;
-  }
-
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  return remainingMinutes === 0
-    ? `${hours}h`
-    : `${hours}h ${remainingMinutes}m`;
 }
 
 function LeaveSummaryModal({ summary, loading, onClose }) {
