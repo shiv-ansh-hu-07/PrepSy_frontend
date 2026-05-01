@@ -42,7 +42,6 @@ export default function RoomLayout({
 
   const [notes, setNotes] = useState("");
   const [shareStatus, setShareStatus] = useState("");
-  const [leaveSummary, setLeaveSummary] = useState(null);
   const [leaving, setLeaving] = useState(false);
   const [enteredAt] = useState(() => Date.now());
   const [showSummary, setShowSummary] = useState(false);
@@ -69,15 +68,15 @@ export default function RoomLayout({
   }, []);
 
   const finishLeave = async () => {
-    await leaveRoom();
+  await leaveMediaRoom();
 
-    if (typeof onLeave === "function") {
-      onLeave();
-      return;
-    }
+  if (typeof onLeave === "function") {
+    onLeave();
+    return;
+  }
 
-    navigate("/dashboard");
-  };
+  navigate("/dashboard");
+};
 
   const handleLeave = async () => {
   if (leaving) return;
@@ -91,16 +90,16 @@ export default function RoomLayout({
 
     setSummary(res.data);
 
-    setTimeout(async () => {
-      await leaveMediaRoom(); 
-      navigate("/dashboard"); 
-    }, 1500);
-
   } catch (err) {
     console.error(err);
   } finally {
     setLeaving(false);
   }
+};
+
+const handleCloseSummary = async () => {
+  await leaveMediaRoom();
+  navigate("/dashboard");
 };
 
   const handleScreenShare = () => {
@@ -241,12 +240,12 @@ export default function RoomLayout({
       </div>
 
       {showSummary && (
-        <LeaveSummaryModal
-          summary={summary}
-          loading={!summary}
-          onClose={() => setShowSummary(false)}
-        />
-      )}
+  <LeaveSummaryModal
+    summary={summary}
+    loading={!summary}
+    onClose={handleCloseSummary}
+  />
+)}
     </div>
   );
 }
@@ -263,15 +262,43 @@ function formatMinutes(minutes) {
     : `${hours}h ${remainingMinutes}m`;
 }
 
-function LeaveSummaryModal({ summary, loading }) {
+function LeaveSummaryModal({ summary, loading, onClose }) {
   return (
-    <div style={modalStyles.overlay}>
-      <div style={modalStyles.card}>
+    <div
+      style={modalStyles.overlay}
+      onClick={onClose} 
+    >
+      <div
+        style={{
+          ...modalStyles.card,
+          position: "relative",
+        }}
+        onClick={(e) => e.stopPropagation()} 
+      >
+        {/* ❌ CLOSE BUTTON */}
+        <button
+          onClick={onClose}
+          style={{
+            position: "absolute",
+            top: 10,
+            right: 12,
+            border: "none",
+            background: "transparent",
+            fontSize: 18,
+            cursor: "pointer",
+            color: "#6b7280",
+          }}
+        >
+          ✕
+        </button>
+
         {loading ? (
           <>
             <p style={modalStyles.tag}>SESSION COMPLETE</p>
             <h2 style={modalStyles.title}>Wrapping up your session...</h2>
-            <p style={modalStyles.text}>Calculating your study insights...</p>
+            <p style={modalStyles.text}>
+              Calculating your study insights...
+            </p>
           </>
         ) : (
           <>
@@ -288,7 +315,9 @@ function LeaveSummaryModal({ summary, loading }) {
             <div style={modalStyles.stats}>
               <div style={modalStyles.stat}>
                 <p style={modalStyles.label}>Time spent</p>
-                <p style={modalStyles.value}>{summary.totalTimeLabel}</p>
+                <p style={modalStyles.value}>
+                  {summary.totalTimeLabel}
+                </p>
               </div>
 
               <div style={modalStyles.stat}>
@@ -301,7 +330,8 @@ function LeaveSummaryModal({ summary, loading }) {
               <div style={modalStyles.stat}>
                 <p style={modalStyles.label}>Streak</p>
                 <p style={modalStyles.value}>
-                  🔥 {summary.streak} day{summary.streak === 1 ? "" : "s"}
+                  🔥 {summary.streak} day
+                  {summary.streak === 1 ? "" : "s"}
                 </p>
               </div>
             </div>
