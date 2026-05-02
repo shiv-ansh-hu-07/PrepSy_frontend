@@ -15,6 +15,7 @@ export default function Dashboard() {
   const isActive = (path) => location.pathname === path;
   const streakDays = user?.attendanceStreak ?? 0;
   const fire = "\uD83D\uDD25";
+  const onlineUsersValue = Math.max(stats?.activeUsers ?? 0, user ? 1 : 0);
   const streakValue = user
     ? `${fire} ${streakDays} day${streakDays === 1 ? "" : "s"}`
     : `${fire} 0 days`;
@@ -193,7 +194,7 @@ export default function Dashboard() {
         <main className="lg:col-span-3 space-y-8">
           <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
             <StatCard label="Active Rooms" value={stats?.activeRooms ?? 0} />
-            <StatCard label="Online Users" value={stats?.activeUsers ?? 0} />
+            <StatCard label="Online Users" value={onlineUsersValue} />
             <StatCard label="Avg Focus" value={stats?.avgFocusLabel ?? "0m"} />
             <StatCard label="Streak" value={streakValue} />
           </section>

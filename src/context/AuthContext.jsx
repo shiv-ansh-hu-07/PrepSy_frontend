@@ -72,6 +72,44 @@ export const AuthProvider = ({ children }) => {
     loadUser();
   }, [loadUser]);
 
+  useEffect(() => {
+    if (!user?.id) {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const sendPresence = async () => {
+      try {
+        await api.post("/auth/presence");
+      } catch {
+        if (!cancelled) {
+          return;
+        }
+      }
+    };
+
+    void sendPresence();
+
+    const intervalId = window.setInterval(() => {
+      void sendPresence();
+    }, 30000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void sendPresence();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [user?.id]);
+
   // Email / password login
   const login = async (email, password) => {
     const res = await api.post("/auth/login", {
