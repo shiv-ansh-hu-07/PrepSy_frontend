@@ -19,6 +19,11 @@ export async function fetchStats() {
   return data;
 }
 
+export async function fetchMyAnalytics() {
+  const { data } = await api.get("/api/analytics/me");
+  return data;
+}
+
 export async function fetchRooms() {
   return {
     rooms: [

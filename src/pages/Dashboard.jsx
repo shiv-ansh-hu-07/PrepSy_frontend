@@ -1,18 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api, { fetchStats } from "../services/api";
+import AppSideNav from "../components/AppSideNav";
 
 export default function Dashboard() {
   const { user, guestSessionActive } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [publicRooms, setPublicRooms] = useState([]);
   const [stats, setStats] = useState(null);
 
   const isGuestViewer = !user && guestSessionActive;
   const displayName = user?.name || "Guest";
-  const isActive = (path) => location.pathname === path;
   const streakDays = user?.attendanceStreak ?? 0;
   const fire = "\uD83D\uDD25";
   const onlineUsersValue = Math.max(stats?.activeUsers ?? 0, user ? 1 : 0);
@@ -83,19 +82,6 @@ export default function Dashboard() {
     );
   }
 
-  const menuItems = [
-    { label: "Home", path: "/dashboard", disabled: false },
-    { label: "Community", path: "/community", disabled: false },
-    {
-      label: "My Rooms",
-      path: "/myRooms",
-      disabled: isGuestViewer,
-      disabledHint: "Available after signing in",
-    },
-    { label: "Create Room", path: "/create-room", disabled: false },
-    { label: "Join Room", path: "/join-room", disabled: false },
-  ];
-
   return (
     <div
       className="min-h-screen px-10 py-10"
@@ -130,66 +116,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 max-w-7xl mx-auto">
-        <aside
-          className="
-            bg-white/70 backdrop-blur-md
-            border border-white/40
-            rounded-2xl
-            shadow-[0_12px_40px_rgba(0,0,0,0.06)]
-            p-8
-          "
-        >
-          <p className="text-sm text-[#6b78a0] mb-6">Dashboard Menu</p>
-
-          <ul className="space-y-2 text-[15px]">
-            {menuItems.map(({ label, path, disabled, disabledHint }) => {
-              const active = isActive(path);
-
-              return (
-                <li
-                  key={label}
-                  onClick={() => {
-                    if (!disabled) {
-                      navigate(path);
-                    }
-                  }}
-                  title={disabled ? disabledHint : undefined}
-                  aria-disabled={disabled}
-                  style={{
-                    position: "relative",
-                    padding: "10px 14px 10px 18px",
-                    borderRadius: "12px",
-                    cursor: disabled ? "not-allowed" : "pointer",
-                    backgroundColor: active
-                      ? "rgba(138,155,214,0.14)"
-                      : "transparent",
-                    color: disabled ? "#94a3b8" : active ? "#5f6fa3" : "#475569",
-                    fontWeight: active ? 500 : 400,
-                    opacity: disabled ? 0.7 : 1,
-                    transition: "all 0.2s ease",
-                  }}
-                >
-                  {active && !disabled ? (
-                    <span
-                      style={{
-                        position: "absolute",
-                        left: 0,
-                        top: "10%",
-                        height: "80%",
-                        width: "4px",
-                        borderRadius: "4px",
-                        backgroundColor: "#8a9bd6",
-                      }}
-                    />
-                  ) : null}
-
-                  {label}
-                  {disabled ? " (Locked)" : ""}
-                </li>
-              );
-            })}
-          </ul>
-        </aside>
+        <AppSideNav />
 
         <main className="lg:col-span-3 space-y-8">
           <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
