@@ -18,6 +18,7 @@ const Features = lazy(() => import("./pages/feature"));
 const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 const Community = lazy(() => import("./pages/Community"));
 const Analytics = lazy(() => import("./pages/Analytics"));
+const Profile = lazy(() => import("./pages/Profile"));
 
 export default function App() {
   return (
@@ -114,6 +115,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Analytics />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             }
           />

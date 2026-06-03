@@ -7,6 +7,7 @@ import {
   Lock,
   MessageCircle,
   PlusCircle,
+  UserRound,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -18,6 +19,7 @@ const navItems = [
   { label: "Create Room", path: "/create-room", icon: PlusCircle, requiresUser: true },
   { label: "Join Room", path: "/join-room", icon: DoorOpen },
   { label: "Analytics", path: "/analytics", icon: BarChart3, requiresUser: true },
+  { label: "Profile", path: "/profile", icon: UserRound, requiresUser: true },
 ];
 
 export default function AppSideNav() {

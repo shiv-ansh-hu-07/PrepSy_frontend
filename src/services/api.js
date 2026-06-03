@@ -24,6 +24,16 @@ export async function fetchMyAnalytics() {
   return data;
 }
 
+export async function fetchMyProfile() {
+  const { data } = await api.get("/profiles/me");
+  return data;
+}
+
+export async function updateMyProfile(profile) {
+  const { data } = await api.put("/profiles/me", profile);
+  return data;
+}
+
 export async function fetchRooms() {
   return {
     rooms: [

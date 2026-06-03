@@ -328,6 +328,7 @@ function buildDesktopLinks({ user, isHomePage, isFeaturePage, isLoginPage, isAct
   if ((user || !isHomePage || isLoginPage) && user) {
     links.push({ label: "Home", path: "/dashboard", active: isActive("/dashboard") });
     links.push({ label: "Analytics", path: "/analytics", active: isActive("/analytics") });
+    links.push({ label: "Profile", path: "/profile", active: isActive("/profile") });
   }
 
   return links;
@@ -342,6 +343,7 @@ function buildMobileLinks({ user, isHomePage, isFeaturePage }) {
     links.push({ label: "Features", path: "/feature", active: false });
     links.push({ label: "My Rooms", path: "/myRooms", active: false });
     links.push({ label: "Analytics", path: "/analytics", active: false });
+    links.push({ label: "Profile", path: "/profile", active: false });
     links.push({ label: "Create Room", path: "/create-room", active: false });
     links.push({ label: "Join Room", path: "/join-room", active: false });
   } else {
