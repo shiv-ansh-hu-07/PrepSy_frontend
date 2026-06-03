@@ -105,7 +105,11 @@ export default function Analytics() {
                   icon={Clock3}
                   label="Total Focus Time"
                   value={summary.totalFocusLabel || "0m"}
-                  detail={`${summary.completedStudyDays || 0} study days completed`}
+                  detail={
+                    summary.liveFocusMinutes > 0
+                      ? `${summary.liveFocusLabel} live right now, saved when you leave`
+                      : `${summary.completedStudyDays || 0} completed study days`
+                  }
                   accent="#6f7fc0"
                 />
                 <StatCard
@@ -268,7 +272,7 @@ function MostActiveRooms({ rooms }) {
   const maxMinutes = Math.max(0, ...visibleRooms.map((room) => room.minutes || 0));
 
   return (
-    <Panel>
+    <Panel style={styles.equalPanel}>
       <SectionHeader icon={Users} title="Most Active Rooms" />
       {visibleRooms.length === 0 ? (
         <EmptyState text="No completed room time recorded yet." />
@@ -290,6 +294,7 @@ function MostActiveRooms({ rooms }) {
               </div>
               <p style={styles.smallMuted}>
                 {room.completedSessions} completed of {room.sessions} joined
+                {room.liveMinutes > 0 ? `, ${formatMinutes(room.liveMinutes)} live` : ""}
               </p>
             </div>
           ))}
@@ -303,7 +308,7 @@ function ConsistencyCard({ summary }) {
   const score = Math.max(0, Math.min(100, summary.consistencyScore || 0));
 
   return (
-    <Panel>
+    <Panel style={styles.equalPanel}>
       <SectionHeader icon={Target} title="Study Consistency" />
       <div style={styles.consistencyWrap}>
         <div
@@ -319,11 +324,13 @@ function ConsistencyCard({ summary }) {
         </div>
         <div>
           <p style={styles.bigSentence}>
-            You studied on <strong>{summary.studiedDaysThisWeek || 0} of 7 days</strong>.
+            You studied on <strong>{summary.studiedDaysThisWeek || 0} of 7 days</strong>{" "}
+            this week.
           </p>
           <p style={styles.panelCopy}>
             Your current streak is {summary.currentStreakDays || 0} day
-            {summary.currentStreakDays === 1 ? "" : "s"}.
+            {summary.currentStreakDays === 1 ? "" : "s"}. All-time completed
+            study days: {summary.completedStudyDays || 0}.
           </p>
         </div>
       </div>
@@ -333,7 +340,7 @@ function ConsistencyCard({ summary }) {
 
 function Achievements({ achievements }) {
   return (
-    <Panel>
+    <Panel style={styles.equalPanel}>
       <SectionHeader icon={Trophy} title="Achievements" />
       <div style={styles.achievementGrid}>
         {achievements.map((achievement) => {
@@ -422,8 +429,10 @@ function ClassHistory({ classes }) {
                 </div>
               </div>
               <div style={styles.classMeta}>
-                <strong>{formatMinutes(session.minutes)}</strong>
-                <span>{session.completed ? "Completed" : "Joined"}</span>
+                <strong>
+                  {formatMinutes(session.completed ? session.minutes : session.liveMinutes || 0)}
+                </strong>
+                <span>{session.completed ? "Completed" : "In progress"}</span>
               </div>
             </article>
           ))}
@@ -637,6 +646,13 @@ const styles = {
     backdropFilter: "blur(12px)",
     padding: 20,
     minWidth: 0,
+    boxSizing: "border-box",
+  },
+  equalPanel: {
+    height: "100%",
+    minHeight: 430,
+    display: "flex",
+    flexDirection: "column",
   },
   twoColumn: (isNarrow) => ({
     display: "grid",
@@ -647,8 +663,9 @@ const styles = {
     display: "grid",
     gridTemplateColumns: isNarrow
       ? "1fr"
-      : "minmax(260px, 0.9fr) minmax(260px, 0.78fr) minmax(360px, 1.1fr)",
+      : "minmax(270px, 0.95fr) minmax(270px, 0.9fr) minmax(360px, 1.2fr)",
     gap: 18,
+    alignItems: "stretch",
   }),
   sectionHeader: {
     display: "flex",
@@ -779,6 +796,8 @@ const styles = {
     gap: 12,
   },
   rowTitle: {
+    display: "block",
+    flex: 1,
     margin: 0,
     color: "#2f3b63",
     fontSize: 14,
@@ -814,9 +833,13 @@ const styles = {
   },
   consistencyWrap: {
     display: "grid",
-    gridTemplateColumns: "128px minmax(0, 1fr)",
+    gridTemplateColumns: "1fr",
     gap: 18,
     alignItems: "center",
+    justifyItems: "center",
+    textAlign: "center",
+    flex: 1,
+    alignContent: "center",
   },
   donut: {
     width: 126,
@@ -851,8 +874,9 @@ const styles = {
   },
   achievementGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
     gap: 12,
+    flex: 1,
   },
   achievement: (achieved) => ({
     borderRadius: 18,
@@ -860,8 +884,9 @@ const styles = {
     background: achieved ? "rgba(239,249,243,0.78)" : "rgba(248,250,255,0.84)",
     padding: 14,
     display: "grid",
+    gridTemplateRows: "auto auto 1fr auto auto",
     gap: 9,
-    minHeight: 188,
+    minHeight: 0,
   }),
   achievementBadge: (achieved) => ({
     width: 42,
@@ -876,9 +901,10 @@ const styles = {
   achievementTitle: {
     margin: 0,
     color: "#2f3b63",
-    fontSize: 14,
+    fontSize: 13,
     lineHeight: 1.35,
     fontWeight: 900,
+    overflowWrap: "anywhere",
   },
   achievementCopy: {
     margin: 0,
