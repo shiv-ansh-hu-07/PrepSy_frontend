@@ -17,8 +17,9 @@ import AppSideNav from "../components/AppSideNav";
 import { fetchMyAnalytics } from "../services/api";
 
 const analyticsTabs = [
-  { id: "focus", label: "Focus" },
-  { id: "consistency", label: "Consistency" },
+  { id: "activity", label: "Activity" },
+  { id: "topics", label: "Topics" },
+  { id: "sessions", label: "Sessions" },
   { id: "achievements", label: "Achievements" },
 ];
 
@@ -26,7 +27,7 @@ export default function Analytics() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activeAnalyticsTab, setActiveAnalyticsTab] = useState("focus");
+  const [activeAnalyticsTab, setActiveAnalyticsTab] = useState("activity");
   const [isNarrow, setIsNarrow] = useState(
     typeof window !== "undefined" ? window.innerWidth < 1060 : false
   );
@@ -88,7 +89,7 @@ export default function Analytics() {
             </div>
 
             <button type="button" onClick={loadAnalytics} style={styles.refreshButton}>
-              <RefreshCw size={16} />
+              <RefreshCw size={15} />
               Refresh
             </button>
           </header>
@@ -119,7 +120,7 @@ export default function Analytics() {
                   value={summary.totalFocusLabel || "0m"}
                   detail={
                     summary.liveFocusMinutes > 0
-                      ? `${summary.liveFocusLabel} live right now, saved when you leave`
+                      ? `${summary.liveFocusLabel} live right now`
                       : `${summary.completedStudyDays || 0} completed study days`
                   }
                   accent="#6f7fc0"
@@ -157,26 +158,31 @@ export default function Analytics() {
                   ))}
                 </div>
 
-                <div key={activeAnalyticsTab} style={styles.analyticsTabPanel(isNarrow)}>
-                  {activeAnalyticsTab === "focus" ? (
-                    <div style={styles.focusTabGrid(isNarrow)}>
+                <div key={activeAnalyticsTab} style={styles.analyticsTabPanel}>
+                  {activeAnalyticsTab === "activity" ? (
+                    <div style={styles.twoColGrid(isNarrow)}>
                       <Heatmap analytics={analytics} />
                       <WeeklyFocusChart entries={analytics.weeklyFocus || []} total={weeklyTotal} />
+                    </div>
+                  ) : null}
+
+                  {activeAnalyticsTab === "topics" ? (
+                    <div style={styles.twoColGrid(isNarrow)}>
                       <TopicsStudied topics={analytics.topics || []} />
+                      <MostActiveRooms rooms={analytics.rooms || []} />
+                    </div>
+                  ) : null}
+
+                  {activeAnalyticsTab === "sessions" ? (
+                    <div style={styles.singleColGrid}>
                       <ClassHistory classes={analytics.classes || []} />
                     </div>
                   ) : null}
 
-                  {activeAnalyticsTab === "consistency" ? (
-                    <div style={styles.consistencyTabGrid(isNarrow)}>
-                      <MostActiveRooms rooms={analytics.rooms || []} />
-                      <ConsistencyCard summary={summary} />
-                    </div>
-                  ) : null}
-
                   {activeAnalyticsTab === "achievements" ? (
-                    <div style={styles.singleTabGrid}>
+                    <div style={styles.achievementsTabGrid(isNarrow)}>
                       <Achievements achievements={analytics.achievements || []} />
+                      <ConsistencyCard summary={summary} />
                     </div>
                   ) : null}
                 </div>
@@ -197,7 +203,7 @@ function StatCard({ icon: Icon, label, value, detail, accent }) {
   return (
     <article style={styles.statCard}>
       <div style={{ ...styles.statIcon, background: `${accent}1f`, color: accent }}>
-        <Icon size={22} />
+        <Icon size={20} />
       </div>
       <div style={styles.statText}>
         <p style={styles.statLabel}>{label}</p>
@@ -218,11 +224,7 @@ function Heatmap({ analytics }) {
 
   return (
     <Panel>
-      <SectionHeader
-        icon={CalendarDays}
-        title="Study Heatmap"
-        meta={monthLabel}
-      />
+      <SectionHeader icon={CalendarDays} title="Study Heatmap" meta={monthLabel} />
 
       <div style={styles.weekdayRow}>
         {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
@@ -242,9 +244,10 @@ function Heatmap({ analytics }) {
               style={{
                 ...styles.heatCell,
                 background: heatColor(cell.minutes, maxMinutes),
-                color: cell.minutes > 0 && getHeatLevel(cell.minutes, maxMinutes) >= 4
-                  ? "#ffffff"
-                  : "#4a5a85",
+                color:
+                  cell.minutes > 0 && getHeatLevel(cell.minutes, maxMinutes) >= 4
+                    ? "#ffffff"
+                    : "#4a5a85",
               }}
             >
               {Number(cell.date.slice(-2))}
@@ -285,7 +288,7 @@ function WeeklyFocusChart({ entries, total }) {
 
       <div style={styles.chartWrap}>
         {entries.map((entry) => {
-          const height = maxMinutes > 0 ? Math.max(8, (entry.minutes / maxMinutes) * 150) : 0;
+          const height = maxMinutes > 0 ? Math.max(6, (entry.minutes / maxMinutes) * 140) : 0;
           return (
             <div key={entry.date} style={styles.chartColumn}>
               <span style={styles.chartValue}>
@@ -294,7 +297,9 @@ function WeeklyFocusChart({ entries, total }) {
               <div style={styles.chartTrack}>
                 <div style={{ ...styles.chartBar, height }} />
               </div>
-              <span style={styles.chartLabel}>{formatDateKey(entry.date, { weekday: "short" })}</span>
+              <span style={styles.chartLabel}>
+                {formatDateKey(entry.date, { weekday: "short" })}
+              </span>
             </div>
           );
         })}
@@ -308,7 +313,7 @@ function MostActiveRooms({ rooms }) {
   const maxMinutes = Math.max(0, ...visibleRooms.map((room) => room.minutes || 0));
 
   return (
-    <Panel style={styles.equalPanel}>
+    <Panel>
       <SectionHeader icon={Users} title="Most Active Rooms" />
       {visibleRooms.length === 0 ? (
         <EmptyState text="No completed room time recorded yet." />
@@ -344,7 +349,7 @@ function ConsistencyCard({ summary }) {
   const score = Math.max(0, Math.min(100, summary.consistencyScore || 0));
 
   return (
-    <Panel style={styles.equalPanel}>
+    <Panel>
       <SectionHeader icon={Target} title="Study Consistency" />
       <div style={styles.consistencyWrap}>
         <div
@@ -354,19 +359,22 @@ function ConsistencyCard({ summary }) {
           }}
         >
           <div style={styles.donutInner}>
-            <strong>{score}%</strong>
-            <span>Consistency</span>
+            <strong style={styles.donutScore}>{score}%</strong>
+            <span style={styles.donutLabel}>Consistency</span>
           </div>
         </div>
-        <div>
+        <div style={styles.consistencyText}>
           <p style={styles.bigSentence}>
-            You studied on <strong>{summary.studiedDaysThisWeek || 0} of 7 days</strong>{" "}
+            You studied on{" "}
+            <strong style={{ fontWeight: 600 }}>
+              {summary.studiedDaysThisWeek || 0} of 7 days
+            </strong>{" "}
             this week.
           </p>
           <p style={styles.panelCopy}>
-            Your current streak is {summary.currentStreakDays || 0} day
-            {summary.currentStreakDays === 1 ? "" : "s"}. All-time completed
-            study days: {summary.completedStudyDays || 0}.
+            Current streak: {summary.currentStreakDays || 0} day
+            {summary.currentStreakDays === 1 ? "" : "s"}. All-time completed study
+            days: {summary.completedStudyDays || 0}.
           </p>
         </div>
       </div>
@@ -376,17 +384,20 @@ function ConsistencyCard({ summary }) {
 
 function Achievements({ achievements }) {
   return (
-    <Panel style={styles.equalPanel}>
+    <Panel>
       <SectionHeader icon={Trophy} title="Achievements" />
       <div style={styles.achievementGrid}>
         {achievements.map((achievement) => {
           const Icon = achievement.achieved ? Award : Lock;
-          const progress = Math.min(100, ((achievement.progress || 0) / achievement.target) * 100);
+          const progress = Math.min(
+            100,
+            ((achievement.progress || 0) / achievement.target) * 100
+          );
 
           return (
             <article key={achievement.id} style={styles.achievement(achievement.achieved)}>
               <div style={styles.achievementBadge(achievement.achieved)}>
-                <Icon size={22} />
+                <Icon size={20} />
               </div>
               <h3 style={styles.achievementTitle}>{achievement.title}</h3>
               <p style={styles.achievementCopy}>{achievement.description}</p>
@@ -415,7 +426,11 @@ function TopicsStudied({ topics }) {
 
   return (
     <Panel>
-      <SectionHeader icon={BookOpenCheck} title="Topics Studied" meta={`${topics.length} topics`} />
+      <SectionHeader
+        icon={BookOpenCheck}
+        title="Topics Studied"
+        meta={`${topics.length} topics`}
+      />
       {topics.length === 0 ? (
         <EmptyState text="No room tags recorded from your sessions yet." />
       ) : (
@@ -446,7 +461,11 @@ function TopicsStudied({ topics }) {
 function ClassHistory({ classes }) {
   return (
     <Panel>
-      <SectionHeader icon={CalendarDays} title="Classes Joined" meta={`${classes.length} total`} />
+      <SectionHeader
+        icon={CalendarDays}
+        title="Session History"
+        meta={`${classes.length} total`}
+      />
       {classes.length === 0 ? (
         <EmptyState text="Your joined class history will appear after you enter a room." />
       ) : (
@@ -465,8 +484,10 @@ function ClassHistory({ classes }) {
                 </div>
               </div>
               <div style={styles.classMeta}>
-                <strong>
-                  {formatMinutes(session.completed ? session.minutes : session.liveMinutes || 0)}
+                <strong style={{ fontWeight: 600, fontSize: 13 }}>
+                  {formatMinutes(
+                    session.completed ? session.minutes : session.liveMinutes || 0
+                  )}
                 </strong>
                 <span>{session.completed ? "Completed" : "In progress"}</span>
               </div>
@@ -482,7 +503,7 @@ function SectionHeader({ icon: Icon, title, meta }) {
   return (
     <div style={styles.sectionHeader}>
       <div style={styles.sectionTitleWrap}>
-        <Icon size={18} />
+        <Icon size={16} />
         <h2 style={styles.sectionTitle}>{title}</h2>
       </div>
       {meta ? <span style={styles.sectionMeta}>{meta}</span> : null}
@@ -545,22 +566,15 @@ function formatDateTime(value) {
 
 const analyticsTransitionStyles = `
 @keyframes analyticsFade {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
 }
 `;
 
 const styles = {
   page: {
     minHeight: "calc(100vh - 76px)",
-    background:
-      "radial-gradient(ellipse at top, #eef1fb 0%, #f3f5fc 48%, #f8f9fe 100%)",
+    background: "radial-gradient(ellipse at top, #eef1fb 0%, #f3f5fc 48%, #f8f9fe 100%)",
     padding: "32px 24px 56px",
   },
   layout: (isNarrow) => ({
@@ -574,7 +588,7 @@ const styles = {
   }),
   main: {
     display: "grid",
-    gap: 20,
+    gap: 18,
     minWidth: 0,
   },
   header: {
@@ -587,59 +601,62 @@ const styles = {
   eyebrow: {
     margin: 0,
     color: "#7a89b8",
-    fontWeight: 800,
-    fontSize: 12,
+    fontWeight: 600,
+    fontSize: 11,
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
   },
   title: {
-    margin: "6px 0 6px",
+    margin: "5px 0 5px",
     fontFamily: "Georgia, serif",
     color: "#3f4f7a",
-    fontSize: 36,
-    lineHeight: 1.08,
+    fontSize: 30,
+    lineHeight: 1.1,
+    fontWeight: 400,
   },
   subtitle: {
     margin: 0,
     color: "#6b78a0",
-    fontSize: 15,
+    fontSize: 13,
     lineHeight: 1.6,
+    fontWeight: 400,
   },
   refreshButton: {
-    height: 42,
-    borderRadius: 14,
+    height: 36,
+    borderRadius: 12,
     border: "1px solid rgba(190,200,235,0.62)",
     background: "rgba(255,255,255,0.82)",
     color: "#4a5a85",
     display: "inline-flex",
     alignItems: "center",
-    gap: 8,
-    padding: "0 14px",
-    fontWeight: 800,
+    gap: 7,
+    padding: "0 13px",
+    fontWeight: 500,
+    fontSize: 13,
     cursor: "pointer",
-    boxShadow: "0 10px 22px rgba(74,90,133,0.08)",
+    boxShadow: "0 6px 18px rgba(74,90,133,0.07)",
   },
   statGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: 14,
-    alignItems: "stretch",
+    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+    gap: 12,
   },
   statCard: {
-    minHeight: 128,
-    borderRadius: 22,
+    borderRadius: 18,
     border: "1px solid rgba(190,200,235,0.52)",
     background: "rgba(255,255,255,0.76)",
-    boxShadow: "0 14px 34px rgba(74,90,133,0.1)",
-    padding: 18,
+    boxShadow: "0 8px 24px rgba(74,90,133,0.08)",
+    padding: "14px 16px",
     display: "flex",
-    gap: 14,
+    gap: 12,
     alignItems: "center",
     minWidth: 0,
     boxSizing: "border-box",
   },
   statIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 13,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -648,54 +665,55 @@ const styles = {
   statText: {
     minWidth: 0,
     display: "grid",
-    gap: 4,
+    gap: 2,
   },
   statLabel: {
     margin: 0,
     color: "#65749f",
-    fontSize: 13,
-    fontWeight: 800,
+    fontSize: 11,
+    fontWeight: 500,
   },
   statValue: {
     margin: 0,
     color: "#2f3b63",
-    fontSize: 28,
-    lineHeight: 1,
-    fontWeight: 900,
+    fontSize: 22,
+    lineHeight: 1.1,
+    fontWeight: 600,
   },
   statDetail: {
     margin: 0,
     color: "#7a89b8",
-    fontSize: 13,
+    fontSize: 11,
     lineHeight: 1.35,
+    fontWeight: 400,
   },
   panel: {
-    borderRadius: 24,
+    borderRadius: 20,
     border: "1px solid rgba(190,200,235,0.52)",
     background: "rgba(255,255,255,0.78)",
-    boxShadow: "0 16px 42px rgba(74,90,133,0.1)",
+    boxShadow: "0 10px 32px rgba(74,90,133,0.08)",
     backdropFilter: "blur(12px)",
-    padding: 20,
+    padding: 18,
     minWidth: 0,
     boxSizing: "border-box",
   },
   analyticsTabsShell: {
-    borderRadius: 24,
+    borderRadius: 20,
     border: "1px solid rgba(190,200,235,0.52)",
     background: "rgba(255,255,255,0.58)",
-    boxShadow: "0 16px 42px rgba(74,90,133,0.08)",
-    padding: 18,
+    boxShadow: "0 10px 32px rgba(74,90,133,0.06)",
+    padding: 16,
     display: "grid",
-    gap: 16,
+    gap: 14,
     minWidth: 0,
     boxSizing: "border-box",
   },
   tabRail: {
     position: "relative",
     display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
     gap: 4,
-    borderRadius: 16,
+    borderRadius: 13,
     padding: 4,
     background: "#eef2ff",
     border: "1px solid rgba(190,200,235,0.5)",
@@ -705,98 +723,70 @@ const styles = {
     position: "absolute",
     top: 4,
     bottom: 4,
-    left: `calc(${(activeIndex * 100) / 3}% + ${4 - activeIndex * (8 / 3)}px)`,
-    width: "calc(33.333333% - 2.666px)",
-    borderRadius: 13,
+    left: `calc(${activeIndex * 25}% + ${4 - activeIndex * 2}px)`,
+    width: "calc(25% - 2px)",
+    borderRadius: 10,
     background: "#ffffff",
-    boxShadow: "0 10px 22px rgba(95,111,163,0.14)",
+    boxShadow: "0 4px 14px rgba(95,111,163,0.12)",
     transition: "left 0.24s ease",
   }),
   tabButton: (active) => ({
     position: "relative",
     zIndex: 1,
-    height: 42,
+    height: 36,
     border: "none",
-    borderRadius: 13,
+    borderRadius: 10,
     background: "transparent",
     color: active ? "#3f4f7a" : "#6b78a0",
-    fontWeight: active ? 900 : 800,
+    fontWeight: active ? 600 : 400,
+    fontSize: 13,
     cursor: "pointer",
   }),
-  analyticsTabPanel: (isNarrow) => ({
-    height: isNarrow ? "auto" : 660,
-    minHeight: isNarrow ? 0 : 660,
-    overflow: isNarrow ? "visible" : "hidden",
+  analyticsTabPanel: {
     animation: "analyticsFade 0.22s ease",
-  }),
-  focusTabGrid: (isNarrow) => ({
-    height: "100%",
-    display: "grid",
-    gridTemplateColumns: isNarrow ? "1fr" : "minmax(0, 1fr) minmax(0, 1.08fr)",
-    gridTemplateRows: isNarrow ? "auto" : "minmax(285px, 0.98fr) minmax(285px, 1fr)",
-    gap: 18,
-    alignItems: "stretch",
-    minWidth: 0,
-  }),
-  consistencyTabGrid: (isNarrow) => ({
-    height: "100%",
-    display: "grid",
-    gridTemplateColumns: isNarrow ? "1fr" : "minmax(0, 1fr) minmax(320px, 0.9fr)",
-    gap: 18,
-    alignItems: "stretch",
-    minWidth: 0,
-  }),
-  singleTabGrid: {
-    height: "100%",
-    display: "grid",
-    minWidth: 0,
   },
-  equalPanel: {
-    height: "100%",
-    minHeight: 430,
-    display: "flex",
-    flexDirection: "column",
-  },
-  twoColumn: (isNarrow) => ({
+  twoColGrid: (isNarrow) => ({
     display: "grid",
-    gridTemplateColumns: isNarrow ? "1fr" : "minmax(0, 0.95fr) minmax(420px, 1.05fr)",
-    gap: 18,
-    alignItems: "stretch",
+    gridTemplateColumns: isNarrow ? "1fr" : "minmax(0, 1fr) minmax(0, 1fr)",
+    gap: 16,
+    alignItems: "start",
   }),
-  lowerGrid: (isNarrow) => ({
+  singleColGrid: {
     display: "grid",
-    gridTemplateColumns: isNarrow
-      ? "1fr"
-      : "minmax(250px, 0.92fr) minmax(250px, 0.84fr) minmax(340px, 1.35fr)",
-    gap: 18,
-    alignItems: "stretch",
+    gap: 16,
+  },
+  achievementsTabGrid: (isNarrow) => ({
+    display: "grid",
+    gridTemplateColumns: isNarrow ? "1fr" : "minmax(0, 1.4fr) minmax(0, 1fr)",
+    gap: 16,
+    alignItems: "start",
   }),
   sectionHeader: {
     display: "flex",
     justifyContent: "space-between",
     gap: 12,
-    alignItems: "flex-start",
-    marginBottom: 16,
+    alignItems: "center",
+    marginBottom: 14,
     minWidth: 0,
   },
   sectionTitleWrap: {
     display: "flex",
     alignItems: "center",
-    gap: 9,
-    color: "#4a5a85",
+    gap: 8,
+    color: "#5a6a94",
     minWidth: 0,
     flex: 1,
   },
   sectionTitle: {
     margin: 0,
     color: "#3f4f7a",
-    fontSize: 17,
-    fontWeight: 900,
+    fontSize: 14,
+    fontWeight: 600,
   },
   sectionMeta: {
     color: "#7a89b8",
-    fontSize: 13,
-    fontWeight: 800,
+    fontSize: 12,
+    fontWeight: 400,
     flexShrink: 0,
   },
   weekdayRow: {
@@ -805,73 +795,76 @@ const styles = {
     gap: 8,
     marginBottom: 8,
     color: "#7a89b8",
-    fontSize: 12,
-    fontWeight: 800,
+    fontSize: 11,
+    fontWeight: 500,
     textAlign: "center",
   },
   heatGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(7, minmax(28px, 1fr))",
-    gap: 8,
+    gap: 7,
   },
   heatCell: {
     aspectRatio: "1 / 1",
-    minHeight: 34,
-    borderRadius: 10,
+    minHeight: 28,
+    borderRadius: 8,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: 12,
-    fontWeight: 800,
+    fontSize: 11,
+    fontWeight: 400,
     border: "1px solid rgba(255,255,255,0.68)",
   },
   emptyHeatCell: {
     aspectRatio: "1 / 1",
-    minHeight: 34,
+    minHeight: 28,
   },
   legend: {
     display: "flex",
     alignItems: "center",
-    gap: 7,
-    marginTop: 16,
+    gap: 6,
+    marginTop: 14,
     color: "#65749f",
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: 400,
     justifyContent: "flex-end",
   },
   legendSwatch: {
-    width: 14,
-    height: 14,
-    borderRadius: 5,
+    width: 11,
+    height: 11,
+    borderRadius: 4,
     border: "1px solid rgba(190,200,235,0.45)",
   },
   chartWrap: {
-    height: 220,
+    height: 200,
     display: "grid",
-    gridTemplateColumns: "repeat(7, minmax(32px, 1fr))",
-    gap: 12,
+    gridTemplateColumns: "repeat(7, minmax(28px, 1fr))",
+    gap: 10,
     alignItems: "end",
-    paddingTop: 8,
+    paddingTop: 6,
     minWidth: 0,
   },
   chartColumn: {
     minWidth: 0,
     height: "100%",
     display: "grid",
-    gridTemplateRows: "24px 1fr 22px",
+    gridTemplateRows: "20px 1fr 18px",
     alignItems: "end",
     justifyItems: "center",
-    gap: 7,
+    gap: 5,
   },
   chartValue: {
-    color: "#4a5a85",
-    fontSize: 12,
-    fontWeight: 800,
+    color: "#5a6a94",
+    fontSize: 10,
+    fontWeight: 500,
     whiteSpace: "nowrap",
+    lineHeight: 1,
+    alignSelf: "end",
   },
   chartTrack: {
     width: "100%",
-    height: 150,
-    borderRadius: 14,
+    height: 140,
+    borderRadius: 12,
     background: "#eef2ff",
     display: "flex",
     alignItems: "flex-end",
@@ -879,22 +872,22 @@ const styles = {
   },
   chartBar: {
     width: "100%",
-    borderRadius: "14px 14px 0 0",
+    borderRadius: "10px 10px 0 0",
     background: "linear-gradient(180deg, #8a9bd6, #5f6fa3)",
-    boxShadow: "0 8px 18px rgba(95,111,163,0.28)",
+    boxShadow: "0 4px 12px rgba(95,111,163,0.22)",
   },
   chartLabel: {
     color: "#65749f",
-    fontSize: 12,
-    fontWeight: 800,
+    fontSize: 10,
+    fontWeight: 500,
   },
   stack: {
     display: "grid",
-    gap: 14,
+    gap: 12,
   },
   roomRow: {
     display: "grid",
-    gap: 7,
+    gap: 5,
   },
   roomTopline: {
     display: "flex",
@@ -908,8 +901,8 @@ const styles = {
     flex: 1,
     margin: 0,
     color: "#2f3b63",
-    fontSize: 14,
-    fontWeight: 900,
+    fontSize: 13,
+    fontWeight: 500,
     minWidth: 0,
     overflow: "hidden",
     textOverflow: "ellipsis",
@@ -917,13 +910,13 @@ const styles = {
   },
   rowMeta: {
     color: "#4a5a85",
-    fontSize: 13,
-    fontWeight: 900,
+    fontSize: 12,
+    fontWeight: 500,
     flexShrink: 0,
   },
   progressTrack: {
     width: "100%",
-    height: 8,
+    height: 5,
     borderRadius: 999,
     background: "#e8edf9",
     overflow: "hidden",
@@ -936,72 +929,90 @@ const styles = {
   smallMuted: {
     margin: 0,
     color: "#7a89b8",
-    fontSize: 12,
+    fontSize: 11,
     lineHeight: 1.45,
+    fontWeight: 400,
   },
   consistencyWrap: {
-    display: "grid",
-    gridTemplateColumns: "1fr",
-    gap: 18,
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
     alignItems: "center",
-    justifyItems: "center",
     textAlign: "center",
-    flex: 1,
-    alignContent: "center",
+    paddingTop: 8,
   },
   donut: {
-    width: 126,
-    height: 126,
+    width: 116,
+    height: 116,
     borderRadius: "50%",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
   donutInner: {
-    width: 88,
-    height: 88,
+    width: 82,
+    height: 82,
     borderRadius: "50%",
     background: "#ffffff",
-    display: "grid",
-    placeItems: "center",
-    alignContent: "center",
-    color: "#2f3b63",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
     boxShadow: "inset 0 0 0 1px rgba(190,200,235,0.42)",
+  },
+  donutScore: {
+    fontSize: 19,
+    fontWeight: 600,
+    color: "#2f3b63",
+    lineHeight: 1,
+  },
+  donutLabel: {
+    fontSize: 9,
+    fontWeight: 500,
+    color: "#7a89b8",
+    textTransform: "uppercase",
+    letterSpacing: "0.04em",
+  },
+  consistencyText: {
+    textAlign: "center",
   },
   bigSentence: {
     margin: 0,
     color: "#2f3b63",
-    fontSize: 16,
-    lineHeight: 1.55,
+    fontSize: 13,
+    lineHeight: 1.6,
+    fontWeight: 400,
   },
   panelCopy: {
-    margin: "8px 0 0",
+    margin: "6px 0 0",
     color: "#65749f",
-    fontSize: 13,
+    fontSize: 12,
     lineHeight: 1.55,
+    fontWeight: 400,
   },
   achievementGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gridAutoRows: "1fr",
-    gap: 12,
-    flex: 1,
+    gap: 10,
   },
   achievement: (achieved) => ({
-    borderRadius: 18,
-    border: achieved ? "1px solid rgba(88,169,120,0.38)" : "1px solid rgba(190,200,235,0.54)",
+    borderRadius: 14,
+    border: achieved
+      ? "1px solid rgba(88,169,120,0.38)"
+      : "1px solid rgba(190,200,235,0.54)",
     background: achieved ? "rgba(239,249,243,0.78)" : "rgba(248,250,255,0.84)",
-    padding: 14,
+    padding: 12,
     display: "grid",
     gridTemplateRows: "auto auto 1fr auto auto",
-    gap: 9,
-    minHeight: 0,
+    gap: 7,
     boxSizing: "border-box",
   }),
   achievementBadge: (achieved) => ({
-    width: 42,
-    height: 42,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 11,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1011,34 +1022,35 @@ const styles = {
   achievementTitle: {
     margin: 0,
     color: "#2f3b63",
-    fontSize: 13,
+    fontSize: 12,
     lineHeight: 1.35,
-    fontWeight: 900,
+    fontWeight: 600,
     overflowWrap: "anywhere",
   },
   achievementCopy: {
     margin: 0,
     color: "#65749f",
-    fontSize: 12,
+    fontSize: 11,
     lineHeight: 1.45,
+    fontWeight: 400,
   },
   topicList: {
     display: "grid",
-    gap: 14,
-    maxHeight: 360,
+    gap: 12,
+    maxHeight: 420,
     overflowY: "auto",
     paddingRight: 4,
   },
   topicRow: {
     display: "grid",
-    gap: 7,
+    gap: 5,
   },
   topicName: {
     display: "block",
     flex: 1,
     color: "#2f3b63",
-    fontSize: 14,
-    fontWeight: 900,
+    fontSize: 13,
+    fontWeight: 500,
     minWidth: 0,
     overflow: "hidden",
     textOverflow: "ellipsis",
@@ -1046,20 +1058,20 @@ const styles = {
   },
   classList: {
     display: "grid",
-    gap: 10,
-    maxHeight: 390,
+    gap: 8,
+    maxHeight: 520,
     overflowY: "auto",
     paddingRight: 4,
   },
   classRow: {
-    borderRadius: 16,
+    borderRadius: 13,
     border: "1px solid rgba(190,200,235,0.44)",
     background: "rgba(248,250,255,0.78)",
-    padding: 14,
+    padding: "11px 13px",
     display: "flex",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    gap: 14,
+    gap: 12,
     minWidth: 0,
   },
   classInfo: {
@@ -1071,32 +1083,35 @@ const styles = {
     gap: 2,
     justifyItems: "end",
     color: "#4a5a85",
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: 400,
     flexShrink: 0,
   },
   tags: {
     display: "flex",
-    gap: 6,
+    gap: 5,
     flexWrap: "wrap",
-    marginTop: 8,
+    marginTop: 6,
   },
   tag: {
     borderRadius: 999,
     background: "#eef2ff",
     color: "#5f6fa3",
-    padding: "4px 8px",
-    fontSize: 11,
-    fontWeight: 800,
+    padding: "3px 7px",
+    fontSize: 10,
+    fontWeight: 500,
   },
   stateText: {
     margin: 0,
     color: "#65749f",
-    fontWeight: 700,
+    fontWeight: 400,
+    fontSize: 14,
   },
   emptyState: {
     margin: 0,
     color: "#7a89b8",
-    fontSize: 14,
+    fontSize: 13,
     lineHeight: 1.55,
+    fontWeight: 400,
   },
 };
