@@ -34,6 +34,13 @@ export async function updateMyProfile(profile) {
   return data;
 }
 
+export async function uploadAvatar(formData) {
+  const { data } = await api.post("/profiles/avatar", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}
+
 export async function fetchRooms() {
   return {
     rooms: [
