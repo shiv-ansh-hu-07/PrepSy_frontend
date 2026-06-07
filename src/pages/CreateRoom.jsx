@@ -721,6 +721,10 @@ export default function CreateRoom() {
                 : "0 10px 24px rgba(124,58,237,0.28)",
               marginTop: 10,
               transition: "opacity 0.2s",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
             }}
           >
             {submitting ? "Creating room..." : "Create & Join Room"}
