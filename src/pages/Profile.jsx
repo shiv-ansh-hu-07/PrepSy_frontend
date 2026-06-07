@@ -29,10 +29,12 @@ import { useAuth } from "../context/AuthContext";
 
 /* ─── Predefined option sets for clustering ─────────────────────────────── */
 const GOAL_OPTIONS = [
-  "DSA & Algorithms", "Placements", "GATE", "CAT / MBA", "UPSC / Civil Services",
-  "NEET", "JEE", "Full-Stack Development", "Web Development", "System Design",
-  "Machine Learning", "Data Science", "Competitive Programming", "Interview Prep",
-  "Research / Academia", "Startup / Freelancing",
+  "DSA & Algorithms", "Competitive Programming", "Interview Prep", "Placements",
+  "Job Switch", "FAANG / Top Tech", "System Design", "Full-Stack Development",
+  "Web Development", "Mobile Development", "Backend Development", "Frontend Development",
+  "DevOps / Cloud", "Data Science", "Machine Learning / AI", "Cybersecurity",
+  "Open Source", "Freelancing / Startup", "GATE", "CAT / MBA", "UPSC / Civil Services",
+  "Research / Academia",
 ];
 
 const INTEREST_OPTIONS = [
@@ -48,22 +50,39 @@ const LANGUAGE_OPTIONS = [
   "Assamese", "French", "German", "Spanish", "Japanese",
 ];
 
-const LOOKING_FOR_OPTIONS = [
-  "Study partner", "Accountability partner", "Project collaborator",
-  "Group study", "Interview practice partner", "Mentor",
-  "Mentee / Tutoring", "Peer review", "Hackathon team",
-];
-
 const AVAILABILITY_OPTIONS = [
   "Weekday mornings", "Weekday afternoons", "Weekday evenings",
   "Weekday nights", "Weekend mornings", "Weekend afternoons",
   "Weekend evenings", "Flexible / Any time",
 ];
 
-const EXAM_OPTIONS = [
-  "JEE Mains", "JEE Advanced", "NEET", "GATE", "CAT", "GMAT", "GRE",
-  "UPSC CSE", "SSC CGL", "Bank PO / Clerk", "CLAT", "CUET",
-  "Class 10 Boards", "Class 12 Boards", "IELTS / TOEFL",
+const SKILL_OPTIONS = [
+  // Languages
+  "Python", "JavaScript", "TypeScript", "Java", "C", "C++", "C#", "Go",
+  "Rust", "Ruby", "PHP", "Swift", "Kotlin", "Dart", "R", "Scala", "MATLAB",
+  // Web & Frontend
+  "HTML", "CSS", "React", "Next.js", "Vue", "Angular", "Svelte", "Tailwind CSS",
+  "Bootstrap", "Redux", "GraphQL",
+  // Backend & Frameworks
+  "Node.js", "Express", "NestJS", "Django", "Flask", "FastAPI", "Spring Boot",
+  "Laravel", "Ruby on Rails", "ASP.NET",
+  // Mobile
+  "React Native", "Flutter", "Android (Kotlin)", "iOS (Swift)",
+  // Databases
+  "MySQL", "PostgreSQL", "MongoDB", "Redis", "SQLite", "Cassandra",
+  "DynamoDB", "Elasticsearch", "Firebase",
+  // Cloud & DevOps
+  "AWS", "Google Cloud", "Azure", "Docker", "Kubernetes", "Terraform",
+  "CI/CD", "GitHub Actions", "Jenkins", "Linux", "Nginx",
+  // Data & ML
+  "Machine Learning", "Deep Learning", "TensorFlow", "PyTorch", "Pandas",
+  "NumPy", "Scikit-learn", "Computer Vision", "NLP", "LLM / GenAI",
+  // CS Fundamentals
+  "DSA", "System Design", "OS Concepts", "Computer Networks", "DBMS",
+  "Competitive Programming", "OOP",
+  // Tools & Other
+  "Git", "REST API", "Microservices", "Web3 / Blockchain", "Cybersecurity",
+  "Figma / UI Design", "Agile / Scrum", "SQL",
 ];
 
 const CITY_OPTIONS = [
@@ -105,7 +124,6 @@ const recommendationFields = [
   { key: "institutionType", label: "Institution type" },
   { key: "institutionName", label: "Institution name" },
   { key: "interests", label: "Interests" },
-  { key: "lookingFor", label: "Collaboration preference" },
   { key: "availability", label: "Availability" },
 ];
 
@@ -431,12 +449,6 @@ export default function Profile() {
               <Section icon={GraduationCap} title="I Am A">
                 <div style={styles.segmentGrid}>
                   <SegmentCard
-                    icon={GraduationCap} title="School Student"
-                    description="Class, board, and exam prep"
-                    active={profile.institutionType === "school"}
-                    onClick={() => updateField("institutionType", "school")}
-                  />
-                  <SegmentCard
                     icon={GraduationCap} title="College Student"
                     description="Course, semester, and branch"
                     active={profile.institutionType === "college" || profile.institutionType === "student"}
@@ -456,46 +468,6 @@ export default function Profile() {
                   />
                 </div>
               </Section>
-
-              {profile.institutionType === "school" ? (
-                <Section icon={GraduationCap} title="School Details"
-                  caption="Used for class, board, and school-based matching.">
-                  <div style={styles.fieldGrid}>
-                    <Field label="School Name">
-                      <input value={profile.institutionName}
-                        onChange={(e) => updateField("institutionName", e.target.value)}
-                        placeholder="Your school name" style={styles.input} />
-                    </Field>
-                    <Field label="Class / Grade">
-                      <input value={profile.semester}
-                        onChange={(e) => updateField("semester", e.target.value)}
-                        placeholder="Class 10, Class 12" style={styles.input} />
-                    </Field>
-                    <Field label="Board">
-                      <select value={profile.degree}
-                        onChange={(e) => updateField("degree", e.target.value)}
-                        style={styles.input}>
-                        <option value="">Select board</option>
-                        <option value="CBSE">CBSE</option>
-                        <option value="ICSE">ICSE</option>
-                        <option value="State Board">State Board</option>
-                        <option value="IB">IB</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </Field>
-                    <Field label="Stream">
-                      <input value={profile.branch}
-                        onChange={(e) => updateField("branch", e.target.value)}
-                        placeholder="Science, Commerce, Arts" style={styles.input} />
-                    </Field>
-                    <Field label="Target Exams">
-                      <MultiSelect value={profile.examTargets}
-                        onChange={(next) => updateField("examTargets", next)}
-                        options={EXAM_OPTIONS} placeholder="Select target exams" />
-                    </Field>
-                  </div>
-                </Section>
-              ) : null}
 
               {(profile.institutionType === "college" || profile.institutionType === "student") ? (
                 <Section icon={GraduationCap} title="College Details"
@@ -675,14 +647,6 @@ export default function Profile() {
                       placeholder="Select languages you speak"
                     />
                   </Field>
-                  <Field label="Looking For">
-                    <MultiSelect
-                      value={profile.lookingFor}
-                      onChange={(next) => updateField("lookingFor", next)}
-                      options={LOOKING_FOR_OPTIONS}
-                      placeholder="What kind of collaborator?"
-                    />
-                  </Field>
                   <Field label="Availability">
                     <MultiSelect
                       value={profile.availability}
@@ -691,19 +655,13 @@ export default function Profile() {
                       placeholder="When are you free to study?"
                     />
                   </Field>
-                  <Field label="Exam / Career Targets">
-                    <MultiSelect
-                      value={profile.examTargets}
-                      onChange={(next) => updateField("examTargets", next)}
-                      options={EXAM_OPTIONS}
-                      placeholder="Select exams or career targets"
-                    />
-                  </Field>
                   <Field label="Skills">
-                    <TagInput
+                    <MultiSelect
                       value={profile.skills}
                       onChange={(next) => updateField("skills", next)}
-                      placeholder="Java, React, SQL, communication"
+                      options={SKILL_OPTIONS}
+                      placeholder="Select your tech skills"
+                      max={30}
                     />
                   </Field>
                   <Field label="Collaboration Style">
@@ -802,7 +760,7 @@ function Field({ label, required, children }) {
 }
 
 /* MultiSelect — checkbox dropdown with pill tags */
-function MultiSelect({ value, onChange, options, placeholder }) {
+function MultiSelect({ value, onChange, options, placeholder, max }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
 
@@ -820,7 +778,7 @@ function MultiSelect({ value, onChange, options, placeholder }) {
   function toggle(option) {
     if (value.includes(option)) {
       onChange(value.filter((v) => v !== option));
-    } else if (value.length < 16) {
+    } else if (value.length < (max || 16)) {
       onChange([...value, option]);
     }
   }
