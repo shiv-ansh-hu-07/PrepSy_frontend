@@ -284,14 +284,69 @@ export default function JoinRoom() {
 
         {!isMobile && (
           <div style={{ display: "flex", justifyContent: "center" }}>
-            <img
-              src="/joinRoom_img.png"
-              alt="Students studying together"
-              style={illustrationStyle}
-            />
+            <StudyIllustration style={illustrationStyle} />
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function StudyIllustration({ style }) {
+  return (
+    <svg
+      width="380"
+      height="300"
+      viewBox="0 0 380 300"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      style={style}
+      aria-label="Two people studying together on laptops"
+    >
+      <ellipse cx="190" cy="165" rx="155" ry="120" fill="#EEF1FF" opacity="0.85" />
+
+      {/* Left desk */}
+      <rect x="58" y="196" width="116" height="10" rx="5" fill="#c5ccec" />
+      <rect x="74" y="187" width="84" height="11" rx="3" fill="#8a9bd6" opacity="0.65" />
+      {/* Left laptop screen */}
+      <rect x="76" y="152" width="80" height="50" rx="6" fill="#2f3b63" />
+      <rect x="79" y="155" width="74" height="42" rx="4" fill="#3d4f8a" opacity="0.75" />
+      <rect x="84" y="161" width="32" height="3" rx="1.5" fill="#8a9bd6" opacity="0.8" />
+      <rect x="84" y="167" width="50" height="3" rx="1.5" fill="#6b78a0" opacity="0.55" />
+      <rect x="84" y="173" width="40" height="3" rx="1.5" fill="#8a9bd6" opacity="0.65" />
+      <rect x="84" y="179" width="56" height="3" rx="1.5" fill="#6b78a0" opacity="0.45" />
+      <rect x="84" y="185" width="28" height="3" rx="1.5" fill="#8a9bd6" opacity="0.5" />
+      {/* Left person */}
+      <circle cx="116" cy="132" r="22" fill="#c5ccec" />
+      <ellipse cx="116" cy="157" rx="22" ry="10" fill="#b0badf" />
+
+      {/* Right desk */}
+      <rect x="206" y="196" width="116" height="10" rx="5" fill="#c5ccec" />
+      <rect x="222" y="187" width="84" height="11" rx="3" fill="#8a9bd6" opacity="0.65" />
+      {/* Right laptop screen */}
+      <rect x="224" y="152" width="80" height="50" rx="6" fill="#2f3b63" />
+      <rect x="227" y="155" width="74" height="42" rx="4" fill="#3d4f8a" opacity="0.75" />
+      <rect x="232" y="161" width="48" height="3" rx="1.5" fill="#8a9bd6" opacity="0.8" />
+      <rect x="232" y="167" width="36" height="3" rx="1.5" fill="#6b78a0" opacity="0.55" />
+      <rect x="232" y="173" width="56" height="3" rx="1.5" fill="#8a9bd6" opacity="0.65" />
+      <rect x="232" y="179" width="30" height="3" rx="1.5" fill="#6b78a0" opacity="0.45" />
+      <rect x="232" y="185" width="44" height="3" rx="1.5" fill="#8a9bd6" opacity="0.5" />
+      {/* Right person */}
+      <circle cx="264" cy="132" r="22" fill="#c5ccec" />
+      <ellipse cx="264" cy="157" rx="22" ry="10" fill="#b0badf" />
+
+      {/* Connection dots in the middle */}
+      <circle cx="190" cy="168" r="6" fill="#8a9bd6" opacity="0.5" />
+      <circle cx="170" cy="160" r="4" fill="#8a9bd6" opacity="0.32" />
+      <circle cx="210" cy="160" r="4" fill="#8a9bd6" opacity="0.32" />
+
+      {/* Focus dots around heads */}
+      <circle cx="90" cy="108" r="5" fill="#8a9bd6" opacity="0.38" />
+      <circle cx="290" cy="112" r="4" fill="#8a9bd6" opacity="0.3" />
+      <circle cx="190" cy="100" r="7" fill="#8a9bd6" opacity="0.45" />
+
+      <text x="190" y="240" textAnchor="middle" fill="#4a5a85" fontSize="14" fontFamily="Georgia, serif">Study together. Grow faster.</text>
+      <text x="190" y="260" textAnchor="middle" fill="#6b78a0" fontSize="12" fontFamily="system-ui, sans-serif">Join a room and get into flow.</text>
+    </svg>
   );
 }

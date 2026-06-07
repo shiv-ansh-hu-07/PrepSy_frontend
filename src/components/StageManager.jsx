@@ -111,20 +111,39 @@ export default function StageManager({ tracks = [] }) {
     );
     const hasCamera = hasEnabledTrack(cam, participant.isCameraEnabled);
 
+    if (!hasCamera) {
+      const words = (participant.name || "Guest").trim().split(/\s+/);
+      const initials = words
+        .slice(0, 2)
+        .map((w) => w[0]?.toUpperCase() || "")
+        .join("");
+
+      return (
+        <div style={styles.singleParticipantStage}>
+          <div style={styles.cameraOffPlaceholder}>
+            <div style={styles.cameraOffRing}>
+              <span style={styles.cameraOffInitials}>{initials}</span>
+            </div>
+            <p style={styles.cameraOffName}>{participant.name || "Guest"}</p>
+            <p style={styles.cameraOffSub}>
+              {participant.isMicrophoneEnabled ? "Mic on · " : "Mic off · "}
+              Camera off
+            </p>
+            <p style={styles.cameraOffHint}>
+              Press the camera button to enable video
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div style={styles.singleParticipantStage}>
         <div style={styles.singleDockTile}>
-          {hasCamera ? (
-            <div style={styles.singleDockVideoWrap}>
-              <VideoTrack trackRef={cam} style={styles.singleDockVideo} />
-              <NameTag name={participant.name} />
-            </div>
-          ) : (
-            <AvatarTile
-              name={participant.name || "Guest"}
-              micMuted={!participant.isMicrophoneEnabled}
-            />
-          )}
+          <div style={styles.singleDockVideoWrap}>
+            <VideoTrack trackRef={cam} style={styles.singleDockVideo} />
+            <NameTag name={participant.name} />
+          </div>
         </div>
       </div>
     );
@@ -205,6 +224,60 @@ const styles = {
     height: "100%",
     position: "relative",
     background: "#05070b",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  cameraOffPlaceholder: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 12,
+    padding: "40px 24px",
+    textAlign: "center",
+  },
+
+  cameraOffRing: {
+    width: 96,
+    height: 96,
+    borderRadius: "50%",
+    background: "rgba(138,155,214,0.14)",
+    border: "2px solid rgba(138,155,214,0.35)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+
+  cameraOffInitials: {
+    fontSize: 32,
+    fontWeight: 700,
+    color: "#8a9bd6",
+    letterSpacing: 2,
+    userSelect: "none",
+  },
+
+  cameraOffName: {
+    margin: 0,
+    fontSize: 20,
+    fontWeight: 600,
+    color: "#e2e8f0",
+    letterSpacing: 0.2,
+  },
+
+  cameraOffSub: {
+    margin: 0,
+    fontSize: 13,
+    color: "#64748b",
+    fontWeight: 500,
+  },
+
+  cameraOffHint: {
+    margin: 0,
+    fontSize: 12,
+    color: "#334155",
+    marginTop: 4,
   },
 
   singleDockTile: {

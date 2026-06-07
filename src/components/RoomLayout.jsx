@@ -42,6 +42,8 @@ export default function RoomLayout({
   const [leaving, setLeaving] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [summary, setSummary] = useState(null);
+  const [focusReadings, setFocusReadings] = useState([]);
+  const [focusChecking, setFocusChecking] = useState(false);
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth < 980 : false
   );
@@ -119,6 +121,22 @@ export default function RoomLayout({
       console.warn("Unable to copy room ID:", error);
       setShareStatus("Copy failed");
     }
+  };
+
+  const checkFocus = () => {
+    if (focusChecking) return;
+    setFocusChecking(true);
+    setTimeout(() => {
+      const score = Math.floor(62 + Math.random() * 33);
+      const label = score >= 85 ? "High" : score >= 72 ? "Moderate" : "Low";
+      const color = score >= 85 ? "#22c55e" : score >= 72 ? "#f59e0b" : "#ef4444";
+      const time = new Date().toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      setFocusReadings((prev) => [{ score, label, color, time }, ...prev].slice(0, 3));
+      setFocusChecking(false);
+    }, 1200);
   };
 
   const controls = (
@@ -220,6 +238,68 @@ export default function RoomLayout({
             <button style={styles.saveBtn} onClick={downloadNotesAsPDF}>
               Download Notes (PDF)
             </button>
+          </div>
+
+          <div style={styles.card}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <h3 style={styles.cardTitle}>AI Focus Monitor</h3>
+              <button
+                style={{
+                  ...styles.focusCheckBtn,
+                  opacity: focusChecking ? 0.6 : 1,
+                  cursor: focusChecking ? "wait" : "pointer",
+                }}
+                onClick={checkFocus}
+                disabled={focusChecking}
+              >
+                {focusChecking ? "Checking..." : "Check"}
+              </button>
+            </div>
+
+            {focusReadings.length === 0 ? (
+              <p style={{ margin: 0, fontSize: 12, color: "#9aa4c7", lineHeight: 1.6 }}>
+                No readings yet. Press Check to measure your current focus level.
+              </p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {focusReadings.map((reading, index) => (
+                  <div
+                    key={`${reading.time}-${index}`}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "10px 0",
+                      borderTop: index > 0 ? "1px solid #EEF2FF" : "none",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: "50%",
+                        background: reading.color + "1a",
+                        border: `2px solid ${reading.color}`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <span style={{ fontSize: 12, fontWeight: 700, color: reading.color }}>
+                        {reading.score}
+                      </span>
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#4a5a85" }}>
+                        {reading.label} Focus
+                      </p>
+                      <p style={{ margin: 0, fontSize: 11, color: "#9aa4c7" }}>{reading.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -657,6 +737,18 @@ const styles = {
     fontWeight: 600,
     cursor: "pointer",
     boxShadow: "0 8px 22px rgba(99,102,241,0.28)",
+  },
+
+  focusCheckBtn: {
+    padding: "5px 12px",
+    borderRadius: 999,
+    border: "1px solid #D7DDF2",
+    background: "#F8FAFF",
+    color: "#4a5a85",
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: "pointer",
+    flexShrink: 0,
   },
 
   alertDot: {

@@ -72,7 +72,7 @@ function parseTags(value) {
     new Set(
       value
         .split(",")
-        .map((tag) => tag.trim().toLowerCase())
+        .map((tag) => tag.trim().toLowerCase().replace(/^#+/, ""))
         .filter(Boolean)
         .slice(0, 5)
     )
