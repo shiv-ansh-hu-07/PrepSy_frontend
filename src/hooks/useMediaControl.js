@@ -90,6 +90,7 @@ export default function useMediaControls() {
 
     if (next) {
       await localParticipant.setScreenShareEnabled(true, {
+        audio: true,
         video: {
           width: 1920,
           height: 1080,
