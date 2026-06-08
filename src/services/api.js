@@ -24,6 +24,21 @@ export async function fetchMyAnalytics() {
   return data;
 }
 
+export async function saveFocusSession(payload) {
+  const { data } = await api.post("/focus-analytics", payload);
+  return data;
+}
+
+export async function fetchFocusSummary() {
+  const { data } = await api.get("/focus-analytics/summary");
+  return data;
+}
+
+export async function fetchFocusForRoom(roomId) {
+  const { data } = await api.get(`/focus-analytics/room/${roomId}`);
+  return data;
+}
+
 export async function fetchMyProfile() {
   const { data } = await api.get("/profiles/me");
   return data;

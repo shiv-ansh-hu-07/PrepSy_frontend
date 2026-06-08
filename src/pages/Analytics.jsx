@@ -12,19 +12,22 @@ import {
   Target,
   Trophy,
   Users,
+  Brain,
 } from "lucide-react";
 import AppSideNav from "../components/AppSideNav";
-import { fetchMyAnalytics } from "../services/api";
+import { fetchMyAnalytics, fetchFocusSummary } from "../services/api";
 
 const analyticsTabs = [
   { id: "activity", label: "Activity" },
   { id: "topics", label: "Topics" },
   { id: "sessions", label: "Sessions" },
+  { id: "focus", label: "Focus" },
   { id: "achievements", label: "Achievements" },
 ];
 
 export default function Analytics() {
   const [analytics, setAnalytics] = useState(null);
+  const [focusData, setFocusData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeAnalyticsTab, setActiveAnalyticsTab] = useState("activity");
@@ -44,8 +47,16 @@ export default function Analytics() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetchMyAnalytics();
-      setAnalytics(res.analytics);
+      const [res, focus] = await Promise.allSettled([
+        fetchMyAnalytics(),
+        fetchFocusSummary(),
+      ]);
+      if (res.status === "fulfilled") setAnalytics(res.value.analytics);
+      else {
+        setAnalytics(null);
+        setError(res.reason?.response?.data?.message || "Unable to load analytics.");
+      }
+      if (focus.status === "fulfilled") setFocusData(focus.value);
     } catch (err) {
       setAnalytics(null);
       setError(err?.response?.data?.message || "Unable to load analytics.");
@@ -71,6 +82,9 @@ export default function Analytics() {
     0,
     analyticsTabs.findIndex((tab) => tab.id === activeAnalyticsTab)
   );
+
+  const trendLabel = (t) =>
+    t === "improving" ? "↑ Improving" : t === "declining" ? "↓ Declining" : t === "stable" ? "→ Stable" : "—";
 
   return (
     <div style={styles.page}>
@@ -139,11 +153,22 @@ export default function Analytics() {
                   detail={`${summary.studiedDaysThisWeek || 0} of 7 days this week`}
                   accent="#58a978"
                 />
+                <StatCard
+                  icon={Brain}
+                  label="Avg Focus Score"
+                  value={focusData?.totalAnalyzedSessions > 0
+                    ? `${focusData.avgFocusScore}/100`
+                    : "—"}
+                  detail={focusData?.totalAnalyzedSessions > 0
+                    ? `${focusData.totalAnalyzedSessions} sessions · ${trendLabel(focusData.trend)}`
+                    : "Enable camera to start tracking"}
+                  accent="#7c3aed"
+                />
               </section>
 
               <section style={styles.analyticsTabsShell}>
-                <div style={styles.tabRail} role="tablist" aria-label="Analytics sections">
-                  <span style={styles.tabIndicator(activeTabIndex)} />
+                <div style={styles.tabRail(analyticsTabs.length)} role="tablist" aria-label="Analytics sections">
+                  <span style={styles.tabIndicator(activeTabIndex, analyticsTabs.length)} />
                   {analyticsTabs.map((tab) => (
                     <button
                       key={tab.id}
@@ -176,6 +201,13 @@ export default function Analytics() {
                   {activeAnalyticsTab === "sessions" ? (
                     <div style={styles.singleColGrid}>
                       <ClassHistory classes={analytics.classes || []} />
+                    </div>
+                  ) : null}
+
+                  {activeAnalyticsTab === "focus" ? (
+                    <div style={styles.twoColGrid(isNarrow)}>
+                      <FocusOverviewPanel focusData={focusData} />
+                      <FocusSessionList sessions={focusData?.recentSessions || []} />
                     </div>
                   ) : null}
 
@@ -515,6 +547,125 @@ function EmptyState({ text }) {
   return <p style={styles.emptyState}>{text}</p>;
 }
 
+function FocusOverviewPanel({ focusData }) {
+  const hasSessions = focusData && focusData.totalAnalyzedSessions > 0;
+  const scoreColor = !hasSessions ? "#b0b8d8"
+    : focusData.avgFocusScore >= 75 ? "#22c55e"
+    : focusData.avgFocusScore >= 50 ? "#f59e0b" : "#ef4444";
+
+  const trendColor = focusData?.trend === "improving" ? "#22c55e"
+    : focusData?.trend === "declining" ? "#ef4444" : "#9aa4c7";
+  const trendText = focusData?.trend === "improving" ? "↑ Improving this week"
+    : focusData?.trend === "declining" ? "↓ Needs attention"
+    : focusData?.trend === "stable" ? "→ Holding steady" : null;
+
+  return (
+    <Panel>
+      <SectionHeader icon={Brain} title="AI Focus Overview" />
+      {!hasSessions ? (
+        <EmptyState text="No focus sessions recorded yet. Turn on your camera during a study room session to start AI focus monitoring." />
+      ) : (
+        <>
+          <div style={{ display: "flex", gap: 18, alignItems: "center", marginBottom: 18 }}>
+            <div style={{
+              width: 80, height: 80, borderRadius: "50%", flexShrink: 0,
+              background: scoreColor + "18",
+              border: `3px solid ${scoreColor}`,
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            }}>
+              <span style={{ fontSize: 24, fontWeight: 800, color: scoreColor, lineHeight: 1 }}>
+                {focusData.avgFocusScore}
+              </span>
+              <span style={{ fontSize: 9, color: scoreColor, fontWeight: 600, opacity: 0.8 }}>/100</span>
+            </div>
+            <div>
+              <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#2f3b63" }}>Avg Focus Score</p>
+              <p style={{ margin: "3px 0 4px", fontSize: 12, color: "#6b78a0" }}>
+                {focusData.totalAnalyzedSessions} session{focusData.totalAnalyzedSessions === 1 ? "" : "s"} analysed ·
+                Best: {focusData.bestFocusScore}/100
+              </p>
+              {trendText && (
+                <span style={{ fontSize: 11, fontWeight: 600, color: trendColor }}>
+                  {trendText}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 6 }}>
+            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 600, color: "#9aa4c7", textTransform: "uppercase", letterSpacing: 0.5 }}>
+              Avg engagement
+            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ flex: 1, height: 6, borderRadius: 999, background: "#e8edf9", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${focusData.avgEngagementScore}%`, background: "linear-gradient(90deg, #7c3aed, #a78bfa)", borderRadius: 999 }} />
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#4a5a85", flexShrink: 0 }}>
+                {focusData.avgEngagementScore}%
+              </span>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 14, padding: "12px 14px", background: "#f8f9ff", borderRadius: 12 }}>
+            <p style={{ margin: "0 0 4px", fontSize: 11, fontWeight: 600, color: "#6f3bd6", textTransform: "uppercase", letterSpacing: 0.5 }}>
+              How it works
+            </p>
+            <p style={{ margin: 0, fontSize: 12, color: "#6b78a0", lineHeight: 1.55 }}>
+              Face detection tracks your head orientation, eye openness, and expressions every 5 seconds while your camera is on. Scores improve as you build consistent focused study habits.
+            </p>
+          </div>
+        </>
+      )}
+    </Panel>
+  );
+}
+
+function FocusSessionList({ sessions }) {
+  const scoreColor = (s) => s >= 75 ? "#22c55e" : s >= 50 ? "#f59e0b" : "#ef4444";
+
+  return (
+    <Panel>
+      <SectionHeader icon={CalendarDays} title="Focus Sessions" meta={sessions.length > 0 ? `${sessions.length} recent` : ""} />
+      {sessions.length === 0 ? (
+        <EmptyState text="Your AI-analysed sessions will appear here after your first monitored study session." />
+      ) : (
+        <div style={{ display: "grid", gap: 8, maxHeight: 480, overflowY: "auto", paddingRight: 4 }}>
+          {sessions.map((s) => (
+            <article key={s.id} style={{ borderRadius: 13, border: "1px solid rgba(190,200,235,0.44)", background: "rgba(248,250,255,0.78)", padding: "11px 13px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <p style={{ margin: "0 0 2px", fontSize: 13, fontWeight: 600, color: "#2f3b63", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {s.roomName || s.roomId}
+                  </p>
+                  <p style={{ margin: 0, fontSize: 11, color: "#7a89b8" }}>
+                    {formatDateTime(s.sessionDate)} · {s.durationMinutes}m
+                  </p>
+                  {/* High/Med/Low bar */}
+                  <div style={{ display: "flex", borderRadius: 999, overflow: "hidden", height: 5, marginTop: 7, width: "100%" }}>
+                    {s.highFocusPercent > 0 && <div style={{ width: `${s.highFocusPercent}%`, background: "#22c55e" }} />}
+                    {s.medFocusPercent > 0 && <div style={{ width: `${s.medFocusPercent}%`, background: "#f59e0b" }} />}
+                    {s.lowFocusPercent > 0 && <div style={{ width: `${s.lowFocusPercent}%`, background: "#ef4444" }} />}
+                  </div>
+                  <p style={{ margin: "4px 0 0", fontSize: 10, color: "#9aa4c7" }}>
+                    {s.distractionCount} distraction{s.distractionCount === 1 ? "" : "s"}
+                    {s.offScreenSeconds > 0 ? ` · ${s.offScreenSeconds}s off-screen` : ""}
+                  </p>
+                </div>
+                <div style={{ flexShrink: 0, textAlign: "center" }}>
+                  <span style={{ display: "block", fontSize: 18, fontWeight: 800, color: scoreColor(s.focusScore), lineHeight: 1 }}>
+                    {s.focusScore}
+                  </span>
+                  <span style={{ display: "block", fontSize: 9, color: "#9aa4c7", fontWeight: 500, marginTop: 1 }}>FOCUS</span>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
 function buildMonthCells(days) {
   if (!days.length) return [];
   const firstDate = parseDateKey(days[0].date);
@@ -708,24 +859,23 @@ const styles = {
     minWidth: 0,
     boxSizing: "border-box",
   },
-  tabRail: {
+  tabRail: (count = 5) => ({
     position: "relative",
     display: "grid",
-    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+    gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))`,
     gap: 4,
     borderRadius: 13,
     padding: 4,
     background: "#eef2ff",
     border: "1px solid rgba(190,200,235,0.5)",
     overflow: "hidden",
-    maxWidth: 440,
-  },
-  tabIndicator: (activeIndex) => ({
+  }),
+  tabIndicator: (activeIndex, count = 5) => ({
     position: "absolute",
     top: 3,
     bottom: 3,
-    left: `calc(${activeIndex * 25}% + ${4 - activeIndex * 2}px)`,
-    width: "calc(25% - 2px)",
+    left: `calc(${activeIndex * (100 / count)}% + ${4 - activeIndex * (8 / count)}px)`,
+    width: `calc(${100 / count}% - 2px)`,
     borderRadius: 9,
     background: "#ffffff",
     boxShadow: "0 4px 14px rgba(95,111,163,0.12)",
