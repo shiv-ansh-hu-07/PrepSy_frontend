@@ -47,7 +47,23 @@ export default function useMediaControls() {
     try {
       await localParticipant.setCameraEnabled(!camEnabled);
     } catch (error) {
-      console.warn("Unable to toggle camera:", error);
+      // Stale device ID in localStorage — enumerate real devices and retry
+      if (!camEnabled && error?.name === "NotFoundError") {
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const cam = devices.find((d) => d.kind === "videoinput");
+          if (!cam) {
+            console.warn("No camera device found on this device.");
+            return;
+          }
+          await room.switchActiveDevice("videoinput", cam.deviceId);
+          await localParticipant.setCameraEnabled(true);
+        } catch (retryErr) {
+          console.warn("Unable to toggle camera after device reset:", retryErr);
+        }
+      } else {
+        console.warn("Unable to toggle camera:", error);
+      }
     }
   }, [localParticipant, camEnabled, room]);
 
