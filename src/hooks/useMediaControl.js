@@ -2,7 +2,7 @@ import {
   useLocalParticipant,
   useRoomContext,
 } from "@livekit/components-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 function getScreenShareSupport() {
   if (typeof navigator === "undefined" || typeof window === "undefined") {
@@ -13,50 +13,18 @@ function getScreenShareSupport() {
 }
 
 export default function useMediaControls() {
-  const { localParticipant } = useLocalParticipant();
+  const {
+    localParticipant,
+    isMicrophoneEnabled: micEnabled,
+    isCameraEnabled: camEnabled,
+    isScreenShareEnabled: screenEnabled,
+  } = useLocalParticipant();
   const room = useRoomContext();
 
-  const [micEnabled, setMicEnabled] = useState(false);
-  const [camEnabled, setCamEnabled] = useState(false);
-  const [screenEnabled, setScreenEnabled] = useState(false);
   const [screenShareSupported] = useState(getScreenShareSupport);
-  const resetMediaState = useCallback(() => {
-    setMicEnabled(false);
-    setCamEnabled(false);
-    setScreenEnabled(false);
-  }, []);
-
-  useEffect(() => {
-    if (!room || !localParticipant) return;
-    if (room.state !== "connected") return;
-
-    let active = true;
-
-    const initializeParticipantMedia = async () => {
-      try {
-        await localParticipant.setMicrophoneEnabled(false);
-        await localParticipant.setCameraEnabled(false);
-      } catch (error) {
-        console.warn("Unable to initialize local media state:", error);
-      }
-
-      queueMicrotask(() => {
-        if (active) {
-          resetMediaState();
-        }
-      });
-    };
-
-    void initializeParticipantMedia();
-
-    return () => {
-      active = false;
-    };
-  }, [localParticipant, resetMediaState, room]);
 
   const ensureRoomAudioStarted = useCallback(async () => {
     if (!room || typeof room.startAudio !== "function") return;
-
     try {
       await room.startAudio();
     } catch (error) {
@@ -66,42 +34,45 @@ export default function useMediaControls() {
 
   const toggleMic = useCallback(async () => {
     if (!localParticipant || room?.state !== "connected") return;
-
-    const next = !micEnabled;
-    await ensureRoomAudioStarted();
-    await localParticipant.setMicrophoneEnabled(next);
-    setMicEnabled(next);
+    try {
+      await ensureRoomAudioStarted();
+      await localParticipant.setMicrophoneEnabled(!micEnabled);
+    } catch (error) {
+      console.warn("Unable to toggle microphone:", error);
+    }
   }, [ensureRoomAudioStarted, localParticipant, micEnabled, room]);
 
   const toggleCamera = useCallback(async () => {
     if (!localParticipant || room?.state !== "connected") return;
-
-    const next = !camEnabled;
-    await localParticipant.setCameraEnabled(next);
-    setCamEnabled(next);
+    try {
+      await localParticipant.setCameraEnabled(!camEnabled);
+    } catch (error) {
+      console.warn("Unable to toggle camera:", error);
+    }
   }, [localParticipant, camEnabled, room]);
 
   const toggleScreenShare = useCallback(async () => {
     if (!localParticipant || room?.state !== "connected") return;
     if (!screenShareSupported) return;
 
-    const next = !screenEnabled;
-    await ensureRoomAudioStarted();
+    try {
+      await ensureRoomAudioStarted();
 
-    if (next) {
-      await localParticipant.setScreenShareEnabled(true, {
-        audio: true,
-        video: {
-          width: 1920,
-          height: 1080,
-          frameRate: 30,
-        },
-      });
-    } else {
-      await localParticipant.setScreenShareEnabled(false);
+      if (!screenEnabled) {
+        await localParticipant.setScreenShareEnabled(true, {
+          audio: true,
+          video: {
+            width: 1920,
+            height: 1080,
+            frameRate: 30,
+          },
+        });
+      } else {
+        await localParticipant.setScreenShareEnabled(false);
+      }
+    } catch (error) {
+      console.warn("Unable to toggle screen share:", error);
     }
-
-    setScreenEnabled(next);
   }, [
     ensureRoomAudioStarted,
     localParticipant,
