@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocalParticipant } from "@livekit/components-react";
 
-const MODEL_CDN = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights";
+const MODEL_CDN = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights";
 
 // Module-level singleton so models load only once per page
 let modelCache = null;
@@ -164,7 +164,8 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
     let faceapi;
     try {
       faceapi = await loadModels();
-    } catch {
+    } catch (err) {
+      console.error("[FocusMonitor] Failed to load models:", err);
       modelCache = null; // allow retry next time
       setStatus("error");
       return;
