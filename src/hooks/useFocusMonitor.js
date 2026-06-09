@@ -9,7 +9,7 @@ let modelCache = null;
 async function loadModels() {
   if (modelCache) return modelCache;
   modelCache = (async () => {
-    const faceapi = (await import("face-api.js")).default;
+    const faceapi = await import("face-api.js");
     await Promise.all([
       faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_CDN),
       faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_CDN),
