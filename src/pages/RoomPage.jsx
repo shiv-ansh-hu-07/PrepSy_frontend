@@ -19,6 +19,7 @@ export default function RoomPage() {
 
   const [token, setToken] = useState(null);
   const [roomName, setRoomName] = useState("");
+  const [roomDurationMinutes, setRoomDurationMinutes] = useState(90);
   const [chatOpen, setChatOpen] = useState(false);
   const [joinError, setJoinError] = useState(null);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
@@ -42,6 +43,7 @@ export default function RoomPage() {
         if (!cancelled) {
           setToken(res.data.token);
           setRoomName(res.data.roomName || "Study Room");
+          setRoomDurationMinutes(res.data.durationMinutes || 90);
           setJoinError(null);
         }
       })
@@ -185,6 +187,7 @@ export default function RoomPage() {
         <RoomLayout
           roomId={roomId}
           roomName={roomName}
+          roomDurationMinutes={roomDurationMinutes}
           onToggleChat={() =>
             setChatOpen((value) => {
               const next = !value;

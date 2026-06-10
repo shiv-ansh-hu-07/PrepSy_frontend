@@ -2,6 +2,14 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
+const COLLAB_STYLE_OPTIONS = [
+  { value: "quiet-focus", label: "Quiet Focus", desc: "Silent deep work, no interruptions" },
+  { value: "discussion-heavy", label: "Discussion Heavy", desc: "Active dialogue and idea exchange" },
+  { value: "pair-study", label: "Pair Study", desc: "Work through problems together" },
+  { value: "project-based", label: "Project Based", desc: "Collaborate on a shared project" },
+  { value: "interview-practice", label: "Interview Practice", desc: "Mock interviews and problem solving" },
+];
+
 const GOAL_OPTIONS = [
   "DSA & Algorithms", "Competitive Programming", "Interview Prep", "Placements",
   "Job Switch", "FAANG / Top Tech", "System Design", "Full-Stack Development",
@@ -336,6 +344,7 @@ export default function CreateRoom() {
   const [languages, setLanguages] = useState([]);
   const [visibility, setVisibility] = useState("PRIVATE");
   const [expertise, setExpertise] = useState("learning");
+  const [collaborationStyle, setCollaborationStyle] = useState("quiet-focus");
   const [femaleOnly, setFemaleOnly] = useState(false);
   const [scheduleEnabled, setScheduleEnabled] = useState(true);
   const [scheduleTime, setScheduleTime] = useState("19:00");
@@ -364,11 +373,8 @@ export default function CreateRoom() {
     }
 
     const parsedDuration = Number(durationMinutes);
-    if (
-      scheduleEnabled &&
-      (!Number.isFinite(parsedDuration) || parsedDuration <= 0)
-    ) {
-      alert("Enter a valid duration in minutes");
+    if (!Number.isFinite(parsedDuration) || parsedDuration <= 0) {
+      alert("Enter a valid session duration in minutes");
       return;
     }
 
@@ -384,8 +390,9 @@ export default function CreateRoom() {
         visibility,
         femaleOnly,
         preferredLanguages: languages,
+        collaborationStyle,
+        durationMinutes: parsedDuration,
         scheduleTime: scheduleEnabled ? scheduleTime : null,
-        durationMinutes: scheduleEnabled ? parsedDuration : null,
         timezone: scheduleEnabled ? timezone : null,
         isRecurring: scheduleEnabled,
       });
@@ -486,6 +493,20 @@ export default function CreateRoom() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
+
+          <FieldLabel>Session Duration (minutes) *</FieldLabel>
+          <input
+            type="number"
+            min="15"
+            step="15"
+            style={inputBase}
+            value={durationMinutes}
+            onChange={(e) => setDurationMinutes(e.target.value)}
+            placeholder="e.g. 90"
+          />
+          <p style={{ margin: "-8px 0 14px", fontSize: 11, color: "#9aa4c7" }}>
+            Sets the Pomodoro timer automatically — e.g. 90 min → 3 sessions × ~27 min + 5 min breaks
+          </p>
 
           {/* ── Room Settings ── */}
           <SectionHeader>Room Settings</SectionHeader>
@@ -617,6 +638,38 @@ export default function CreateRoom() {
             <Toggle value={femaleOnly} onChange={setFemaleOnly} />
           </div>
 
+          {/* ── Collaboration Style ── */}
+          <SectionHeader>Collaboration Style</SectionHeader>
+          <p style={{ margin: "-8px 0 12px", fontSize: 12, color: "#9aa4c7" }}>
+            How will participants work together in this room?
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 6 }}>
+            {COLLAB_STYLE_OPTIONS.map((opt) => {
+              const active = collaborationStyle === opt.value;
+              return (
+                <div
+                  key={opt.value}
+                  onClick={() => setCollaborationStyle(opt.value)}
+                  style={{
+                    border: `1.5px solid ${active ? "#7c3aed" : "#d6d9e8"}`,
+                    borderRadius: 14,
+                    padding: "12px 14px",
+                    cursor: "pointer",
+                    background: active ? "#f3eeff" : "#fafbff",
+                    transition: "border-color 0.15s, background 0.15s",
+                  }}
+                >
+                  <p style={{ margin: "0 0 2px", fontSize: 13, fontWeight: 600, color: active ? "#6f3bd6" : "#2f3b63" }}>
+                    {opt.label}
+                  </p>
+                  <p style={{ margin: 0, fontSize: 11, color: active ? "#9b77e0" : "#9aa4c7", lineHeight: 1.4 }}>
+                    {opt.desc}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
           {/* ── Study Goals ── */}
           <SectionHeader>Study Goals</SectionHeader>
           <p style={{ margin: "-8px 0 10px", fontSize: 12, color: "#9aa4c7" }}>
@@ -674,16 +727,6 @@ export default function CreateRoom() {
                 style={inputBase}
                 value={scheduleTime}
                 onChange={(e) => setScheduleTime(e.target.value)}
-              />
-
-              <FieldLabel>Duration (minutes)</FieldLabel>
-              <input
-                type="number"
-                min="15"
-                step="15"
-                style={inputBase}
-                value={durationMinutes}
-                onChange={(e) => setDurationMinutes(e.target.value)}
               />
 
               <FieldLabel>Timezone</FieldLabel>
@@ -902,7 +945,7 @@ export default function CreateRoom() {
                 </div>
               )}
 
-              {scheduleEnabled && scheduleTime && (
+              {durationMinutes && (
                 <div
                   style={{
                     marginTop: 12,
@@ -913,7 +956,9 @@ export default function CreateRoom() {
                     color: "#4a5a85",
                   }}
                 >
-                  Daily at {scheduleTime} · {durationMinutes} min
+                  {durationMinutes} min session
+                  {scheduleEnabled && scheduleTime ? ` · Daily at ${scheduleTime}` : ""}
+                  {collaborationStyle && ` · ${COLLAB_STYLE_OPTIONS.find(o => o.value === collaborationStyle)?.label || ""}`}
                 </div>
               )}
             </div>

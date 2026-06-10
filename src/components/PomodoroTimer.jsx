@@ -1,25 +1,36 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   useLocalParticipant,
   useRoomContext,
 } from "@livekit/components-react";
 
-const SESSION_DURATION = 25 * 60;
 const BREAK_DURATION = 5 * 60;
 const RADIUS = 70;
 const STROKE = 10;
 const ARC_LENGTH = Math.PI * RADIUS;
 
-export default function PomodoroTimer({ onLeaveRoom }) {
+function calcPomodoro(roomDurationMinutes) {
+  const D = Math.max(15, roomDurationMinutes || 90);
+  const N = Math.max(1, Math.round(D / 30));
+  const sessionMinutes = Math.max(5, Math.round((D - (N - 1) * 5) / N));
+  return { sessions: N, sessionSeconds: sessionMinutes * 60 };
+}
+
+export default function PomodoroTimer({ onLeaveRoom, roomDurationMinutes = 90 }) {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
+
+  const { sessions: autoSessions, sessionSeconds: SESSION_DURATION } = useMemo(
+    () => calcPomodoro(roomDurationMinutes),
+    [roomDurationMinutes],
+  );
 
   const [now, setNow] = useState(() => Date.now());
   const completionHandledRef = useRef(false);
 
   const [phaseStartedAt, setPhaseStartedAt] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
-  const [totalSessions, setTotalSessions] = useState(1);
+  const [totalSessions, setTotalSessions] = useState(() => calcPomodoro(roomDurationMinutes).sessions);
   const [completedSessions, setCompletedSessions] = useState(0);
   const [statusMessage, setStatusMessage] = useState("");
   const [showNextSessionPrompt, setShowNextSessionPrompt] = useState(false);
@@ -27,6 +38,12 @@ export default function PomodoroTimer({ onLeaveRoom }) {
   const [breakSecondsLeft, setBreakSecondsLeft] = useState(BREAK_DURATION);
   const [showSettlePrompt, setShowSettlePrompt] = useState(true);
   const [settleSecondsLeft, setSettleSecondsLeft] = useState(60);
+
+  useEffect(() => {
+    if (!isRunning && !phaseStartedAt && !showBreakPrompt && !showNextSessionPrompt) {
+      setTotalSessions(autoSessions);
+    }
+  }, [autoSessions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   let timeLeft = SESSION_DURATION;
 
@@ -287,6 +304,9 @@ export default function PomodoroTimer({ onLeaveRoom }) {
         <div style={styles.sessionCountRow}>
           <span>Sessions: </span>
           <span style={styles.sessionCount}>{totalSessions}</span>
+          <span style={{ color: "#9aa4c7", fontSize: 11 }}>
+            ({Math.round(SESSION_DURATION / 60)}m each)
+          </span>
         </div>
 
         <div>Completed: {completedSessions}</div>

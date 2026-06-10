@@ -118,6 +118,7 @@ const emptyProfile = {
   institutionType: "", institutionName: "", degree: "", branch: "",
   semester: "", expectedGraduation: "", company: "", role: "",
   experienceLevel: "", workMode: "", collaborationPreference: "",
+  dailyStudyGoalMinutes: 0,
   portfolioUrl: "", linkedinUrl: "", githubUrl: "", isDiscoverable: true,
 };
 
@@ -443,6 +444,23 @@ export default function Profile() {
                       rows={3} style={styles.textarea} />
                     <p style={styles.helperText}>{profile.bio.length}/180</p>
                   </Field>
+                  <Field label="Daily Study Goal">
+                    <select
+                      value={profile.dailyStudyGoalMinutes || 0}
+                      onChange={(e) => updateField("dailyStudyGoalMinutes", Number(e.target.value))}
+                      style={styles.input}
+                    >
+                      <option value={0}>No goal set</option>
+                      {[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,7,8,9,10,12].map((h) => (
+                        <option key={h} value={Math.round(h * 60)}>
+                          {h} hour{h !== 1 ? "s" : ""} per day
+                        </option>
+                      ))}
+                    </select>
+                    <p style={styles.helperText}>
+                      Used to show your daily goal vs actual time in Analytics.
+                    </p>
+                  </Field>
                 </Section>
 
                 <Section icon={GraduationCap} title="I Am A">
@@ -709,6 +727,12 @@ function ProfileViewPanel({ profile }) {
           <ViewItem label="Phone" value={profile.phone} />
           <ViewItem label="Age" value={profile.age} />
           <ViewItem label="Gender" value={formatGender(profile.gender)} />
+          <ViewItem
+            label="Daily Study Goal"
+            value={profile.dailyStudyGoalMinutes > 0
+              ? `${profile.dailyStudyGoalMinutes / 60} hr${profile.dailyStudyGoalMinutes !== 60 ? "s" : ""} / day`
+              : null}
+          />
         </div>
         {profile.bio && (
           <div style={{ marginTop: 14 }}>
@@ -992,6 +1016,7 @@ function normalizeProfile(profile) {
     ...emptyProfile,
     ...(profile || {}),
     age: profile?.age || "",
+    dailyStudyGoalMinutes: profile?.dailyStudyGoalMinutes ?? 0,
     institutionType:
       profile?.institutionType === "student" ? "college" : profile?.institutionType || "",
     goals: profile?.goals || [],

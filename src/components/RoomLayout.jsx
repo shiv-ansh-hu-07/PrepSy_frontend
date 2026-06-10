@@ -22,6 +22,7 @@ export default function RoomLayout({
   roomName,
   onToggleChat,
   hasUnreadMessages = false,
+  roomDurationMinutes = 90,
 }) {
   const {
     toggleMic,
@@ -189,7 +190,7 @@ export default function RoomLayout({
 
         <div style={styles.sidePanel(isMobile)}>
           <div style={{ ...styles.card, minHeight: isMobile ? 210 : 224, overflow: "visible", display: "grid", gridTemplateRows: "auto 1fr auto" }}>
-            <PomodoroTimer onLeaveRoom={handleLeave} />
+            <PomodoroTimer onLeaveRoom={handleLeave} roomDurationMinutes={roomDurationMinutes} />
           </div>
 
           <div style={{ ...styles.card, minHeight: isMobile ? 210 : 248 }}>

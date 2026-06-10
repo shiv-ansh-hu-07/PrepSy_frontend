@@ -187,7 +187,11 @@ export default function Analytics() {
                   {activeAnalyticsTab === "activity" ? (
                     <div style={styles.twoColGrid(isNarrow)}>
                       <Heatmap analytics={analytics} />
-                      <WeeklyFocusChart entries={analytics.weeklyFocus || []} total={weeklyTotal} />
+                      <WeeklyFocusChart
+                        entries={analytics.weeklyFocus || []}
+                        total={weeklyTotal}
+                        dailyGoalMinutes={summary.dailyStudyGoalMinutes || 0}
+                      />
                     </div>
                   ) : null}
 
@@ -307,27 +311,72 @@ function Heatmap({ analytics }) {
   );
 }
 
-function WeeklyFocusChart({ entries, total }) {
-  const maxMinutes = Math.max(0, ...entries.map((entry) => entry.minutes || 0));
+function WeeklyFocusChart({ entries, total, dailyGoalMinutes = 0 }) {
+  const hasGoal = dailyGoalMinutes > 0;
+  const maxActual = Math.max(0, ...entries.map((e) => e.minutes || 0));
+  const barScale = hasGoal ? dailyGoalMinutes : maxActual;
+
+  const goalLabel = hasGoal
+    ? `Goal ${formatMinutes(dailyGoalMinutes)}/day`
+    : null;
 
   return (
     <Panel>
       <SectionHeader
         icon={BarChart3}
         title="Weekly Focus Time"
-        meta={`Total ${formatMinutes(total)}`}
+        meta={goalLabel ? `Total ${formatMinutes(total)} · ${goalLabel}` : `Total ${formatMinutes(total)}`}
       />
+
+      {hasGoal && (
+        <div style={{ display: "flex", gap: 12, marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: "#8a9bd6", display: "inline-block" }} />
+            <span style={{ fontSize: 11, color: "#6b78a0" }}>Studied</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: "#e6e9f8", border: "1px solid #c4cce8", display: "inline-block" }} />
+            <span style={{ fontSize: 11, color: "#6b78a0" }}>Goal</span>
+          </div>
+        </div>
+      )}
 
       <div style={styles.chartWrap}>
         {entries.map((entry) => {
-          const height = maxMinutes > 0 ? Math.max(6, (entry.minutes / maxMinutes) * 140) : 0;
+          const actual = entry.minutes || 0;
+          const trackHeight = 140;
+          const goalH = barScale > 0 ? trackHeight : 0;
+          const actualH = barScale > 0 ? Math.min(trackHeight, Math.max(actual > 0 ? 6 : 0, (actual / barScale) * trackHeight)) : 0;
+          const overGoal = hasGoal && actual > dailyGoalMinutes;
+
           return (
             <div key={entry.date} style={styles.chartColumn}>
               <span style={styles.chartValue}>
-                {entry.minutes > 0 ? formatMinutes(entry.minutes) : ""}
+                {actual > 0 ? formatMinutes(actual) : ""}
               </span>
-              <div style={styles.chartTrack}>
-                <div style={{ ...styles.chartBar, height }} />
+              <div style={{ ...styles.chartTrack, height: trackHeight, position: "relative" }}>
+                {hasGoal && (
+                  <div style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: goalH,
+                    background: "#eef2ff",
+                    border: "1px solid #d0d8f0",
+                    borderRadius: 6,
+                  }} />
+                )}
+                <div style={{
+                  ...styles.chartBar,
+                  height: actualH,
+                  position: hasGoal ? "absolute" : "static",
+                  bottom: hasGoal ? 0 : undefined,
+                  left: hasGoal ? 0 : undefined,
+                  right: hasGoal ? 0 : undefined,
+                  background: overGoal ? "#22c55e" : "#8a9bd6",
+                  zIndex: 1,
+                }} />
               </div>
               <span style={styles.chartLabel}>
                 {formatDateKey(entry.date, { weekday: "short" })}
