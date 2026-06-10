@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  Activity,
   Award,
   BarChart3,
   BookOpenCheck,
@@ -13,6 +14,7 @@ import {
   Trophy,
   Users,
   Brain,
+  Zap,
 } from "lucide-react";
 import AppSideNav from "../components/AppSideNav";
 import { fetchMyAnalytics, fetchFocusSummary } from "../services/api";
@@ -209,9 +211,15 @@ export default function Analytics() {
                   ) : null}
 
                   {activeAnalyticsTab === "focus" ? (
-                    <div style={styles.twoColGrid(isNarrow)}>
-                      <FocusOverviewPanel focusData={focusData} />
-                      <FocusSessionList sessions={focusData?.recentSessions || []} />
+                    <div style={{ display: "grid", gap: 18 }}>
+                      <div style={styles.twoColGrid(isNarrow)}>
+                        <FocusOverviewPanel focusData={focusData} />
+                        <FocusSessionList sessions={focusData?.recentSessions || []} />
+                      </div>
+                      <div style={styles.twoColGrid(isNarrow)}>
+                        <PeakFocusHoursChart sessions={focusData?.recentSessions || []} />
+                        <DistractionBreakdown sessions={focusData?.recentSessions || []} />
+                      </div>
                     </div>
                   ) : null}
 
@@ -594,6 +602,234 @@ function SectionHeader({ icon: Icon, title, meta }) {
 
 function EmptyState({ text }) {
   return <p style={styles.emptyState}>{text}</p>;
+}
+
+// ── Peak Focus Hours ─────────────────────────────────────────────────────────
+
+function scoreToHeatColor(score) {
+  if (score === null) return "#f0f3fc";
+  if (score >= 80) return "#6f3bd6";
+  if (score >= 65) return "#8a9bd6";
+  if (score >= 50) return "#b3bfe8";
+  if (score >= 35) return "#d6dcf4";
+  return "#eef2ff";
+}
+
+function formatHour(hour, short = false) {
+  const amPm = hour >= 12 ? "pm" : "am";
+  const h = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return short ? `${h}${amPm}` : `${h}:00 ${amPm.toUpperCase()}`;
+}
+
+function PeakFocusHoursChart({ sessions }) {
+  const hasSessions = sessions && sessions.length > 0;
+
+  const hourlyData = useMemo(() => {
+    const map = {};
+    (sessions || []).forEach((s) => {
+      const hour = new Date(s.sessionDate).getHours();
+      if (!map[hour]) map[hour] = [];
+      map[hour].push(s.focusScore);
+    });
+    return Array.from({ length: 24 }, (_, h) => {
+      const scores = map[h] || [];
+      return {
+        hour: h,
+        avgScore: scores.length
+          ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+          : null,
+        count: scores.length,
+      };
+    });
+  }, [sessions]);
+
+  const peakHour = useMemo(
+    () =>
+      hourlyData
+        .filter((h) => h.avgScore !== null)
+        .sort((a, b) => b.avgScore - a.avgScore)[0] || null,
+    [hourlyData],
+  );
+
+  const visibleHours = hourlyData.filter((h) => h.hour >= 5 && h.hour <= 23);
+
+  return (
+    <Panel>
+      <SectionHeader icon={Zap} title="Peak Focus Hours" />
+      {!hasSessions ? (
+        <EmptyState text="Complete monitored sessions to discover your peak focus hours." />
+      ) : (
+        <>
+          {peakHour && (
+            <div style={{
+              padding: "10px 14px", background: "#f0ebff", borderRadius: 10,
+              border: "1px solid rgba(124,58,237,0.15)", marginBottom: 14,
+            }}>
+              <p style={{ margin: 0, fontSize: 13, color: "#6f3bd6", fontWeight: 600 }}>
+                ⚡ Your brain works best around {formatHour(peakHour.hour)} — avg score {peakHour.avgScore}/100
+              </p>
+            </div>
+          )}
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 5 }}>
+            {visibleHours.map((h) => {
+              const hasData = h.avgScore !== null;
+              const bg = scoreToHeatColor(h.avgScore);
+              const textColor = hasData && h.avgScore >= 65 ? "#ffffff" : "#4a5a85";
+              const isPeak = peakHour && h.hour === peakHour.hour;
+              return (
+                <div
+                  key={h.hour}
+                  title={
+                    hasData
+                      ? `${formatHour(h.hour)}: ${h.avgScore}/100 (${h.count} session${h.count !== 1 ? "s" : ""})`
+                      : `${formatHour(h.hour)}: No data`
+                  }
+                  style={{
+                    height: 50,
+                    borderRadius: 10,
+                    background: bg,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: isPeak ? "2px solid #7c3aed" : "2px solid transparent",
+                    cursor: "default",
+                    transition: "opacity 0.15s",
+                  }}
+                >
+                  <span style={{ fontSize: 9, color: hasData ? textColor : "#c0c8e0", fontWeight: 600, lineHeight: 1 }}>
+                    {formatHour(h.hour, true)}
+                  </span>
+                  {hasData && (
+                    <span style={{ fontSize: 12, fontWeight: 800, color: textColor, lineHeight: 1.3 }}>
+                      {h.avgScore}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center" }}>
+            <span style={{ fontSize: 10, color: "#b0b8d8" }}>Low focus</span>
+            {[20, 40, 55, 70, 85].map((v) => (
+              <span
+                key={v}
+                style={{ width: 16, height: 10, borderRadius: 3, background: scoreToHeatColor(v), display: "inline-block" }}
+              />
+            ))}
+            <span style={{ fontSize: 10, color: "#b0b8d8" }}>High focus</span>
+          </div>
+          <p style={{ margin: "8px 0 0", fontSize: 11, color: "#b0b8d8" }}>
+            Based on {sessions.length} recent session{sessions.length !== 1 ? "s" : ""}
+          </p>
+        </>
+      )}
+    </Panel>
+  );
+}
+
+// ── Distraction Breakdown ─────────────────────────────────────────────────────
+
+function MiniMetric({ label, value, unit, color }) {
+  return (
+    <div style={{ padding: "10px 12px", background: "#f8f9ff", borderRadius: 12, border: "1px solid #eef2ff" }}>
+      <p style={{ margin: "0 0 3px", fontSize: 10, color: "#9aa4c7", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4 }}>
+        {label}
+      </p>
+      <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color, lineHeight: 1 }}>
+        {value}
+        {unit && <span style={{ fontSize: 11, color: "#9aa4c7", fontWeight: 400, marginLeft: 3 }}>{unit}</span>}
+      </p>
+    </div>
+  );
+}
+
+function DistractionBreakdown({ sessions }) {
+  const hasSessions = sessions && sessions.length > 0;
+
+  const stats = useMemo(() => {
+    if (!hasSessions) return null;
+    const n = sessions.length;
+    const avg = (arr) => Math.round(arr.reduce((a, b) => a + b, 0) / arr.length);
+    const avgDistractions = (
+      sessions.reduce((a, s) => a + (s.distractionCount || 0), 0) / n
+    ).toFixed(1);
+    const avgOffScreenMin = Math.round(
+      (sessions.reduce((a, s) => a + (s.offScreenSeconds || 0), 0) / n / 60) * 10,
+    ) / 10;
+
+    return {
+      avgDistractions,
+      avgOffScreenMin,
+      avgHighPct: avg(sessions.map((s) => s.highFocusPercent || 0)),
+      avgMedPct: avg(sessions.map((s) => s.medFocusPercent || 0)),
+      avgLowPct: avg(sessions.map((s) => s.lowFocusPercent || 0)),
+      avgEngagement: avg(sessions.map((s) => s.engagementScore || 0)),
+    };
+  }, [sessions, hasSessions]);
+
+  const insight = stats
+    ? Number(stats.avgOffScreenMin) >= 1
+      ? `Off-screen costs you ~${stats.avgOffScreenMin}m per session`
+      : Number(stats.avgDistractions) > 2
+      ? `You average ${stats.avgDistractions} distractions per session`
+      : stats.avgHighPct >= 60
+      ? `Great discipline — ${stats.avgHighPct}% of your time is in high focus`
+      : null
+    : null;
+
+  return (
+    <Panel>
+      <SectionHeader icon={Activity} title="Distraction Breakdown" />
+      {!hasSessions || !stats ? (
+        <EmptyState text="Complete monitored sessions to see your distraction patterns." />
+      ) : (
+        <>
+          {insight && (
+            <div style={{
+              padding: "10px 14px", background: "#fff7ed", borderRadius: 10,
+              border: "1px solid #fed7aa", marginBottom: 14,
+            }}>
+              <p style={{ margin: 0, fontSize: 13, color: "#c2410c", fontWeight: 600 }}>
+                {Number(stats.avgOffScreenMin) >= 1 || Number(stats.avgDistractions) > 2 ? "⚠ " : "✓ "}
+                {insight}
+              </p>
+            </div>
+          )}
+
+          <p style={{ margin: "0 0 7px", fontSize: 11, fontWeight: 600, color: "#9aa4c7", textTransform: "uppercase", letterSpacing: 0.5 }}>
+            Avg focus quality per session
+          </p>
+          <div style={{ display: "flex", borderRadius: 999, overflow: "hidden", height: 10, marginBottom: 6 }}>
+            {stats.avgHighPct > 0 && <div style={{ width: `${stats.avgHighPct}%`, background: "#22c55e" }} />}
+            {stats.avgMedPct > 0 && <div style={{ width: `${stats.avgMedPct}%`, background: "#f59e0b" }} />}
+            {stats.avgLowPct > 0 && <div style={{ width: `${stats.avgLowPct}%`, background: "#ef4444" }} />}
+          </div>
+          <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+            {[
+              { label: "High", pct: stats.avgHighPct, color: "#22c55e" },
+              { label: "Medium", pct: stats.avgMedPct, color: "#f59e0b" },
+              { label: "Low", pct: stats.avgLowPct, color: "#ef4444" },
+            ].map(({ label, pct, color }) => (
+              <div key={label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: color, display: "inline-block" }} />
+                <span style={{ fontSize: 11, color: "#6b78a0" }}>{label} {pct}%</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <MiniMetric label="Avg distractions" value={stats.avgDistractions} unit="/session" color="#f59e0b" />
+            <MiniMetric label="Off-screen time" value={stats.avgOffScreenMin} unit="m/session" color="#ef4444" />
+            <MiniMetric label="Avg engagement" value={`${stats.avgEngagement}%`} color="#22c55e" />
+            <MiniMetric label="Sessions analyzed" value={sessions.length} color="#8a9bd6" />
+          </div>
+        </>
+      )}
+    </Panel>
+  );
 }
 
 function FocusOverviewPanel({ focusData }) {
