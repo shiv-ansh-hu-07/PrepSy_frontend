@@ -87,6 +87,49 @@ const CITY_OPTIONS = [
   "Nashik", "Aurangabad", "Srinagar", "Allahabad", "Pondicherry", "Other",
 ];
 
+const CITY_META = {
+  Mumbai:         { state: "Maharashtra",       country: "India", timezone: "Asia/Kolkata" },
+  Delhi:          { state: "Delhi",             country: "India", timezone: "Asia/Kolkata" },
+  Bangalore:      { state: "Karnataka",         country: "India", timezone: "Asia/Kolkata" },
+  Hyderabad:      { state: "Telangana",         country: "India", timezone: "Asia/Kolkata" },
+  Chennai:        { state: "Tamil Nadu",        country: "India", timezone: "Asia/Kolkata" },
+  Kolkata:        { state: "West Bengal",       country: "India", timezone: "Asia/Kolkata" },
+  Pune:           { state: "Maharashtra",       country: "India", timezone: "Asia/Kolkata" },
+  Ahmedabad:      { state: "Gujarat",           country: "India", timezone: "Asia/Kolkata" },
+  Jaipur:         { state: "Rajasthan",         country: "India", timezone: "Asia/Kolkata" },
+  Lucknow:        { state: "Uttar Pradesh",     country: "India", timezone: "Asia/Kolkata" },
+  Surat:          { state: "Gujarat",           country: "India", timezone: "Asia/Kolkata" },
+  Kanpur:         { state: "Uttar Pradesh",     country: "India", timezone: "Asia/Kolkata" },
+  Nagpur:         { state: "Maharashtra",       country: "India", timezone: "Asia/Kolkata" },
+  Indore:         { state: "Madhya Pradesh",    country: "India", timezone: "Asia/Kolkata" },
+  Bhopal:         { state: "Madhya Pradesh",    country: "India", timezone: "Asia/Kolkata" },
+  Patna:          { state: "Bihar",             country: "India", timezone: "Asia/Kolkata" },
+  Vadodara:       { state: "Gujarat",           country: "India", timezone: "Asia/Kolkata" },
+  Coimbatore:     { state: "Tamil Nadu",        country: "India", timezone: "Asia/Kolkata" },
+  Visakhapatnam:  { state: "Andhra Pradesh",    country: "India", timezone: "Asia/Kolkata" },
+  Chandigarh:     { state: "Chandigarh (UT)",   country: "India", timezone: "Asia/Kolkata" },
+  Ranchi:         { state: "Jharkhand",         country: "India", timezone: "Asia/Kolkata" },
+  Guwahati:       { state: "Assam",             country: "India", timezone: "Asia/Kolkata" },
+  Kochi:          { state: "Kerala",            country: "India", timezone: "Asia/Kolkata" },
+  Mysuru:         { state: "Karnataka",         country: "India", timezone: "Asia/Kolkata" },
+  Jodhpur:        { state: "Rajasthan",         country: "India", timezone: "Asia/Kolkata" },
+  Varanasi:       { state: "Uttar Pradesh",     country: "India", timezone: "Asia/Kolkata" },
+  Agra:           { state: "Uttar Pradesh",     country: "India", timezone: "Asia/Kolkata" },
+  Meerut:         { state: "Uttar Pradesh",     country: "India", timezone: "Asia/Kolkata" },
+  Rajkot:         { state: "Gujarat",           country: "India", timezone: "Asia/Kolkata" },
+  Amritsar:       { state: "Punjab",            country: "India", timezone: "Asia/Kolkata" },
+  Gwalior:        { state: "Madhya Pradesh",    country: "India", timezone: "Asia/Kolkata" },
+  Vijayawada:     { state: "Andhra Pradesh",    country: "India", timezone: "Asia/Kolkata" },
+  Madurai:        { state: "Tamil Nadu",        country: "India", timezone: "Asia/Kolkata" },
+  Raipur:         { state: "Chhattisgarh",      country: "India", timezone: "Asia/Kolkata" },
+  Kota:           { state: "Rajasthan",         country: "India", timezone: "Asia/Kolkata" },
+  Nashik:         { state: "Maharashtra",       country: "India", timezone: "Asia/Kolkata" },
+  Aurangabad:     { state: "Maharashtra",       country: "India", timezone: "Asia/Kolkata" },
+  Srinagar:       { state: "Jammu & Kashmir",   country: "India", timezone: "Asia/Kolkata" },
+  Allahabad:      { state: "Uttar Pradesh",     country: "India", timezone: "Asia/Kolkata" },
+  Pondicherry:    { state: "Puducherry",        country: "India", timezone: "Asia/Kolkata" },
+};
+
 const TIMEZONE_OPTIONS = [
   "Asia/Kolkata (IST, UTC+5:30)", "Asia/Dhaka (UTC+6)", "Asia/Karachi (PKT, UTC+5)",
   "Asia/Dubai (UTC+4)", "Asia/Singapore (UTC+8)", "Asia/Tokyo (JST, UTC+9)",
@@ -599,9 +642,23 @@ export default function Profile() {
                   caption="City and timezone help recommend nearby collaborators and compatible schedules.">
                   <div style={styles.fieldGrid}>
                     <Field label="City">
-                      <select value={profile.city}
-                        onChange={(e) => updateField("city", e.target.value)}
-                        style={styles.input}>
+                      <select
+                        value={profile.city}
+                        onChange={(e) => {
+                          const city = e.target.value;
+                          const meta = CITY_META[city];
+                          setProfile((cur) => ({
+                            ...cur,
+                            city,
+                            ...(meta ? {
+                              state: meta.state,
+                              country: meta.country,
+                              timezone: meta.timezone,
+                            } : {}),
+                          }));
+                        }}
+                        style={styles.input}
+                      >
                         <option value="">Select city</option>
                         {CITY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
                       </select>
