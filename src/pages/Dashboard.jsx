@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import api, { fetchStats } from "../services/api";
+import api, { fetchStats, fetchMyAnalytics } from "../services/api";
 import AppSideNav from "../components/AppSideNav";
 
 export default function Dashboard() {
@@ -9,15 +9,10 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [publicRooms, setPublicRooms] = useState([]);
   const [stats, setStats] = useState(null);
+  const [myAnalytics, setMyAnalytics] = useState(null);
 
   const isGuestViewer = !user && guestSessionActive;
   const displayName = user?.name || "Guest";
-  const streakDays = user?.attendanceStreak ?? 0;
-  const fire = "\uD83D\uDD25";
-  const onlineUsersValue = Math.max(stats?.activeUsers ?? 0, user ? 1 : 0);
-  const streakValue = user
-    ? `${fire} ${streakDays} day${streakDays === 1 ? "" : "s"}`
-    : `${fire} 0 days`;
 
   useEffect(() => {
     let cancelled = false;
@@ -25,11 +20,19 @@ export default function Dashboard() {
     async function loadStats() {
       try {
         const statsResp = await fetchStats();
-        if (!cancelled) {
-          setStats(statsResp.stats);
-        }
+        if (!cancelled) setStats(statsResp.stats);
       } catch (err) {
         console.error("Dashboard stats load error:", err);
+      }
+    }
+
+    async function loadMyAnalytics() {
+      if (!user?.id) return;
+      try {
+        const resp = await fetchMyAnalytics();
+        if (!cancelled) setMyAnalytics(resp.analytics?.summary ?? null);
+      } catch {
+        // non-critical
       }
     }
 
@@ -62,6 +65,7 @@ export default function Dashboard() {
 
     loadStats();
     loadRooms();
+    loadMyAnalytics();
 
     return () => {
       cancelled = true;
@@ -120,10 +124,39 @@ export default function Dashboard() {
 
         <main className="lg:col-span-3 space-y-8">
           <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-            <StatCard label="Active Rooms" value={stats?.activeRooms ?? 0} />
-            <StatCard label="Online Users" value={onlineUsersValue} />
-            <StatCard label="Avg Focus" value={stats?.avgFocusLabel ?? "0m"} />
-            <StatCard label="Streak" value={streakValue} />
+            <StatCard
+              label="Study Time"
+              value={myAnalytics?.totalFocusLabel || "0m"}
+              sub={myAnalytics?.totalFocusMinutes > 0 ? "total so far" : null}
+              cta={!myAnalytics?.totalFocusMinutes ? { label: "Join a room →", onClick: () => navigate("/") } : null}
+              accent="#7c3aed"
+            />
+            <StatCard
+              label="Sessions Done"
+              value={myAnalytics?.sessionsCompleted ?? 0}
+              sub={myAnalytics?.sessionsCompleted > 0 ? `${myAnalytics.sessionsCompleted} completed` : null}
+              cta={!myAnalytics?.sessionsCompleted ? { label: "Start your first →", onClick: () => navigate("/") } : null}
+              accent="#8a9bd6"
+            />
+            <StatCard
+              label="🔥 Streak"
+              value={`${myAnalytics?.currentStreakDays ?? 0} day${(myAnalytics?.currentStreakDays ?? 0) === 1 ? "" : "s"}`}
+              sub={
+                (myAnalytics?.currentStreakDays ?? 0) === 0 && (myAnalytics?.bestStreakDays ?? 0) > 0
+                  ? `Best: ${myAnalytics.bestStreakDays} days`
+                  : (myAnalytics?.currentStreakDays ?? 0) > 0
+                  ? "keep it going!"
+                  : null
+              }
+              cta={(myAnalytics?.currentStreakDays ?? 0) === 0 && !(myAnalytics?.bestStreakDays) ? { label: "Study today →", onClick: () => navigate("/") } : null}
+              accent="#f59e0b"
+            />
+            <StatCard
+              label="This Week"
+              value={`${myAnalytics?.studiedDaysThisWeek ?? 0} / 7`}
+              sub="days studied"
+              accent="#22c55e"
+            />
           </section>
 
           <section
@@ -149,7 +182,35 @@ export default function Dashboard() {
                 .filter(Boolean)}
 
               {sessionRooms.length === 0 ? (
-                <p className="text-sm text-[#6b78a0]">No upcoming sessions.</p>
+                <div style={{
+                  textAlign: "center",
+                  padding: "32px 20px",
+                  background: "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)",
+                  borderRadius: 18,
+                  border: "1px dashed rgba(124,58,237,0.2)",
+                }}>
+                  <p style={{ fontSize: 28, marginBottom: 8 }}>📚</p>
+                  <p style={{ fontWeight: 600, color: "#4a5a85", marginBottom: 4, fontSize: 15 }}>No live rooms right now</p>
+                  <p style={{ fontSize: 13, color: "#7b88b8", marginBottom: 16, lineHeight: 1.5 }}>
+                    Be the first to start a session — your peers will follow.
+                  </p>
+                  <button
+                    onClick={() => navigate("/create-room")}
+                    style={{
+                      padding: "10px 22px",
+                      background: "#7c3aed",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: 10,
+                      fontWeight: 600,
+                      fontSize: 13,
+                      cursor: "pointer",
+                      boxShadow: "0 4px 16px rgba(124,58,237,0.3)",
+                    }}
+                  >
+                    Create a Room →
+                  </button>
+                </div>
               ) : null}
             </div>
           </section>
@@ -233,19 +294,62 @@ function SessionRoomCard({ room, onJoin }) {
   );
 }
 
-function StatCard({ label, value }) {
+function StatCard({ label, value, sub, cta, accent = "#8a9bd6" }) {
   return (
     <div
-      className="
-        bg-white/70 backdrop-blur-md
-        border border-white/40
-        rounded-2xl
-        shadow-[0_12px_30px_rgba(0,0,0,0.06)]
-        p-6 text-center
-      "
+      style={{
+        background: "rgba(255,255,255,0.72)",
+        backdropFilter: "blur(12px)",
+        border: "1px solid rgba(255,255,255,0.5)",
+        borderRadius: 20,
+        boxShadow: "0 12px 30px rgba(0,0,0,0.06)",
+        padding: "20px 18px 18px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 4,
+        position: "relative",
+        overflow: "hidden",
+      }}
     >
-      <p className="text-sm text-[#6b78a0] mb-1">{label}</p>
-      <p className="text-2xl font-medium text-slate-700">{value}</p>
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 3,
+          background: accent,
+          borderRadius: "20px 20px 0 0",
+        }}
+      />
+      <p style={{ fontSize: 12, color: "#6b78a0", margin: 0, fontWeight: 600, letterSpacing: 0.3, textTransform: "uppercase" }}>
+        {label}
+      </p>
+      <p style={{ fontSize: 26, fontWeight: 700, color: "#2f3b63", margin: 0, lineHeight: 1.1 }}>
+        {value}
+      </p>
+      {sub && !cta && (
+        <p style={{ fontSize: 11, color: "#9aa4c7", margin: 0 }}>{sub}</p>
+      )}
+      {cta && (
+        <button
+          onClick={cta.onClick}
+          style={{
+            marginTop: 4,
+            padding: "5px 12px",
+            fontSize: 11,
+            fontWeight: 600,
+            color: accent,
+            background: "transparent",
+            border: `1px solid ${accent}`,
+            borderRadius: 20,
+            cursor: "pointer",
+          }}
+        >
+          {cta.label}
+        </button>
+      )}
     </div>
   );
 }
