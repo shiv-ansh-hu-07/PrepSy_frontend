@@ -26,98 +26,87 @@ const MARQUEE_TAGS = [
   { icon: "🤝", label: "Collaboration Styles" },
 ];
 
-// hero = spans 2 grid columns; size "sm" = compact card
 const FEATURES = [
   {
     icon: "🧠",
     title: "AI Focus Monitor",
-    desc: "Camera-powered attention coach running on face-api.js + TensorFlow.js. Classifies your state every 5 seconds — focused, distracted, on-phone, drowsy — and posts a scored session summary to your analytics.",
+    desc: "Your camera tracks your attention every 5 seconds. It knows when you're distracted, on your phone, or drowsy — and scores every session so you can actually see yourself improve.",
     tag: "New ✦",
     tagColor: "#10b981",
-    tech: ["face-api.js", "TensorFlow.js", "WebWorker"],
     accent: "#10b981",
     hero: true,
   },
   {
     icon: "👩",
     title: "Female-Only Rooms",
-    desc: "Verified, access-controlled study rooms exclusively for women. Built-in safety filter at the room level — not just a toggle.",
+    desc: "Safe, verified study rooms exclusively for women. Entry is access-controlled at the room level — not a loose setting anyone can change.",
     tag: "Live ✓",
     tagColor: "#ec4899",
-    tech: ["Role-based access", "Verified entry"],
     accent: "#ec4899",
     hero: true,
   },
   {
     icon: "🎥",
     title: "Live Study Rooms",
-    desc: "WebRTC video rooms via LiveKit. Filter by goal, language, or collaboration style. Join with camera, audio-only, or observe silently.",
+    desc: "Video rooms with peers targeting the same roles. Filter by goal, language, or collaboration style. Join with camera, audio-only, or just observe.",
     tag: "Core",
     tagColor: "#7c3aed",
-    tech: ["LiveKit WebRTC", "Socket.io"],
     accent: "#7c3aed",
   },
   {
     icon: "📺",
     title: "Screen Share + Audio",
-    desc: "Share screen and system audio — IDE, YouTube, slides — everyone hears exactly what you're explaining.",
+    desc: "Share your screen and system audio — IDE, YouTube, slides — so everyone sees and hears exactly what you're going through.",
     tag: "Built-in",
     tagColor: "#0ea5e9",
-    tech: ["LiveKit SDK", "DisplayMedia API"],
     accent: "#0ea5e9",
   },
   {
     icon: "⏱️",
     title: "Pomodoro Timer",
-    desc: "Auto-calculated focus blocks from room duration. Timer state synced across all participants in real time via LiveKit data channels.",
+    desc: "Focus blocks auto-calculated from your room duration. The timer stays in sync for every participant so the whole group works in the same rhythm.",
     tag: "Synced",
     tagColor: "#f59e0b",
-    tech: ["LiveKit Data", "Real-time sync"],
     accent: "#f59e0b",
   },
   {
     icon: "📊",
     title: "Analytics Dashboard",
-    desc: "Streak, focus heatmap, peak-hour chart, AI score trend, and distraction breakdown — per-session and lifetime.",
+    desc: "Streak, focus heatmap, peak-hour chart, AI score trend, and distraction breakdown — tracked per session and over your lifetime.",
     tag: "Insights",
     tagColor: "#6366f1",
-    tech: ["NestJS", "Prisma ORM", "PostgreSQL"],
     accent: "#6366f1",
   },
   {
     icon: "🤝",
     title: "Collaboration Styles",
-    desc: "Tag each room: Quiet Focus, Discussion, Pair Study, Project-Based, or Interview Practice — so everyone knows the energy before they join.",
+    desc: "Pick the room's vibe before anyone joins: Quiet Focus, Discussion, Pair Study, Project-Based, or Interview Practice.",
     tag: "UX",
     tagColor: "#8b5cf6",
-    tech: ["Room metadata", "5 modes"],
     accent: "#8b5cf6",
   },
   {
     icon: "💬",
     title: "Chat & Notes",
-    desc: "Real-time in-room chat over WebSocket with PDF session-note export built in.",
+    desc: "Chat with your room while you study, share links, and download the session notes as a formatted PDF any time.",
     tag: "Collaboration",
     tagColor: "#14b8a6",
-    tech: ["WebSocket", "PDF Export"],
     accent: "#14b8a6",
   },
   {
     icon: "👥",
     title: "Community Feed",
-    desc: "Post wins, share resources, ask questions. A focused community of people serious about placements.",
+    desc: "Post wins, share resources, ask questions. A focused community of people who are serious about landing their next role.",
     tag: "Community",
     tagColor: "#f43f5e",
-    tech: ["Real-time", "Moderated"],
     accent: "#f43f5e",
   },
   {
     icon: "🎯",
     title: "Goal-Based Discovery",
-    desc: "Tag rooms with DSA, System Design, HR, Aptitude. Find rooms that match exactly what you're working on today.",
+    desc: "Rooms tagged with DSA, System Design, HR, Aptitude, and more. Find exactly what you need for today's prep in seconds.",
     tag: "Smart",
     tagColor: "#f59e0b",
-    tech: ["Tag filtering", "10+ categories"],
     accent: "#f59e0b",
   },
 ];
@@ -313,20 +302,6 @@ function SectionLabel({ text, color = "#7c3aed", bg = "rgba(124,58,237,0.07)", b
   );
 }
 
-function TechChip({ label, color }) {
-  return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", gap: 4,
-      padding: "3px 9px", borderRadius: 6,
-      background: `${color}12`, border: `1px solid ${color}28`,
-      fontSize: 10, fontWeight: 700, color, letterSpacing: 0.2,
-      fontFamily: "'SF Mono', 'Fira Mono', monospace",
-    }}>
-      {label}
-    </span>
-  );
-}
-
 // Mini AI focus meter visual for the hero AI card
 function FocusMeterMini() {
   const bars = [
@@ -399,8 +374,8 @@ function HeroFeatureCard({ feature, fadeStyle }) {
       border: `1px solid ${T.border}`,
       boxShadow: "0 6px 28px rgba(100,116,180,0.09)",
       position: "relative", overflow: "hidden",
-      gridColumn: "span 2",
-      display: "flex", flexDirection: "column", gap: 16,
+      width: "100%",
+      display: "flex", flexDirection: "column", justifyContent: "space-between",
       ...fadeStyle,
     }}>
       {/* Colour accent top bar */}
@@ -440,14 +415,9 @@ function HeroFeatureCard({ feature, fadeStyle }) {
               }}>{feature.tag}</span>
             </div>
           </div>
-          <p style={{ fontSize: 13.5, color: T.textMid, lineHeight: 1.7, margin: "0 0 14px", maxWidth: 340 }}>
+          <p style={{ fontSize: 13.5, color: T.textMid, lineHeight: 1.7, margin: 0, maxWidth: 340 }}>
             {feature.desc}
           </p>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {feature.tech.map((t) => (
-              <TechChip key={t} label={t} color={feature.accent} />
-            ))}
-          </div>
         </div>
 
         {/* Right: mini visual */}
@@ -467,7 +437,8 @@ function FeatureCard({ feature, fadeStyle }) {
       border: `1px solid ${T.border}`,
       boxShadow: "0 4px 20px rgba(100,116,180,0.07)",
       position: "relative", overflow: "hidden",
-      display: "flex", flexDirection: "column", gap: 0,
+      width: "100%",
+      display: "flex", flexDirection: "column",
       ...fadeStyle,
     }}>
       <div className="feat-accent-bar" style={{
@@ -496,15 +467,9 @@ function FeatureCard({ feature, fadeStyle }) {
         }}>{feature.tag}</span>
       </div>
 
-      <p style={{ fontSize: 13, color: T.textMid, lineHeight: 1.65, margin: "0 0 14px", flexGrow: 1 }}>
+      <p style={{ fontSize: 13, color: T.textMid, lineHeight: 1.65, margin: 0, flexGrow: 1 }}>
         {feature.desc}
       </p>
-
-      <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-        {feature.tech.map((t) => (
-          <TechChip key={t} label={t} color={feature.accent} />
-        ))}
-      </div>
     </div>
   );
 }
@@ -760,12 +725,12 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Hero row — two wide cards */}
+        {/* Hero row — two equal-height wide cards */}
         {!sm && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginBottom: 18 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginBottom: 18, alignItems: "stretch" }}>
             {heroFeatures.map((f, i) => (
-              <div key={f.title} data-s={`hero-${i}`} style={{ gridColumn: "span 1", ...fi(`hero-${i}`, i * 80) }}>
-                <HeroFeatureCard feature={f} fadeStyle={{}} />
+              <div key={f.title} data-s={`hero-${i}`} style={{ ...fi(`hero-${i}`, i * 80), display: "flex" }}>
+                <HeroFeatureCard feature={f} fadeStyle={{ flex: 1 }} />
               </div>
             ))}
           </div>
@@ -778,15 +743,16 @@ export default function Home() {
           </div>
         ))}
 
-        {/* Regular grid */}
+        {/* Regular grid — equal height via align-items: stretch */}
         <div style={{
           display: "grid",
           gridTemplateColumns: sm ? "1fr" : "repeat(4, 1fr)",
           gap: 18,
+          alignItems: "stretch",
         }}>
           {regularFeatures.map((f, i) => (
-            <div key={f.title} data-s={`feat-${i}`}>
-              <FeatureCard feature={f} fadeStyle={fi(`feat-${i}`, i * 45)} />
+            <div key={f.title} data-s={`feat-${i}`} style={{ display: "flex" }}>
+              <FeatureCard feature={f} fadeStyle={{ ...fi(`feat-${i}`, i * 45), flex: 1 }} />
             </div>
           ))}
         </div>
