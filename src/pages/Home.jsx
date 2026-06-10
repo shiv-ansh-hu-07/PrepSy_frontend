@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-// ─── Theme tokens ────────────────────────────────────────────────────────────
+// ─── Theme tokens ─────────────────────────────────────────────────────────────
 const T = {
   bg: "radial-gradient(ellipse at 60% 20%, #eef1fb 0%, #f4f6fd 55%, #f8f9fe 100%)",
   purple: "#7c3aed",
@@ -12,7 +12,7 @@ const T = {
   textLight: "#6b7a99",
 };
 
-// ─── Data ────────────────────────────────────────────────────────────────────
+// ─── Data ─────────────────────────────────────────────────────────────────────
 const MARQUEE_TAGS = [
   { icon: "🎥", label: "Live Study Rooms" },
   { icon: "🧠", label: "AI Focus Monitor" },
@@ -20,76 +20,105 @@ const MARQUEE_TAGS = [
   { icon: "📊", label: "Analytics Dashboard" },
   { icon: "📺", label: "Screen Share + Audio" },
   { icon: "💬", label: "In-Room Chat" },
-  { icon: "📄", label: "Notes & PDF Export" },
-  { icon: "👥", label: "Community Feed" },
+  { icon: "👩", label: "Female-Only Rooms" },
   { icon: "🎯", label: "Goal-Based Rooms" },
   { icon: "📅", label: "Daily Scheduling" },
+  { icon: "🤝", label: "Collaboration Styles" },
 ];
 
+// hero = spans 2 grid columns; size "sm" = compact card
 const FEATURES = [
-  {
-    icon: "🎥",
-    title: "Live Study Rooms",
-    desc: "Join or create video rooms with peers targeting the same roles. Filter by goal, expertise, or language.",
-    tag: "Core",
-    tagColor: "#7c3aed",
-  },
-  {
-    icon: "📺",
-    title: "Screen Share with Audio",
-    desc: "Share your screen and audio — YouTube, IDE, slides. Everyone hears exactly what you're going through.",
-    tag: "Built-in",
-    tagColor: "#0ea5e9",
-  },
   {
     icon: "🧠",
     title: "AI Focus Monitor",
-    desc: "Camera-powered attention coach. Detects distractions, phone usage, and drowsiness every 5 seconds — and scores every session.",
+    desc: "Camera-powered attention coach running on face-api.js + TensorFlow.js. Classifies your state every 5 seconds — focused, distracted, on-phone, drowsy — and posts a scored session summary to your analytics.",
     tag: "New ✦",
     tagColor: "#10b981",
-    highlight: true,
+    tech: ["face-api.js", "TensorFlow.js", "WebWorker"],
+    accent: "#10b981",
+    hero: true,
+  },
+  {
+    icon: "👩",
+    title: "Female-Only Rooms",
+    desc: "Verified, access-controlled study rooms exclusively for women. Built-in safety filter at the room level — not just a toggle.",
+    tag: "Live ✓",
+    tagColor: "#ec4899",
+    tech: ["Role-based access", "Verified entry"],
+    accent: "#ec4899",
+    hero: true,
+  },
+  {
+    icon: "🎥",
+    title: "Live Study Rooms",
+    desc: "WebRTC video rooms via LiveKit. Filter by goal, language, or collaboration style. Join with camera, audio-only, or observe silently.",
+    tag: "Core",
+    tagColor: "#7c3aed",
+    tech: ["LiveKit WebRTC", "Socket.io"],
+    accent: "#7c3aed",
+  },
+  {
+    icon: "📺",
+    title: "Screen Share + Audio",
+    desc: "Share screen and system audio — IDE, YouTube, slides — everyone hears exactly what you're explaining.",
+    tag: "Built-in",
+    tagColor: "#0ea5e9",
+    tech: ["LiveKit SDK", "DisplayMedia API"],
+    accent: "#0ea5e9",
   },
   {
     icon: "⏱️",
     title: "Pomodoro Timer",
-    desc: "Built-in focus timer. Work in structured blocks so your group stays in rhythm and on track together.",
-    tag: "Built-in",
+    desc: "Auto-calculated focus blocks from room duration. Timer state synced across all participants in real time via LiveKit data channels.",
+    tag: "Synced",
     tagColor: "#f59e0b",
+    tech: ["LiveKit Data", "Real-time sync"],
+    accent: "#f59e0b",
   },
   {
     icon: "📊",
     title: "Analytics Dashboard",
-    desc: "Streak, focus time, sessions completed, and AI focus score — all trending with your daily consistency.",
+    desc: "Streak, focus heatmap, peak-hour chart, AI score trend, and distraction breakdown — per-session and lifetime.",
     tag: "Insights",
     tagColor: "#6366f1",
+    tech: ["NestJS", "Prisma ORM", "PostgreSQL"],
+    accent: "#6366f1",
+  },
+  {
+    icon: "🤝",
+    title: "Collaboration Styles",
+    desc: "Tag each room: Quiet Focus, Discussion, Pair Study, Project-Based, or Interview Practice — so everyone knows the energy before they join.",
+    tag: "UX",
+    tagColor: "#8b5cf6",
+    tech: ["Room metadata", "5 modes"],
+    accent: "#8b5cf6",
   },
   {
     icon: "💬",
     title: "Chat & Notes",
-    desc: "Chat during study sessions, share links, and download session notes as a formatted PDF anytime.",
+    desc: "Real-time in-room chat over WebSocket with PDF session-note export built in.",
     tag: "Collaboration",
-    tagColor: "#ec4899",
+    tagColor: "#14b8a6",
+    tech: ["WebSocket", "PDF Export"],
+    accent: "#14b8a6",
   },
   {
     icon: "👥",
     title: "Community Feed",
-    desc: "Post wins, ask questions, share resources. A community of people who are serious about landing roles.",
+    desc: "Post wins, share resources, ask questions. A focused community of people serious about placements.",
     tag: "Community",
-    tagColor: "#14b8a6",
+    tagColor: "#f43f5e",
+    tech: ["Real-time", "Moderated"],
+    accent: "#f43f5e",
   },
   {
     icon: "🎯",
     title: "Goal-Based Discovery",
     desc: "Tag rooms with DSA, System Design, HR, Aptitude. Find rooms that match exactly what you're working on today.",
     tag: "Smart",
-    tagColor: "#f43f5e",
-  },
-  {
-    icon: "📅",
-    title: "Daily Scheduling",
-    desc: "Plan your prep day-by-day. Set what you're covering and join rooms that are aligned to your schedule.",
-    tag: "Planning",
-    tagColor: "#8b5cf6",
+    tagColor: "#f59e0b",
+    tech: ["Tag filtering", "10+ categories"],
+    accent: "#f59e0b",
   },
 ];
 
@@ -98,34 +127,34 @@ const STEPS = [
     num: "01",
     icon: "🙋",
     title: "Create your profile",
-    desc: "Set your goals, skills, and preferred languages. PrepSy uses this to surface the most relevant rooms for you.",
+    desc: "Set goals, skills, and preferred languages. PrepSy surfaces the most relevant rooms for your exact level.",
   },
   {
     num: "02",
     icon: "🚪",
     title: "Join or host a room",
-    desc: "Browse by goal or expertise. Join with video, audio, or just observe. Start your own room in one click.",
+    desc: "Browse by goal or style. Join with video, audio-only, or observe silently. Start your own room in one click.",
   },
   {
     num: "03",
     icon: "📈",
     title: "Prep. Track. Improve.",
-    desc: "AI monitors focus, Pomodoro keeps time, analytics measure growth. Show up daily and watch your scores climb.",
+    desc: "AI monitors focus, Pomodoro keeps time, analytics measure growth. Show up daily — the scores don't lie.",
   },
 ];
 
 const AI_BULLETS = [
-  "Real-time focus score updated every 5 seconds",
+  "Focus state classified every 5 seconds",
   "Detects phone usage, looking away, and drowsiness",
-  "Post-session summary with H / M / L focus breakdown",
-  "Daily trend tracking in your analytics dashboard",
+  "Post-session H / M / L focus breakdown",
+  "Peak-hour heatmap — know when your brain peaks",
 ];
 
 const ANALYTICS_BULLETS = [
-  "Daily study streak tracking",
-  "Session-by-session focus scores",
-  "Total focus time accumulated",
-  "Improving / declining trend indicator",
+  "Daily study streak with rescue email at 8pm",
+  "Session-by-session AI focus scores",
+  "Peak Focus Hours heatmap by hour of day",
+  "Distraction breakdown — off-screen time per session",
 ];
 
 const ANALYTICS_CARDS = [
@@ -136,10 +165,10 @@ const ANALYTICS_CARDS = [
 ];
 
 const COMING_SOON = [
-  { icon: "🔒", title: "Female-Only Rooms", desc: "Safe, exclusive rooms for women in tech." },
-  { icon: "🌐", title: "Language Filtering", desc: "Find rooms that match your preferred language." },
-  { icon: "🤝", title: "Smart Peer Matching", desc: "AI-powered matching by goals and current level." },
-  { icon: "🎤", title: "Mock Interviews", desc: "Structured 1-on-1 interview practice sessions." },
+  { icon: "🤝", title: "Smart Peer Matching", desc: "AI pairs you with the right study partner by goal, pace, and level." },
+  { icon: "🎤", title: "Mock Interviews", desc: "Structured 1-on-1 sessions with feedback scoring and recording." },
+  { icon: "📱", title: "Mobile App", desc: "Native iOS and Android — study from anywhere without friction." },
+  { icon: "🌐", title: "Language Filtering", desc: "Find rooms where discussion happens in your preferred language." },
 ];
 
 const STATS = [
@@ -158,7 +187,7 @@ const COMMUNITY_POSTS = [
   "📝 Mock interview partners wanted",
 ];
 
-// ─── CSS Animations ──────────────────────────────────────────────────────────
+// ─── CSS ──────────────────────────────────────────────────────────────────────
 const CSS = `
   @keyframes float {
     0%, 100% { transform: translateY(0px) rotate(-2deg); }
@@ -185,23 +214,24 @@ const CSS = `
     85% { top: 188px; opacity: 0.6; }
     100% { top: 24px; opacity: 0; }
   }
-  @keyframes pulse-ring {
-    0% { box-shadow: 0 0 0 0 rgba(124,58,237,0.28); }
-    70% { box-shadow: 0 0 0 16px rgba(124,58,237,0); }
-    100% { box-shadow: 0 0 0 0 rgba(124,58,237,0); }
-  }
   @keyframes slide-up {
     from { opacity: 0; transform: translateY(18px); }
     to   { opacity: 1; transform: translateY(0); }
   }
+  @keyframes progress-fill {
+    from { width: 0%; }
+    to   { width: var(--target-w); }
+  }
 
-  .home-feature-card {
+  .feat-card {
     transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease !important;
   }
-  .home-feature-card:hover {
-    transform: translateY(-7px) !important;
-    box-shadow: 0 18px 44px rgba(124,58,237,0.17) !important;
-    border-color: rgba(124,58,237,0.28) !important;
+  .feat-card:hover {
+    transform: translateY(-6px) !important;
+    box-shadow: 0 20px 48px rgba(100,116,180,0.14) !important;
+  }
+  .feat-card:hover .feat-accent-bar {
+    opacity: 1 !important;
   }
   .home-step-card {
     transition: transform 0.24s ease, box-shadow 0.24s ease !important;
@@ -256,7 +286,7 @@ const CSS = `
   }
 `;
 
-// ─── Sub-components ──────────────────────────────────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────────────────
 function RoleBadge({ emoji, text, color }) {
   return (
     <div style={{
@@ -283,33 +313,198 @@ function SectionLabel({ text, color = "#7c3aed", bg = "rgba(124,58,237,0.07)", b
   );
 }
 
-function FeatureCard({ feature, fadeStyle }) {
+function TechChip({ label, color }) {
   return (
-    <div className="home-feature-card" style={{
-      background: "#fff", borderRadius: "22px", padding: "28px 26px",
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 4,
+      padding: "3px 9px", borderRadius: 6,
+      background: `${color}12`, border: `1px solid ${color}28`,
+      fontSize: 10, fontWeight: 700, color, letterSpacing: 0.2,
+      fontFamily: "'SF Mono', 'Fira Mono', monospace",
+    }}>
+      {label}
+    </span>
+  );
+}
+
+// Mini AI focus meter visual for the hero AI card
+function FocusMeterMini() {
+  const bars = [
+    { h: 40, color: "#22c55e" },
+    { h: 65, color: "#22c55e" },
+    { h: 50, color: "#fbbf24" },
+    { h: 80, color: "#22c55e" },
+    { h: 72, color: "#22c55e" },
+    { h: 30, color: "#f87171" },
+    { h: 85, color: "#22c55e" },
+    { h: 60, color: "#22c55e" },
+  ];
+  return (
+    <div style={{
+      background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.18)",
+      borderRadius: 14, padding: "14px 16px", minWidth: 180,
+    }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "#10b981", marginBottom: 10, letterSpacing: 0.4, textTransform: "uppercase" }}>
+        Live Focus Stream
+      </div>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 56 }}>
+        {bars.map((b, i) => (
+          <div key={i} style={{
+            flex: 1, height: `${b.h}%`, borderRadius: 4,
+            background: b.color, opacity: 0.75 + (i % 3) * 0.08,
+          }} />
+        ))}
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
+        <span style={{ fontSize: 10, color: "#6b7a99" }}>last 40s</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: "#10b981" }}>Score: 86 / 100</span>
+      </div>
+    </div>
+  );
+}
+
+// Mini verified badge for the female-only hero card
+function VerifiedRoomBadge() {
+  return (
+    <div style={{
+      background: "rgba(236,72,153,0.06)", border: "1px solid rgba(236,72,153,0.2)",
+      borderRadius: 14, padding: "14px 16px", minWidth: 180,
+    }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "#ec4899", marginBottom: 10, letterSpacing: 0.4, textTransform: "uppercase" }}>
+        Room Access Control
+      </div>
+      {[
+        { label: "Entry verified", ok: true },
+        { label: "Role-based gate", ok: true },
+        { label: "Room moderator", ok: true },
+        { label: "Safe space policy", ok: true },
+      ].map((row) => (
+        <div key={row.label} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
+          <span style={{ fontSize: 12, color: row.ok ? "#22c55e" : "#f87171", flexShrink: 0 }}>
+            {row.ok ? "✓" : "✗"}
+          </span>
+          <span style={{ fontSize: 11, color: "#4a5a85" }}>{row.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Hero feature card (spans 2 columns in the bento grid)
+function HeroFeatureCard({ feature, fadeStyle }) {
+  const Visual = feature.accent === "#10b981" ? FocusMeterMini : VerifiedRoomBadge;
+  return (
+    <div className="feat-card" style={{
+      background: "#fff", borderRadius: 24, padding: "30px 28px",
       border: `1px solid ${T.border}`,
-      boxShadow: "0 4px 20px rgba(100,116,180,0.08)",
+      boxShadow: "0 6px 28px rgba(100,116,180,0.09)",
       position: "relative", overflow: "hidden",
+      gridColumn: "span 2",
+      display: "flex", flexDirection: "column", gap: 16,
       ...fadeStyle,
     }}>
-      {feature.highlight && (
-        <div style={{
-          position: "absolute", top: 0, right: 0,
-          width: "90px", height: "90px",
-          background: "radial-gradient(circle at top right, rgba(16,185,129,0.13) 0%, transparent 70%)",
-          pointerEvents: "none",
-        }} />
-      )}
-      <div style={{ fontSize: "30px", marginBottom: "14px", lineHeight: 1 }}>{feature.icon}</div>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", marginBottom: "10px", flexWrap: "wrap" }}>
-        <h3 style={{ fontSize: "15.5px", fontWeight: 700, color: T.textDark, lineHeight: 1.3, margin: 0 }}>{feature.title}</h3>
+      {/* Colour accent top bar */}
+      <div className="feat-accent-bar" style={{
+        position: "absolute", top: 0, left: 0, right: 0, height: 3,
+        background: feature.accent, borderRadius: "24px 24px 0 0", opacity: 0.7,
+        transition: "opacity 0.2s",
+      }} />
+      {/* Subtle bg glow */}
+      <div style={{
+        position: "absolute", top: -40, right: -40,
+        width: 180, height: 180, borderRadius: "50%",
+        background: `radial-gradient(circle, ${feature.accent}14 0%, transparent 70%)`,
+        pointerEvents: "none",
+      }} />
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16, position: "relative" }}>
+        {/* Left */}
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 12,
+              background: `${feature.accent}14`, border: `1px solid ${feature.accent}28`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 22, flexShrink: 0,
+            }}>
+              {feature.icon}
+            </div>
+            <div>
+              <h3 style={{ fontSize: 17, fontWeight: 800, color: T.textDark, margin: 0, lineHeight: 1.2 }}>
+                {feature.title}
+              </h3>
+              <span style={{
+                fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999,
+                background: `${feature.tagColor}16`, color: feature.tagColor,
+                letterSpacing: "0.04em",
+              }}>{feature.tag}</span>
+            </div>
+          </div>
+          <p style={{ fontSize: 13.5, color: T.textMid, lineHeight: 1.7, margin: "0 0 14px", maxWidth: 340 }}>
+            {feature.desc}
+          </p>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {feature.tech.map((t) => (
+              <TechChip key={t} label={t} color={feature.accent} />
+            ))}
+          </div>
+        </div>
+
+        {/* Right: mini visual */}
+        <div style={{ flexShrink: 0 }}>
+          <Visual />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Regular feature card
+function FeatureCard({ feature, fadeStyle }) {
+  return (
+    <div className="feat-card" style={{
+      background: "#fff", borderRadius: 22, padding: "24px 22px",
+      border: `1px solid ${T.border}`,
+      boxShadow: "0 4px 20px rgba(100,116,180,0.07)",
+      position: "relative", overflow: "hidden",
+      display: "flex", flexDirection: "column", gap: 0,
+      ...fadeStyle,
+    }}>
+      <div className="feat-accent-bar" style={{
+        position: "absolute", top: 0, left: 0, right: 0, height: 3,
+        background: feature.accent, borderRadius: "22px 22px 0 0", opacity: 0.55,
+        transition: "opacity 0.2s",
+      }} />
+
+      <div style={{
+        width: 38, height: 38, borderRadius: 10,
+        background: `${feature.accent}12`, border: `1px solid ${feature.accent}24`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 19, marginBottom: 12, flexShrink: 0,
+      }}>
+        {feature.icon}
+      </div>
+
+      <div style={{ display: "flex", alignItems: "baseline", gap: 7, marginBottom: 8, flexWrap: "wrap" }}>
+        <h3 style={{ fontSize: 14.5, fontWeight: 800, color: T.textDark, margin: 0, lineHeight: 1.25 }}>
+          {feature.title}
+        </h3>
         <span style={{
-          fontSize: "10px", fontWeight: 700, padding: "2px 8px", borderRadius: "999px",
+          fontSize: 9.5, fontWeight: 700, padding: "2px 7px", borderRadius: 999,
           background: `${feature.tagColor}16`, color: feature.tagColor,
-          letterSpacing: "0.04em", whiteSpace: "nowrap", flexShrink: 0, marginTop: "2px",
+          letterSpacing: "0.05em", whiteSpace: "nowrap",
         }}>{feature.tag}</span>
       </div>
-      <p style={{ fontSize: "13.5px", color: T.textMid, lineHeight: 1.65, margin: 0 }}>{feature.desc}</p>
+
+      <p style={{ fontSize: 13, color: T.textMid, lineHeight: 1.65, margin: "0 0 14px", flexGrow: 1 }}>
+        {feature.desc}
+      </p>
+
+      <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+        {feature.tech.map((t) => (
+          <TechChip key={t} label={t} color={feature.accent} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -317,17 +512,12 @@ function FeatureCard({ feature, fadeStyle }) {
 function AIVisual() {
   return (
     <div style={{ position: "relative", width: "270px", height: "240px", margin: "0 auto" }}>
-      {/* Camera viewport */}
       <div style={{
         width: "220px", height: "210px",
         border: "2px solid rgba(255,255,255,0.18)",
-        borderRadius: "18px", position: "relative",
-        overflow: "hidden",
-        background: "rgba(0,0,0,0.28)",
-        backdropFilter: "blur(4px)",
-        margin: "0 auto",
+        borderRadius: "18px", position: "relative", overflow: "hidden",
+        background: "rgba(0,0,0,0.28)", backdropFilter: "blur(4px)", margin: "0 auto",
       }}>
-        {/* Face detection ellipse */}
         <div style={{
           position: "absolute", top: "50%", left: "50%",
           transform: "translate(-50%, -58%)",
@@ -336,17 +526,13 @@ function AIVisual() {
           borderRadius: "50% 50% 44% 44%",
           boxShadow: "0 0 18px rgba(34,197,94,0.25), inset 0 0 18px rgba(34,197,94,0.05)",
         }} />
-        {/* Eyes */}
         <div style={{ position: "absolute", top: "84px", left: "70px", width: "12px", height: "7px", borderRadius: "50%", background: "rgba(34,197,94,0.85)" }} />
         <div style={{ position: "absolute", top: "84px", right: "70px", width: "12px", height: "7px", borderRadius: "50%", background: "rgba(34,197,94,0.85)" }} />
-        {/* Scan line */}
         <div style={{
-          position: "absolute", left: "10px", right: "10px",
-          height: "1.5px",
+          position: "absolute", left: "10px", right: "10px", height: "1.5px",
           background: "linear-gradient(90deg, transparent 0%, rgba(34,197,94,0.85) 40%, rgba(34,197,94,0.85) 60%, transparent 100%)",
           animation: "scan 2.6s ease-in-out infinite",
         }} />
-        {/* Corner brackets */}
         {[
           { top: "8px", left: "8px", bt: true, bl: true },
           { top: "8px", right: "8px", bt: true, br: true },
@@ -363,7 +549,6 @@ function AIVisual() {
             borderRight: pos.br ? "2px solid rgba(255,255,255,0.55)" : "none",
           }} />
         ))}
-        {/* Focus score badge */}
         <div style={{
           position: "absolute", bottom: "12px", left: "50%", transform: "translateX(-50%)",
           background: "rgba(34,197,94,0.88)", borderRadius: "999px",
@@ -373,8 +558,6 @@ function AIVisual() {
           Focus Score: 86
         </div>
       </div>
-
-      {/* Side metric pills */}
       <div style={{ position: "absolute", right: "-4px", top: "16px", display: "flex", flexDirection: "column", gap: "8px" }}>
         {[
           { label: "Focus", value: "86%", color: "#22c55e" },
@@ -395,7 +578,7 @@ function AIVisual() {
   );
 }
 
-// ─── Main component ──────────────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
 export default function Home() {
   const [isSmallScreen, setIsSmallScreen] = useState(
     typeof window !== "undefined" ? window.innerWidth < 900 : false
@@ -416,9 +599,7 @@ export default function Home() {
     const obs = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
-          if (e.isIntersecting) {
-            setVisible((prev) => new Set([...prev, e.target.dataset.s]));
-          }
+          if (e.isIntersecting) setVisible((prev) => new Set([...prev, e.target.dataset.s]));
         });
       },
       { threshold: 0.08 }
@@ -436,17 +617,19 @@ export default function Home() {
   const sm = isSmallScreen;
   const px = sm ? "20px" : "32px";
 
+  const heroFeatures = FEATURES.filter((f) => f.hero);
+  const regularFeatures = FEATURES.filter((f) => !f.hero);
+
   return (
     <main style={{ background: T.bg, fontFamily: "'Inter', system-ui, sans-serif", color: T.textDark, overflowX: "hidden" }}>
       <style>{CSS}</style>
 
-      {/* ════════════════ HERO ════════════════ */}
+      {/* ══════════════ HERO ══════════════ */}
       <section style={{
         maxWidth: "1160px", margin: "0 auto",
         padding: sm ? "80px 20px 60px" : "112px 32px 80px",
         textAlign: "center", position: "relative",
       }}>
-        {/* Floating role badges — desktop only */}
         {!sm && (
           <>
             <div style={{ position: "absolute", top: "128px", left: "3%", animation: "float 5.2s ease-in-out infinite", zIndex: 0 }}>
@@ -465,7 +648,6 @@ export default function Home() {
         )}
 
         <div style={{ position: "relative", zIndex: 1, animation: "slide-up 0.7s ease both" }}>
-          {/* Live pill */}
           <div style={{
             display: "inline-flex", alignItems: "center", gap: "7px",
             padding: "5px 16px 5px 10px", borderRadius: "999px",
@@ -477,10 +659,9 @@ export default function Home() {
               background: "#22c55e", display: "inline-block",
               animation: "blink 2s ease-in-out infinite",
             }} />
-            AI Focus Monitor is now live
+            AI Focus Monitor · Female-Only Rooms — now live
           </div>
 
-          {/* Headline */}
           <h1 style={{
             fontSize: sm ? "34px" : "58px",
             fontWeight: 800, lineHeight: 1.12, letterSpacing: "-0.03em",
@@ -501,10 +682,9 @@ export default function Home() {
             fontSize: sm ? "16px" : "19px", color: T.textMid,
             lineHeight: 1.68, maxWidth: "600px", margin: "0 auto 38px",
           }}>
-            Live study rooms, AI-powered focus tracking, Pomodoro timers, community, and deep analytics — all built for placements, job switches, and competitive prep.
+            Live study rooms, AI-powered focus tracking, Pomodoro timers, community, and deep analytics — built for placements, job switches, and competitive prep.
           </p>
 
-          {/* CTAs */}
           <div style={{ display: "flex", justifyContent: "center", gap: "14px", flexWrap: "wrap" }}>
             <Link to="/login" className="home-btn-purple" style={{
               background: T.purple, color: "#fff",
@@ -524,11 +704,7 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* Social proof */}
-          <div style={{
-            marginTop: "34px", display: "flex",
-            justifyContent: "center", alignItems: "center", gap: "10px",
-          }}>
+          <div style={{ marginTop: "34px", display: "flex", justifyContent: "center", alignItems: "center", gap: "10px" }}>
             <div style={{ display: "flex" }}>
               {["👩‍💻", "👨‍💻", "🧑‍💻", "👩‍💻"].map((e, i) => (
                 <div key={i} style={{
@@ -547,14 +723,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ════════════════ FEATURE MARQUEE ════════════════ */}
+      {/* ══════════════ MARQUEE ══════════════ */}
       <div style={{
         overflow: "hidden",
         borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}`,
         background: "rgba(255,255,255,0.62)", backdropFilter: "blur(10px)",
-        padding: "15px 0", marginBottom: "80px",
+        padding: "15px 0", marginBottom: "88px",
       }}>
-        <div style={{ display: "flex", animation: "marquee 26s linear infinite", width: "max-content" }}>
+        <div style={{ display: "flex", animation: "marquee 28s linear infinite", width: "max-content" }}>
           {[...MARQUEE_TAGS, ...MARQUEE_TAGS].map((tag, i) => (
             <span key={i} style={{
               display: "inline-flex", alignItems: "center", gap: "7px",
@@ -568,36 +744,55 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ════════════════ FEATURES GRID ════════════════ */}
-      <section data-s="features" style={{ maxWidth: "1140px", margin: "0 auto", padding: `0 ${px} 96px` }}>
+      {/* ══════════════ FEATURES — BENTO GRID ══════════════ */}
+      <section data-s="features" style={{ maxWidth: "1140px", margin: "0 auto", padding: `0 ${px} 100px` }}>
         <div style={{ textAlign: "center", marginBottom: "52px", ...fi("features") }}>
-          <SectionLabel text="What you get" />
+          <SectionLabel text="What's inside" />
           <h2 style={{
             fontSize: sm ? "26px" : "38px", fontWeight: 800,
             letterSpacing: "-0.025em", color: T.textDark,
             margin: "14px 0 14px", fontFamily: "Georgia, serif", lineHeight: 1.2,
           }}>
-            Everything your prep needs.<br />Nothing it doesn't.
+            Built for prep. Wired for focus.
           </h2>
-          <p style={{ fontSize: "16px", color: T.textMid, maxWidth: "500px", margin: "0 auto" }}>
-            Built specifically for competitive exam and interview prep — not a generic productivity tool.
+          <p style={{ fontSize: "16px", color: T.textMid, maxWidth: "520px", margin: "0 auto" }}>
+            Every feature is purpose-built for interview and competitive exam prep — not a repurposed productivity tool.
           </p>
         </div>
 
+        {/* Hero row — two wide cards */}
+        {!sm && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginBottom: 18 }}>
+            {heroFeatures.map((f, i) => (
+              <div key={f.title} data-s={`hero-${i}`} style={{ gridColumn: "span 1", ...fi(`hero-${i}`, i * 80) }}>
+                <HeroFeatureCard feature={f} fadeStyle={{}} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Mobile: hero cards as normal cards */}
+        {sm && heroFeatures.map((f, i) => (
+          <div key={f.title} style={{ marginBottom: 16 }}>
+            <FeatureCard feature={f} fadeStyle={fi(`hero-${i}`, i * 80)} />
+          </div>
+        ))}
+
+        {/* Regular grid */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: sm ? "1fr" : "repeat(3, 1fr)",
-          gap: "18px",
+          gridTemplateColumns: sm ? "1fr" : "repeat(4, 1fr)",
+          gap: 18,
         }}>
-          {FEATURES.map((f, i) => (
+          {regularFeatures.map((f, i) => (
             <div key={f.title} data-s={`feat-${i}`}>
-              <FeatureCard feature={f} fadeStyle={fi(`feat-${i}`, i * 55)} />
+              <FeatureCard feature={f} fadeStyle={fi(`feat-${i}`, i * 45)} />
             </div>
           ))}
         </div>
       </section>
 
-      {/* ════════════════ AI FOCUS SPOTLIGHT ════════════════ */}
+      {/* ══════════════ AI SPOTLIGHT ══════════════ */}
       <section data-s="ai" style={{ padding: `0 ${px} 96px` }}>
         <div style={{
           maxWidth: "1140px", margin: "0 auto",
@@ -606,7 +801,6 @@ export default function Home() {
           position: "relative", overflow: "hidden",
           ...fi("ai"),
         }}>
-          {/* Decorative orbs */}
           <div style={{ position: "absolute", top: "-50px", right: "-50px", width: "240px", height: "240px", borderRadius: "50%", background: "rgba(255,255,255,0.04)", pointerEvents: "none" }} />
           <div style={{ position: "absolute", bottom: "-70px", left: "28%", width: "320px", height: "320px", borderRadius: "50%", background: "rgba(255,255,255,0.03)", pointerEvents: "none" }} />
 
@@ -637,7 +831,7 @@ export default function Home() {
               </h2>
 
               <p style={{ fontSize: "16px", color: "rgba(255,255,255,0.72)", lineHeight: 1.72, marginBottom: "28px" }}>
-                Our camera-based AI monitors your attention every 5 seconds — detecting distractions, phone usage, drowsiness, and head movement — then scores each session so you can actually see improvement.
+                Camera-based AI powered by face-api.js + TensorFlow.js. Classifies your attention state every 5 seconds and scores every session — so you can actually see improvement over time.
               </p>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -657,7 +851,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ════════════════ HOW IT WORKS ════════════════ */}
+      {/* ══════════════ HOW IT WORKS ══════════════ */}
       <section data-s="how" style={{ maxWidth: "1100px", margin: "0 auto", padding: `0 ${px} 96px` }}>
         <div style={{ textAlign: "center", marginBottom: "52px", ...fi("how") }}>
           <SectionLabel text="How it works" />
@@ -666,11 +860,7 @@ export default function Home() {
           </h2>
         </div>
 
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: sm ? "1fr" : "repeat(3, 1fr)",
-          gap: "22px", position: "relative",
-        }}>
+        <div style={{ display: "grid", gridTemplateColumns: sm ? "1fr" : "repeat(3, 1fr)", gap: "22px" }}>
           {STEPS.map((s, i) => (
             <div key={s.num} data-s={`step-${i}`} className="home-step-card" style={{
               background: "#fff", borderRadius: "24px", padding: "32px 28px",
@@ -679,7 +869,6 @@ export default function Home() {
               position: "relative",
               ...fi(`step-${i}`, i * 130),
             }}>
-              {/* Step number background */}
               <div style={{
                 position: "absolute", top: "20px", right: "22px",
                 fontSize: "48px", fontWeight: 900, color: "rgba(124,58,237,0.06)",
@@ -702,14 +891,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ════════════════ ANALYTICS PREVIEW ════════════════ */}
+      {/* ══════════════ ANALYTICS PREVIEW ══════════════ */}
       <section data-s="analytics" style={{ maxWidth: "1140px", margin: "0 auto", padding: `0 ${px} 96px` }}>
         <div style={{
           display: "grid",
           gridTemplateColumns: sm ? "1fr" : "1fr 1fr",
           gap: "52px", alignItems: "center",
         }}>
-          {/* Left: copy */}
           <div style={{ ...fi("analytics") }}>
             <SectionLabel text="Analytics" />
             <h2 style={{
@@ -720,7 +908,7 @@ export default function Home() {
               Your progress,<br />finally measurable.
             </h2>
             <p style={{ fontSize: "15px", color: T.textMid, lineHeight: 1.72, marginBottom: "24px" }}>
-              Track your study streak, total focus time, sessions joined, and your AI-powered focus score — all trending with daily consistency.
+              Track everything that matters — streak, focus heatmap, AI score trend, peak focus hours, and distraction patterns — all in one place.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {ANALYTICS_BULLETS.map((b) => (
@@ -732,7 +920,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right: mock cards */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", ...fi("analytics", 200) }}>
             {ANALYTICS_CARDS.map((c) => (
               <div key={c.label} className="home-stat-card" style={{
@@ -754,7 +941,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ════════════════ STATS BAR ════════════════ */}
+      {/* ══════════════ STATS BAR ══════════════ */}
       <div data-s="stats" style={{
         background: "rgba(255,255,255,0.68)", backdropFilter: "blur(12px)",
         borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}`,
@@ -776,7 +963,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ════════════════ COMMUNITY ════════════════ */}
+      {/* ══════════════ COMMUNITY ══════════════ */}
       <section data-s="community" style={{ maxWidth: "1140px", margin: "0 auto", padding: `0 ${px} 80px` }}>
         <div style={{
           background: "#fff", borderRadius: "28px",
@@ -802,8 +989,7 @@ export default function Home() {
                 padding: "8px 16px", borderRadius: "999px",
                 background: "rgba(124,58,237,0.07)",
                 border: "1px solid rgba(124,58,237,0.14)",
-                fontSize: "13px", fontWeight: 500, color: T.purple,
-                cursor: "default",
+                fontSize: "13px", fontWeight: 500, color: T.purple, cursor: "default",
               }}>
                 {t}
               </div>
@@ -812,7 +998,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ════════════════ COMING SOON ════════════════ */}
+      {/* ══════════════ ROADMAP ══════════════ */}
       <section data-s="coming" style={{ maxWidth: "1140px", margin: "0 auto", padding: `0 ${px} 96px` }}>
         <div style={{ textAlign: "center", marginBottom: "44px", ...fi("coming") }}>
           <SectionLabel text="Roadmap" color="#f59e0b" bg="rgba(245,158,11,0.08)" border="rgba(245,158,11,0.22)" />
@@ -854,7 +1040,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ════════════════ CTA ════════════════ */}
+      {/* ══════════════ CTA ══════════════ */}
       <section data-s="cta" style={{ maxWidth: "860px", margin: "0 auto", padding: `0 ${px} 100px` }}>
         <div style={{
           background: "linear-gradient(140deg, #2f3b63 0%, #7c3aed 100%)",
