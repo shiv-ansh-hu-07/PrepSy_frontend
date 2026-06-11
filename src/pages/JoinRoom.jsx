@@ -13,6 +13,16 @@ const FILTER_TABS = [
   { label: "Aptitude", tag: "aptitude" },
 ];
 
+function useWindowWidth() {
+  const [w, setW] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1200));
+  useEffect(() => {
+    const fn = () => setW(window.innerWidth);
+    window.addEventListener("resize", fn);
+    return () => window.removeEventListener("resize", fn);
+  }, []);
+  return w;
+}
+
 function roomIcon(room) {
   const tags = (room.tags || []).map((t) => t.toLowerCase());
   if (tags.some((t) => t.includes("dsa") || t.includes("algorithm") || t.includes("leetcode"))) return { icon: "⚡", bg: "#e8f5e9", accent: "#16a34a" };
@@ -22,7 +32,6 @@ function roomIcon(room) {
   if (tags.some((t) => t.includes("aptitude") || t.includes("quant") || t.includes("math"))) return { icon: "∑", bg: "#fff8e1", accent: "#f59e0b" };
   if (tags.some((t) => t.includes("interview") || t.includes("mock"))) return { icon: "🎤", bg: "#f3e8ff", accent: "#7c3aed" };
   if (tags.some((t) => t.includes("java") || t.includes("python") || t.includes("backend"))) return { icon: "☕", bg: "#fbe9e7", accent: "#e64a19" };
-  if (tags.some((t) => t.includes("dp") || t.includes("dynamic"))) return { icon: "🧩", bg: "#e8f5e9", accent: "#2e7d32" };
   return { icon: "📚", bg: "#f3e8ff", accent: "#7c3aed" };
 }
 
@@ -49,7 +58,7 @@ export default function JoinRoom() {
   const [roomId, setRoomId] = useState("");
   const [tagQuery, setTagQuery] = useState("");
   const [allRooms, setAllRooms] = useState([]);
-  const [searchResults, setSearchResults] = useState(null); // null = show all, array = filtered
+  const [searchResults, setSearchResults] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("");
   const [searching, setSearching] = useState(false);
@@ -57,6 +66,10 @@ export default function JoinRoom() {
 
   const navigate = useNavigate();
   const { user } = useAuth();
+  const windowWidth = useWindowWidth();
+  const isMobile = windowWidth < 640;
+  const isTablet = windowWidth < 960;
+  const cols = isMobile ? 1 : isTablet ? 2 : 3;
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 5000);
@@ -89,11 +102,7 @@ export default function JoinRoom() {
       setSearching(true);
       const res = await api.get(`/rooms/search?tags=${encodeURIComponent(tagQuery)}`);
       setSearchResults(res.data.rooms || []);
-    } catch {
-      alert("Search failed");
-    } finally {
-      setSearching(false);
-    }
+    } catch { alert("Search failed"); } finally { setSearching(false); }
   };
 
   const handleTabFilter = async (tag) => {
@@ -105,157 +114,146 @@ export default function JoinRoom() {
       setSearching(true);
       const res = await api.get(`/rooms/search?tags=${encodeURIComponent(tag)}`);
       setSearchResults(res.data.rooms || []);
-    } catch { /* show all */ } finally {
-      setSearching(false);
-    }
+    } catch { /* show all */ } finally { setSearching(false); }
   };
 
   const displayRooms = useMemo(() => {
     const rooms = searchResults !== null ? searchResults : allRooms;
-    return rooms.filter((r) => {
-      const s = getRoomStatus(r, now);
-      return !s.ended;
-    });
+    return rooms.filter((r) => !getRoomStatus(r, now).ended);
   }, [searchResults, allRooms, now]);
 
   return (
-    <div style={{ minHeight: "100vh", background: BG, padding: "40px 32px 64px", fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: BG, padding: isMobile ? "24px 16px 48px" : "40px 24px 64px", fontFamily: "'Inter', system-ui, sans-serif" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
 
         {/* Header */}
-        <div style={{ marginBottom: 28, textAlign: "center" }}>
-          <h1 style={{ fontFamily: "Georgia, serif", fontSize: 30, color: "#2f3b63", margin: "0 0 8px", fontWeight: 700 }}>
+        <div style={{ marginBottom: isMobile ? 20 : 28, textAlign: "center" }}>
+          <h1 style={{ fontFamily: "Georgia, serif", fontSize: isMobile ? 24 : 30, color: "#2f3b63", margin: "0 0 8px", fontWeight: 700 }}>
             Find a Study Room
           </h1>
           <p style={{ color: "#6b78a0", fontSize: 14, margin: 0 }}>
-            Join an existing room with its ID, or discover rooms by topic
+            Join with a Room ID, or discover rooms by topic
           </p>
         </div>
 
         {/* Search card */}
         <div style={{
-          background: "#fff", borderRadius: 22,
+          background: "#fff", borderRadius: 20,
           border: "1px solid rgba(190,200,235,0.5)",
           boxShadow: "0 8px 32px rgba(100,116,180,0.09)",
-          padding: "24px 28px", marginBottom: 24,
-          display: "grid",
-          gridTemplateColumns: "1fr auto 1fr",
-          gap: 0, alignItems: "center",
+          padding: isMobile ? "18px 16px" : "22px 24px",
+          marginBottom: 20,
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          alignItems: isMobile ? "stretch" : "center",
+          gap: isMobile ? 16 : 0,
         }}>
           {/* Room ID */}
-          <div>
-            <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 600, color: "#7b88b8", textTransform: "uppercase", letterSpacing: 0.6 }}>
+          <div style={{ flex: 1 }}>
+            <p style={{ margin: "0 0 7px", fontSize: 11, fontWeight: 600, color: "#7b88b8", textTransform: "uppercase", letterSpacing: 0.6 }}>
               Join by Room ID
             </p>
-            <div style={{ display: "flex", gap: 10 }}>
+            <div style={{ display: "flex", gap: 8 }}>
               <input
-                value={roomId}
-                onChange={(e) => setRoomId(e.target.value)}
+                value={roomId} onChange={(e) => setRoomId(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleJoin()}
                 placeholder="Paste Room ID..."
-                style={{
-                  flex: 1, height: 44, borderRadius: 12,
-                  border: "1px solid #d6d9e8",
-                  padding: "0 14px", fontSize: 14,
-                  outline: "none", color: "#2f3b63",
-                  background: "#fafbff",
-                }}
+                style={{ flex: 1, height: 42, borderRadius: 11, border: "1px solid #d6d9e8", padding: "0 13px", fontSize: 14, outline: "none", color: "#2f3b63", background: "#fafbff" }}
               />
-              <button onClick={handleJoin} style={joinBtnStyle}>
-                Join →
-              </button>
+              <button onClick={handleJoin} style={{ ...joinBtnStyle, padding: "0 16px", height: 42, fontSize: 13 }}>Join →</button>
             </div>
           </div>
 
           {/* Divider */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 24px" }}>
-            <div style={{ width: 1, height: 48, background: "rgba(190,200,235,0.6)" }} />
-            <span style={{ fontSize: 12, color: "#9aa4c7", margin: "8px 0", fontWeight: 600 }}>OR</span>
-            <div style={{ width: 1, height: 48, background: "rgba(190,200,235,0.6)" }} />
-          </div>
+          {!isMobile && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 20px" }}>
+              <div style={{ width: 1, height: 42, background: "rgba(190,200,235,0.6)" }} />
+              <span style={{ fontSize: 11, color: "#9aa4c7", margin: "6px 0", fontWeight: 600 }}>OR</span>
+              <div style={{ width: 1, height: 42, background: "rgba(190,200,235,0.6)" }} />
+            </div>
+          )}
+          {isMobile && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ flex: 1, height: 1, background: "rgba(190,200,235,0.6)" }} />
+              <span style={{ fontSize: 11, color: "#9aa4c7", fontWeight: 600 }}>OR</span>
+              <div style={{ flex: 1, height: 1, background: "rgba(190,200,235,0.6)" }} />
+            </div>
+          )}
 
           {/* Tag search */}
-          <div>
-            <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 600, color: "#7b88b8", textTransform: "uppercase", letterSpacing: 0.6 }}>
+          <div style={{ flex: 1 }}>
+            <p style={{ margin: "0 0 7px", fontSize: 11, fontWeight: 600, color: "#7b88b8", textTransform: "uppercase", letterSpacing: 0.6 }}>
               Search by Topic
             </p>
-            <div style={{ display: "flex", gap: 10 }}>
+            <div style={{ display: "flex", gap: 8 }}>
               <input
-                value={tagQuery}
-                onChange={(e) => setTagQuery(e.target.value)}
+                value={tagQuery} onChange={(e) => setTagQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleTagSearch()}
                 placeholder="e.g. dsa, react, system design..."
-                style={{
-                  flex: 1, height: 44, borderRadius: 12,
-                  border: "1px solid #d6d9e8",
-                  padding: "0 14px", fontSize: 14,
-                  outline: "none", color: "#2f3b63",
-                  background: "#fafbff",
-                }}
+                style={{ flex: 1, height: 42, borderRadius: 11, border: "1px solid #d6d9e8", padding: "0 13px", fontSize: 14, outline: "none", color: "#2f3b63", background: "#fafbff" }}
               />
-              <button onClick={handleTagSearch} disabled={searching} style={{ ...joinBtnStyle, background: "#f4f0ff", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.2)", boxShadow: "none" }}>
+              <button onClick={handleTagSearch} disabled={searching}
+                style={{ ...joinBtnStyle, background: "#f4f0ff", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.2)", boxShadow: "none", padding: "0 14px", height: 42, fontSize: 13 }}>
                 {searching ? "..." : "Search"}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Filter tabs */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
+        {/* Filter tabs — horizontal scroll on mobile */}
+        <div style={{
+          display: "flex", gap: 8, marginBottom: 20,
+          overflowX: "auto", paddingBottom: 4,
+          scrollbarWidth: "none",
+          WebkitOverflowScrolling: "touch",
+        }}>
           {FILTER_TABS.map((tab) => {
             const active = activeTab === tab.tag;
             return (
-              <button
-                key={tab.tag}
-                onClick={() => handleTabFilter(tab.tag)}
-                style={{
-                  padding: "8px 18px", borderRadius: 999,
-                  border: active ? "1.5px solid #7c3aed" : "1px solid rgba(190,200,235,0.6)",
-                  background: active ? "#7c3aed" : "#fff",
-                  color: active ? "#fff" : "#4a5a85",
-                  fontWeight: active ? 700 : 500, fontSize: 13,
-                  cursor: "pointer",
-                  boxShadow: active ? "0 4px 14px rgba(124,58,237,0.25)" : "none",
-                  transition: "all 0.15s",
-                }}
-              >
+              <button key={tab.tag} onClick={() => handleTabFilter(tab.tag)} style={{
+                padding: "7px 16px", borderRadius: 999, flexShrink: 0,
+                border: active ? "1.5px solid #7c3aed" : "1px solid rgba(190,200,235,0.6)",
+                background: active ? "#7c3aed" : "#fff",
+                color: active ? "#fff" : "#4a5a85",
+                fontWeight: active ? 700 : 500, fontSize: 13, cursor: "pointer",
+                boxShadow: active ? "0 4px 14px rgba(124,58,237,0.25)" : "none",
+                transition: "all 0.15s",
+              }}>
                 {tab.label}
               </button>
             );
           })}
           {searchResults !== null && (
-            <button
-              onClick={() => { setSearchResults(null); setActiveTab(""); setTagQuery(""); }}
-              style={{ padding: "8px 14px", borderRadius: 999, border: "1px solid #f3d0d0", background: "#fff5f5", color: "#d44", fontWeight: 500, fontSize: 13, cursor: "pointer" }}
-            >
-              ✕ Clear filter
+            <button onClick={() => { setSearchResults(null); setActiveTab(""); setTagQuery(""); }} style={{
+              padding: "7px 12px", borderRadius: 999, flexShrink: 0,
+              border: "1px solid #f3d0d0", background: "#fff5f5",
+              color: "#d44", fontWeight: 500, fontSize: 13, cursor: "pointer",
+            }}>
+              ✕ Clear
             </button>
           )}
         </div>
 
         {/* Results header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <p style={{ margin: 0, fontSize: 13, color: "#7b88b8" }}>
-            {loading || searching
-              ? "Loading rooms..."
-              : `${displayRooms.length} room${displayRooms.length !== 1 ? "s" : ""} available`}
+            {loading || searching ? "Loading rooms..." : `${displayRooms.length} room${displayRooms.length !== 1 ? "s" : ""} available`}
           </p>
-          {!user && (
-            <p style={{ margin: 0, fontSize: 12, color: "#9aa4c7" }}>
-              Sign in to see more rooms
-            </p>
-          )}
         </div>
 
         {/* Room grid */}
         {(loading || searching) ? (
-          <LoadingGrid />
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 }}>
+            {Array.from({ length: cols * 2 }).map((_, i) => (
+              <div key={i} style={{ background: "#fff", borderRadius: 18, border: "1px solid rgba(190,200,235,0.5)", height: 150, opacity: 0.5 }} />
+            ))}
+          </div>
         ) : displayRooms.length === 0 ? (
           <EmptyRoomsState onClear={() => { setSearchResults(null); setActiveTab(""); setTagQuery(""); }} />
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }}>
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: isMobile ? 12 : 16 }}>
             {displayRooms.map((room) => (
-              <RoomCard key={room.roomId} room={room} now={now} onJoin={() => navigate(`/room/${room.roomId}`)} />
+              <RoomCard key={room.roomId} room={room} now={now} isMobile={isMobile} onJoin={() => navigate(`/room/${room.roomId}`)} />
             ))}
           </div>
         )}
@@ -264,105 +262,65 @@ export default function JoinRoom() {
   );
 }
 
-function RoomCard({ room, now, onJoin }) {
+function RoomCard({ room, now, isMobile, onJoin }) {
   const status = getRoomStatus(room, now);
   const { icon, bg, accent } = roomIcon(room);
-  const tags = (room.tags || []).slice(0, 4);
+  const tags = (room.tags || []).slice(0, isMobile ? 3 : 4);
   const userCount = room?.activeUsers ?? 0;
 
   return (
     <div style={{
-      background: "#fff", borderRadius: 20,
+      background: "#fff", borderRadius: 18,
       border: status.live ? "1px solid rgba(34,197,94,0.2)" : "1px solid rgba(190,200,235,0.5)",
-      boxShadow: "0 4px 24px rgba(100,116,180,0.07)",
-      padding: "20px 20px 16px",
+      boxShadow: "0 4px 20px rgba(100,116,180,0.07)",
+      padding: isMobile ? "16px 14px 14px" : "18px 18px 14px",
       display: "flex", flexDirection: "column",
-      transition: "transform 0.2s, box-shadow 0.2s",
     }}>
-      {/* Top row */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
-        <div style={{
-          width: 48, height: 48, borderRadius: 14,
-          background: bg, display: "flex", alignItems: "center",
-          justifyContent: "center", fontSize: 22, flexShrink: 0,
-        }}>{icon}</div>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 }}>
+        <div style={{ width: 42, height: 42, borderRadius: 12, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
+          {icon}
+        </div>
         <span style={{
-          fontSize: 11, fontWeight: 700,
+          fontSize: 10, fontWeight: 700,
           color: status.live ? "#16a34a" : "#7c3aed",
           background: status.live ? "rgba(34,197,94,0.1)" : "rgba(124,58,237,0.08)",
-          padding: "4px 10px", borderRadius: 999,
+          padding: "3px 9px", borderRadius: 999,
         }}>
           {status.live ? "● Live" : status.label}
         </span>
       </div>
 
-      {/* Name */}
-      <h3 style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 700, color: "#2f3b63", lineHeight: 1.3 }}>
+      <h3 style={{ margin: "0 0 6px", fontSize: 14, fontWeight: 700, color: "#2f3b63", lineHeight: 1.3 }}>
         {room.name}
       </h3>
 
-      {/* Tags */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 14, flex: 1 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 12, flex: 1 }}>
         {tags.map((t) => (
-          <span key={t} style={{
-            fontSize: 11, color: accent, background: bg,
-            padding: "2px 8px", borderRadius: 999, fontWeight: 500,
-          }}>
-            #{t}
-          </span>
+          <span key={t} style={{ fontSize: 11, color: accent, background: bg, padding: "2px 7px", borderRadius: 999, fontWeight: 500 }}>#{t}</span>
         ))}
       </div>
 
-      {/* Bottom row */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "auto" }}>
-        {/* Avatar stack + count */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
           <div style={{ display: "flex" }}>
-            {Array.from({ length: Math.min(3, userCount) }).map((_, i) => (
-              <div key={i} style={{
-                width: 26, height: 26, borderRadius: "50%",
-                background: `hsl(${240 + i * 30}, 60%, 70%)`,
-                border: "2px solid #fff",
-                marginLeft: i > 0 ? -8 : 0,
-                fontSize: 10, display: "flex", alignItems: "center",
-                justifyContent: "center", color: "#fff", fontWeight: 600,
-              }}>
+            {Array.from({ length: Math.min(3, userCount || 0) }).map((_, i) => (
+              <div key={i} style={{ width: 22, height: 22, borderRadius: "50%", background: `hsl(${240 + i * 30}, 60%, 70%)`, border: "2px solid #fff", marginLeft: i > 0 ? -6 : 0, fontSize: 9, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 600 }}>
                 {String.fromCharCode(65 + i)}
               </div>
             ))}
-            {userCount === 0 && (
-              <div style={{
-                width: 26, height: 26, borderRadius: "50%",
-                background: "#eef1fb", border: "1px dashed #c5ccec",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 14,
-              }}>
-                👤
-              </div>
+            {(!userCount || userCount === 0) && (
+              <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#eef1fb", border: "1px dashed #c5ccec", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>👤</div>
             )}
           </div>
-          <span style={{ fontSize: 12, color: "#9aa4c7" }}>
-            {userCount > 0 ? `${userCount} studying` : "Be first"}
-          </span>
+          <span style={{ fontSize: 11, color: "#9aa4c7" }}>{userCount > 0 ? `${userCount}` : "0"}</span>
         </div>
 
-        {/* Join button */}
         {status.live ? (
-          <button onClick={onJoin} style={{
-            padding: "8px 18px", borderRadius: 12, border: "none",
-            background: "#7c3aed", color: "#fff",
-            fontWeight: 700, fontSize: 13, cursor: "pointer",
-            boxShadow: "0 4px 14px rgba(124,58,237,0.3)",
-          }}>
+          <button onClick={onJoin} style={{ padding: "7px 15px", borderRadius: 10, border: "none", background: "#7c3aed", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", boxShadow: "0 4px 12px rgba(124,58,237,0.28)" }}>
             Join Now
           </button>
         ) : (
-          <button style={{
-            padding: "8px 14px", borderRadius: 12,
-            border: "1px solid rgba(190,200,235,0.7)",
-            background: "#fafbff", color: "#7b88b8",
-            fontWeight: 500, fontSize: 12, cursor: "default",
-          }}>
+          <button style={{ padding: "7px 12px", borderRadius: 10, border: "1px solid rgba(190,200,235,0.7)", background: "#fafbff", color: "#7b88b8", fontWeight: 500, fontSize: 11, cursor: "default" }}>
             Notify me
           </button>
         )}
@@ -371,50 +329,20 @@ function RoomCard({ room, now, onJoin }) {
   );
 }
 
-function LoadingGrid() {
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }}>
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} style={{
-          background: "#fff", borderRadius: 20,
-          border: "1px solid rgba(190,200,235,0.5)",
-          padding: "20px", height: 160,
-          animation: "pulse 1.5s ease-in-out infinite",
-          opacity: 0.6,
-        }} />
-      ))}
-    </div>
-  );
-}
-
 function EmptyRoomsState({ onClear }) {
   const navigate = useNavigate();
   return (
-    <div style={{
-      textAlign: "center", padding: "56px 20px",
-      background: "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)",
-      borderRadius: 24, border: "1px dashed rgba(124,58,237,0.2)",
-    }}>
+    <div style={{ textAlign: "center", padding: "48px 20px", background: "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)", borderRadius: 22, border: "1px dashed rgba(124,58,237,0.2)" }}>
       <p style={{ fontSize: 36, margin: "0 0 12px" }}>🏫</p>
-      <p style={{ fontWeight: 700, color: "#4a5a85", fontSize: 16, margin: "0 0 8px" }}>No rooms found</p>
-      <p style={{ fontSize: 14, color: "#7b88b8", margin: "0 0 24px", lineHeight: 1.6 }}>
+      <p style={{ fontWeight: 700, color: "#4a5a85", fontSize: 16, margin: "0 0 6px" }}>No rooms found</p>
+      <p style={{ fontSize: 14, color: "#7b88b8", margin: "0 0 22px", lineHeight: 1.6 }}>
         No active rooms match your search.<br />You could be the one to start the next session.
       </p>
-      <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-        <button onClick={onClear} style={{
-          padding: "10px 22px", borderRadius: 12,
-          border: "1px solid rgba(190,200,235,0.7)",
-          background: "#fff", color: "#4a5a85",
-          fontWeight: 600, fontSize: 13, cursor: "pointer",
-        }}>
+      <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+        <button onClick={onClear} style={{ padding: "10px 20px", borderRadius: 12, border: "1px solid rgba(190,200,235,0.7)", background: "#fff", color: "#4a5a85", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
           Show all rooms
         </button>
-        <button onClick={() => navigate("/create-room")} style={{
-          padding: "10px 22px", borderRadius: 12, border: "none",
-          background: "#7c3aed", color: "#fff",
-          fontWeight: 600, fontSize: 13, cursor: "pointer",
-          boxShadow: "0 4px 14px rgba(124,58,237,0.3)",
-        }}>
+        <button onClick={() => navigate("/create-room")} style={{ padding: "10px 20px", borderRadius: 12, border: "none", background: "#7c3aed", color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 14px rgba(124,58,237,0.3)" }}>
           Create a room →
         </button>
       </div>
@@ -423,9 +351,7 @@ function EmptyRoomsState({ onClear }) {
 }
 
 const joinBtnStyle = {
-  height: 44, padding: "0 18px", borderRadius: 12, border: "none",
-  background: "#7c3aed", color: "#fff",
-  fontWeight: 600, fontSize: 13, cursor: "pointer",
-  boxShadow: "0 4px 14px rgba(124,58,237,0.3)",
-  whiteSpace: "nowrap",
+  borderRadius: 11, border: "none", background: "#7c3aed", color: "#fff",
+  fontWeight: 600, cursor: "pointer", boxShadow: "0 4px 12px rgba(124,58,237,0.28)",
+  whiteSpace: "nowrap", flexShrink: 0,
 };

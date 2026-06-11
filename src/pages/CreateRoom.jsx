@@ -2,6 +2,16 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
+function useWindowWidth() {
+  const [w, setW] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1200));
+  useEffect(() => {
+    const fn = () => setW(window.innerWidth);
+    window.addEventListener("resize", fn);
+    return () => window.removeEventListener("resize", fn);
+  }, []);
+  return w;
+}
+
 const COLLAB_STYLE_OPTIONS = [
   { value: "quiet-focus", label: "Quiet Focus", desc: "Silent deep work, no interruptions" },
   { value: "discussion-heavy", label: "Discussion Heavy", desc: "Active dialogue and idea exchange" },
@@ -213,7 +223,9 @@ export default function CreateRoom() {
   const [timezone, setTimezone] = useState(normalizeTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata"));
   const [submitting, setSubmitting] = useState(false);
 
-  const isMobile = typeof window !== "undefined" ? window.innerWidth < 900 : false;
+  const windowWidth = useWindowWidth();
+  const isMobile = windowWidth < 640;
+  const isTablet = windowWidth < 960;
 
   const visibility = visibilityMode;
   const expertiseLabel = ROOM_TYPE_OPTIONS.find((e) => e.value === expertise)?.label || "Learning";
@@ -256,13 +268,13 @@ export default function CreateRoom() {
       minHeight: "100vh",
       background: "radial-gradient(ellipse at 60% 20%, #eef1fb 0%, #f4f6fd 55%, #f8f9fe 100%)",
       display: "flex", justifyContent: "center",
-      padding: "36px 24px 64px",
+      padding: isMobile ? "20px 14px 48px" : isTablet ? "28px 20px 56px" : "36px 24px 64px",
       fontFamily: "'Inter', system-ui, sans-serif",
     }}>
       <div style={{
         width: "100%", maxWidth: 1100,
         display: "grid",
-        gridTemplateColumns: isMobile ? "1fr" : "1fr 300px",
+        gridTemplateColumns: isTablet ? "1fr" : "1fr 300px",
         gap: 24, alignItems: "start",
       }}>
 
@@ -303,7 +315,7 @@ export default function CreateRoom() {
           {/* ── Room Type ── */}
           <SectionHeader>Room Type</SectionHeader>
           <p style={{ margin: "-8px 0 12px", fontSize: 12, color: "#9aa4c7" }}>What kind of session will this be?</p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 6 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: 10, marginBottom: 6 }}>
             {ROOM_TYPE_OPTIONS.map((opt) => {
               const active = expertise === opt.value;
               return (
@@ -375,7 +387,7 @@ export default function CreateRoom() {
           {/* ── Collaboration Style ── */}
           <SectionHeader>Collaboration Style</SectionHeader>
           <p style={{ margin: "-8px 0 12px", fontSize: 12, color: "#9aa4c7" }}>How will participants work together in this room?</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 6 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10, marginBottom: 6 }}>
             {COLLAB_STYLE_OPTIONS.map((opt) => {
               const active = collaborationStyle === opt.value;
               return (
@@ -433,7 +445,7 @@ export default function CreateRoom() {
         </form>
 
         {/* ── PREVIEW PANEL ── */}
-        {!isMobile && (
+        {!isTablet && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16, position: "sticky", top: 80 }}>
             {/* Live preview */}
             <div style={{ background: "#fff", border: "1px solid rgba(190,200,235,0.52)", borderRadius: 18, padding: 20, boxShadow: "0 8px 24px rgba(79,97,160,0.08)" }}>
