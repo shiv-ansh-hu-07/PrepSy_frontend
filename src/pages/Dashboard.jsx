@@ -118,15 +118,23 @@ export default function Dashboard() {
 
       {/* Sidebar — hidden on tablet/mobile; Navbar burger handles nav there */}
       {!isTablet && (
-        <div style={{ width: 236, flexShrink: 0, padding: "28px 12px 28px 16px", display: "flex", flexDirection: "column" }}>
+        <aside style={{
+          width: 252, flexShrink: 0,
+          padding: "24px 0 24px 16px",
+          position: "sticky", top: 0, height: "100vh", overflowY: "auto",
+        }}>
           <AppSideNav />
-        </div>
+        </aside>
       )}
 
       {/* Main */}
       <main style={{
         flex: 1, minWidth: 0,
-        padding: isMobile ? "20px 16px 48px" : isTablet ? "24px 20px 48px" : "28px 28px 48px 12px",
+        padding: isMobile
+          ? "20px 16px 48px"
+          : isTablet
+          ? "24px 20px 48px"
+          : "28px 32px 48px 28px",
       }}>
 
         {/* Header */}
@@ -163,8 +171,8 @@ export default function Dashboard() {
         {/* Two-column content */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: isTablet ? "1fr" : "1fr 300px",
-          gap: 18,
+          gridTemplateColumns: isTablet ? "1fr" : "minmax(0,1fr) 288px",
+          gap: 20,
           alignItems: "start",
         }}>
 
