@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import api, { fetchStats, fetchMyAnalytics, fetchFocusSummary } from "../services/api";
 import AppSideNav from "../components/AppSideNav";
 
-const BG = "radial-gradient(ellipse at top, #eef1fb 0%, #f3f5fc 45%, #f8f9fe 75%)";
+const PAGE_BG = "radial-gradient(ellipse at top, #eef1fb 0%, #f3f5fc 48%, #f8f9fe 100%)";
 
 function useWindowWidth() {
   const [w, setW] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1200));
@@ -114,28 +114,27 @@ export default function Dashboard() {
   const focusTrend = focusSummary?.trend;
 
   return (
-    <div style={{ minHeight: "100vh", background: BG, display: "flex", fontFamily: "'Inter', system-ui, sans-serif" }}>
-
-      {/* Sidebar — hidden on tablet/mobile; Navbar burger handles nav there */}
-      {!isTablet && (
-        <aside style={{
-          width: 252, flexShrink: 0,
-          padding: "24px 0 24px 16px",
-          position: "sticky", top: 0, height: "100vh", overflowY: "auto",
-        }}>
-          <AppSideNav />
-        </aside>
-      )}
+    <div style={{
+      minHeight: "calc(100vh - 76px)",
+      background: PAGE_BG,
+      padding: isMobile ? "20px 16px 48px" : isTablet ? "24px 20px 48px" : "32px 24px 56px",
+      fontFamily: "'Inter', system-ui, sans-serif",
+    }}>
+      {/* Same grid layout pattern as Analytics page */}
+      <div style={{
+        width: "100%",
+        maxWidth: 1360,
+        margin: "0 auto",
+        display: "grid",
+        gridTemplateColumns: isTablet ? "1fr" : "288px minmax(0, 1fr)",
+        gap: 24,
+        alignItems: "start",
+      }}>
+        {/* Sidebar — AppSideNav is a direct grid child, same as Analytics */}
+        {!isTablet && <AppSideNav />}
 
       {/* Main */}
-      <main style={{
-        flex: 1, minWidth: 0,
-        padding: isMobile
-          ? "20px 16px 48px"
-          : isTablet
-          ? "24px 20px 48px"
-          : "28px 32px 48px 28px",
-      }}>
+      <main style={{ display: "grid", gap: 0, minWidth: 0 }}>
 
         {/* Header */}
         <div style={{ marginBottom: isMobile ? 16 : 22 }}>
@@ -286,6 +285,7 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
+      </div>
     </div>
   );
 }
