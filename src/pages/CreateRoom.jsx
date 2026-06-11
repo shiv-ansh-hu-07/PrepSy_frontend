@@ -33,9 +33,8 @@ const ROOM_TYPE_OPTIONS = [
 ];
 
 const VISIBILITY_OPTIONS = [
-  { value: "PRIVATE", label: "Private", icon: "🔒", desc: "Invite-only, not listed publicly", femaleOnly: false },
-  { value: "PUBLIC", label: "Public", icon: "🌐", desc: "Discoverable by anyone in the community", femaleOnly: false },
-  { value: "FEMALE_ONLY", label: "Female Only", icon: "🌸", desc: "Open to female members only", femaleOnly: true },
+  { value: "PRIVATE", label: "Private", icon: "🔒", desc: "Invite-only, not listed publicly" },
+  { value: "PUBLIC", label: "Public", icon: "🌐", desc: "Discoverable by anyone in the community" },
 ];
 
 const FALLBACK_TIMEZONES = [
@@ -203,7 +202,8 @@ export default function CreateRoom() {
   const [description, setDescription] = useState("");
   const [goals, setGoals] = useState([]);
   const [languages, setLanguages] = useState([]);
-  const [visibilityMode, setVisibilityMode] = useState("PRIVATE"); // PRIVATE | PUBLIC | FEMALE_ONLY
+  const [visibilityMode, setVisibilityMode] = useState("PRIVATE"); // PRIVATE | PUBLIC
+  const [femaleOnly, setFemaleOnly] = useState(false);
   const [expertise, setExpertise] = useState("learning");
   const [collaborationStyle, setCollaborationStyle] = useState("quiet-focus");
   const [customTags, setCustomTags] = useState([]);
@@ -215,8 +215,7 @@ export default function CreateRoom() {
 
   const isMobile = typeof window !== "undefined" ? window.innerWidth < 900 : false;
 
-  const visibility = visibilityMode === "FEMALE_ONLY" ? "PUBLIC" : visibilityMode;
-  const femaleOnly = visibilityMode === "FEMALE_ONLY";
+  const visibility = visibilityMode;
   const expertiseLabel = ROOM_TYPE_OPTIONS.find((e) => e.value === expertise)?.label || "Learning";
 
   const handleCreate = async (e) => {
@@ -310,13 +309,13 @@ export default function CreateRoom() {
               return (
                 <div key={opt.value} onClick={() => setExpertise(opt.value)} style={{
                   border: `2px solid ${active ? "#7c3aed" : "#e2e6f3"}`,
-                  borderRadius: 16, padding: "14px 12px",
+                  borderRadius: 14, padding: "12px 10px",
                   cursor: "pointer", textAlign: "center",
                   background: active ? "#f3eeff" : "#fafbff",
                   transition: "border-color 0.15s, background 0.15s",
                 }}>
-                  <div style={{ fontSize: 26, marginBottom: 6 }}>{opt.icon}</div>
-                  <p style={{ margin: "0 0 3px", fontSize: 13, fontWeight: 700, color: active ? "#6f3bd6" : "#2f3b63" }}>{opt.label}</p>
+                  <div style={{ fontSize: 18, marginBottom: 5 }}>{opt.icon}</div>
+                  <p style={{ margin: "0 0 2px", fontSize: 13, fontWeight: 700, color: active ? "#6f3bd6" : "#2f3b63" }}>{opt.label}</p>
                   <p style={{ margin: 0, fontSize: 11, color: active ? "#9b77e0" : "#9aa4c7", lineHeight: 1.3 }}>{opt.desc}</p>
                 </div>
               );
@@ -326,23 +325,43 @@ export default function CreateRoom() {
           {/* ── Visibility ── */}
           <SectionHeader>Visibility</SectionHeader>
           <p style={{ margin: "-8px 0 12px", fontSize: 12, color: "#9aa4c7" }}>Who can see and join this room?</p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 6 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 12 }}>
             {VISIBILITY_OPTIONS.map((opt) => {
               const active = visibilityMode === opt.value;
               return (
                 <div key={opt.value} onClick={() => setVisibilityMode(opt.value)} style={{
                   border: `2px solid ${active ? "#7c3aed" : "#e2e6f3"}`,
-                  borderRadius: 16, padding: "16px 14px",
+                  borderRadius: 14, padding: "12px 14px",
                   cursor: "pointer", textAlign: "center",
                   background: active ? "#f3eeff" : "#fafbff",
                   transition: "border-color 0.15s, background 0.15s",
                 }}>
-                  <div style={{ fontSize: 26, marginBottom: 6 }}>{opt.icon}</div>
-                  <p style={{ margin: "0 0 3px", fontSize: 13, fontWeight: 700, color: active ? "#6f3bd6" : "#2f3b63" }}>{opt.label}</p>
+                  <div style={{ fontSize: 18, marginBottom: 5 }}>{opt.icon}</div>
+                  <p style={{ margin: "0 0 2px", fontSize: 13, fontWeight: 700, color: active ? "#6f3bd6" : "#2f3b63" }}>{opt.label}</p>
                   <p style={{ margin: 0, fontSize: 11, color: active ? "#9b77e0" : "#9aa4c7", lineHeight: 1.3 }}>{opt.desc}</p>
                 </div>
               );
             })}
+          </div>
+
+          {/* Female Only toggle */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "12px 16px",
+            background: femaleOnly ? "#fdf4ff" : "#fafbff",
+            border: `1px solid ${femaleOnly ? "rgba(217,70,239,0.2)" : "#eceef8"}`,
+            borderRadius: 14, marginBottom: 4,
+            transition: "background 0.2s, border-color 0.2s",
+          }}>
+            <div>
+              <p style={{ margin: 0, fontSize: 14, color: "#2f3b63", fontWeight: 600 }}>
+                🌸 Female participants only
+              </p>
+              <p style={{ margin: "2px 0 0", fontSize: 11, color: "#9aa4c7" }}>
+                Restricts access to female members — works with both Private and Public
+              </p>
+            </div>
+            <Toggle value={femaleOnly} onChange={setFemaleOnly} />
           </div>
 
           {/* ── Tags ── */}
@@ -431,9 +450,12 @@ export default function CreateRoom() {
                 <BadgePill bg={expertise === "learning" ? "#dbeafe" : expertise === "practising" ? "#fef3c7" : "#ede9fb"} color={expertise === "learning" ? "#1d4ed8" : expertise === "practising" ? "#b45309" : "#6f3bd6"}>
                   {expertiseLabel}
                 </BadgePill>
-                <BadgePill bg={visibilityMode === "PUBLIC" ? "#dcfce7" : visibilityMode === "FEMALE_ONLY" ? "#fce7f3" : "#f3f4f6"} color={visibilityMode === "PUBLIC" ? "#15803d" : visibilityMode === "FEMALE_ONLY" ? "#be185d" : "#4b5563"}>
-                  {visibilityMode === "PUBLIC" ? "Public" : visibilityMode === "FEMALE_ONLY" ? "Female Only" : "Private"}
+                <BadgePill bg={visibilityMode === "PUBLIC" ? "#dcfce7" : "#f3f4f6"} color={visibilityMode === "PUBLIC" ? "#15803d" : "#4b5563"}>
+                  {visibilityMode === "PUBLIC" ? "Public" : "Private"}
                 </BadgePill>
+                {femaleOnly && (
+                  <BadgePill bg="#fce7f3" color="#be185d">Female Only</BadgePill>
+                )}
               </div>
               {customTags.length > 0 && (
                 <div style={{ marginTop: 12 }}>

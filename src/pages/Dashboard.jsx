@@ -108,12 +108,12 @@ export default function Dashboard() {
     <div style={{ minHeight: "100vh", background: BG, display: "flex", fontFamily: "'Inter', system-ui, sans-serif" }}>
 
       {/* ── Sidebar ── */}
-      <div style={{ width: 224, flexShrink: 0, padding: "24px 16px", display: "flex", flexDirection: "column" }}>
+      <div style={{ width: 236, flexShrink: 0, padding: "28px 12px 28px 16px", display: "flex", flexDirection: "column" }}>
         <AppSideNav />
       </div>
 
       {/* ── Main ── */}
-      <main style={{ flex: 1, padding: "32px 32px 48px 16px", minWidth: 0 }}>
+      <main style={{ flex: 1, padding: "28px 28px 48px 12px", minWidth: 0 }}>
 
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
@@ -130,7 +130,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stat cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 14, marginBottom: 22 }}>
           <StatCard
             icon="🔥"
             label="Current streak"
@@ -158,7 +158,7 @@ export default function Dashboard() {
         </div>
 
         {/* Two-column content area */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 20, alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 18, alignItems: "start" }}>
 
           {/* Sessions panel */}
           <div style={panelStyle}>
@@ -294,20 +294,20 @@ export default function Dashboard() {
 function StatCard({ icon, label, value, sub }) {
   return (
     <div style={{
-      background: "#fff", borderRadius: 18,
+      background: "#fff", borderRadius: 16,
       border: "1px solid rgba(190,200,235,0.5)",
-      boxShadow: "0 4px 20px rgba(100,116,180,0.07)",
-      padding: "18px 20px",
+      boxShadow: "0 2px 12px rgba(100,116,180,0.07)",
+      padding: "16px 16px 14px",
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 9 }}>
         <span style={{
-          width: 32, height: 32, borderRadius: 10,
+          width: 26, height: 26, borderRadius: 8,
           background: "#f4f0ff", display: "flex", alignItems: "center",
-          justifyContent: "center", fontSize: 16, flexShrink: 0,
+          justifyContent: "center", fontSize: 13, flexShrink: 0,
         }}>{icon}</span>
-        <span style={{ fontSize: 12, color: "#7b88b8", fontWeight: 500 }}>{label}</span>
+        <span style={{ fontSize: 11, color: "#7b88b8", fontWeight: 500 }}>{label}</span>
       </div>
-      <p style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 800, color: "#2f3b63", lineHeight: 1 }}>
+      <p style={{ margin: "0 0 3px", fontSize: 22, fontWeight: 800, color: "#2f3b63", lineHeight: 1 }}>
         {value}
       </p>
       <p style={{ margin: 0, fontSize: 11, color: "#9aa4c7" }}>{sub}</p>
@@ -363,10 +363,10 @@ function SessionRow({ room, onJoin }) {
     }}>
       {/* Icon */}
       <div style={{
-        width: 44, height: 44, borderRadius: 14,
+        width: 38, height: 38, borderRadius: 12,
         background: iconBg, display: "flex",
         alignItems: "center", justifyContent: "center",
-        fontSize: 20, flexShrink: 0,
+        fontSize: 17, flexShrink: 0,
       }}>{icon}</div>
 
       {/* Info */}
