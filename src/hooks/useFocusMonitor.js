@@ -11,6 +11,10 @@ async function loadModels() {
   if (modelCache) return modelCache;
   modelCache = (async () => {
     const faceapi = await import("face-api.js");
+    // Force TF.js off WebGL to avoid exhausting the browser's WebGL context
+    // limit, which crashes LiveKit's video rendering when both run together.
+    try { faceapi.tf.ENV.set('WEBGL_VERSION', 0); } catch {}
+    try { await faceapi.tf.setBackend('cpu'); } catch {}
     await Promise.all([
       faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_CDN),
       faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_CDN),
