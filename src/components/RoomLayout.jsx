@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 import PomodoroTimer from "./PomodoroTimer";
 import { useParticipants } from "@livekit/components-react";
 import { useEffect, useState } from "react";
-import api, { saveFocusSession } from "../services/api";
+import api, { fetchMyProfile, saveFocusSession } from "../services/api";
 
 export default function RoomLayout({
   children,
@@ -35,7 +35,7 @@ export default function RoomLayout({
     screenShareSupported,
   } = useMediaControls();
 
-  const focusMonitor = useFocusMonitor({ enabled: camEnabled, intervalMs: 5000 });
+  const focusMonitor = useFocusMonitor({ enabled: camEnabled && aiMonitorEnabled, intervalMs: 5000 });
 
   const navigate = useNavigate();
   const participants = useParticipants();
@@ -47,6 +47,7 @@ export default function RoomLayout({
   const [showSummary, setShowSummary] = useState(false);
   const [summary, setSummary] = useState(null);
   const [focusSummary, setFocusSummary] = useState(null);
+  const [aiMonitorEnabled, setAiMonitorEnabled] = useState(false);
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth < 980 : false
   );
@@ -63,6 +64,12 @@ export default function RoomLayout({
     handle();
     window.addEventListener("resize", handle);
     return () => window.removeEventListener("resize", handle);
+  }, []);
+
+  useEffect(() => {
+    fetchMyProfile().then((res) => {
+      if (res?.profile?.aiMonitorConsent) setAiMonitorEnabled(true);
+    }).catch(() => {});
   }, []);
 
   const handleLeave = async () => {
@@ -206,7 +213,12 @@ export default function RoomLayout({
             </button>
           </div>
 
-          <FocusMonitorCard monitor={focusMonitor} camEnabled={camEnabled} />
+          <FocusMonitorCard
+            monitor={focusMonitor}
+            camEnabled={camEnabled}
+            aiMonitorEnabled={aiMonitorEnabled}
+            onToggleAiMonitor={() => setAiMonitorEnabled((v) => !v)}
+          />
         </div>
       </div>
 
@@ -224,10 +236,11 @@ export default function RoomLayout({
 
 // ── AI Focus Monitor sidebar card ────────────────────────────────────────────
 
-function FocusMonitorCard({ monitor, camEnabled }) {
+function FocusMonitorCard({ monitor, camEnabled, aiMonitorEnabled, onToggleAiMonitor }) {
   const { status, currentLevel, sampleCount } = monitor;
 
   const statusLine = () => {
+    if (!aiMonitorEnabled) return { text: "Face analysis disabled for this session. Toggle to enable.", muted: true };
     if (!camEnabled) return { text: "Camera off — turn on camera to monitor focus", muted: true };
     if (status === "loading") return { text: "Loading AI models…", muted: true };
     if (status === "error") return { text: "Focus monitoring unavailable", muted: true };
@@ -237,14 +250,36 @@ function FocusMonitorCard({ monitor, camEnabled }) {
   };
 
   const info = statusLine();
+  const isLive = aiMonitorEnabled && status === "active";
 
   return (
     <div style={styles.card}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <h3 style={styles.cardTitle}>AI Focus Monitor</h3>
-        <span style={{ fontSize: 11, color: info.muted ? "#b0b8d8" : "#22c55e", fontWeight: 600 }}>
-          {status === "active" ? "● Live" : "○ Off"}
+        <span style={{ fontSize: 11, color: isLive ? "#22c55e" : "#b0b8d8", fontWeight: 600 }}>
+          {isLive ? "● Live" : "○ Off"}
         </span>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <span style={{ fontSize: 11, color: "#9aa4c7" }}>Face analysis</span>
+        <button
+          type="button"
+          onClick={onToggleAiMonitor}
+          style={{
+            width: 38, height: 20, borderRadius: 10, border: "none", cursor: "pointer",
+            background: aiMonitorEnabled ? "#7c3aed" : "#d1d5db",
+            position: "relative", transition: "background 0.2s", flexShrink: 0,
+            padding: 0,
+          }}
+          title={aiMonitorEnabled ? "Disable face analysis for this session" : "Enable face analysis for this session"}
+        >
+          <div style={{
+            position: "absolute", top: 2, left: aiMonitorEnabled ? 20 : 2,
+            width: 16, height: 16, borderRadius: "50%", background: "#fff",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.2)", transition: "left 0.2s",
+          }} />
+        </button>
       </div>
 
       <p style={{ margin: "0 0 12px", fontSize: 11, color: "#9aa4c7", lineHeight: 1.5 }}>

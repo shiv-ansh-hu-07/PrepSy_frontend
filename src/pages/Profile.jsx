@@ -163,6 +163,7 @@ const emptyProfile = {
   experienceLevel: "", workMode: "", collaborationPreference: "",
   dailyStudyGoalMinutes: 0,
   portfolioUrl: "", linkedinUrl: "", githubUrl: "", isDiscoverable: true,
+  aiMonitorConsent: false,
 };
 
 /* ─── Main component ─────────────────────────────────────────────────────── */
@@ -431,6 +432,7 @@ export default function Profile() {
                 <MiniStat icon={Clock3} label="Focus Time" value={stats.totalFocusLabel || "0m"} />
                 <MiniStat icon={CheckCircle2} label="Sessions" value={stats.sessionsCompleted || 0} />
                 <MiniStat icon={ShieldCheck} label="Discoverable" value={profile.isDiscoverable ? "On" : "Off"} />
+                <MiniStat icon={Camera} label="AI Analysis" value={profile.aiMonitorConsent ? "On" : "Off"} />
               </div>
 
               <button type="button" onClick={() => navigate("/analytics")} style={styles.secondaryButton}>
@@ -504,6 +506,65 @@ export default function Profile() {
                       Used to show your daily goal vs actual time in Analytics.
                     </p>
                   </Field>
+                  <div style={{
+                    borderRadius: 14,
+                    background: profile.aiMonitorConsent ? "linear-gradient(135deg,#f3f0ff 0%,#ede9fe 100%)" : "#f6f8ff",
+                    border: `1.5px solid ${profile.aiMonitorConsent ? "#c4b5fd" : "rgba(190,200,235,0.45)"}`,
+                    padding: "16px 18px",
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 14,
+                    transition: "all 0.2s",
+                  }}>
+                    <div style={{ flex: 1, display: "grid", gap: 6 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 16 }}>🎯</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "#2f3b63" }}>
+                          AI Focus Analysis Consent
+                        </span>
+                        {!profile.aiMonitorConsent && (
+                          <span style={{
+                            fontSize: 10, fontWeight: 600, color: "#92400e",
+                            background: "#fef3c7", border: "1px solid #fcd34d",
+                            borderRadius: 6, padding: "1px 6px",
+                          }}>OFF BY DEFAULT</span>
+                        )}
+                        {profile.aiMonitorConsent && (
+                          <span style={{
+                            fontSize: 10, fontWeight: 600, color: "#5b21b6",
+                            background: "#ede9fe", border: "1px solid #c4b5fd",
+                            borderRadius: 6, padding: "1px 6px",
+                          }}>ENABLED</span>
+                        )}
+                      </div>
+                      <p style={{ fontSize: 12.5, color: "#4a5a85", lineHeight: 1.55, margin: 0 }}>
+                        Allow PrepSy to analyze your camera feed during study sessions to measure your focus score.
+                        Your focus score is saved for Analytics. <strong>We do not store any face video or any PII data</strong> — only the numeric focus score is retained.
+                      </p>
+                      {!profile.aiMonitorConsent && (
+                        <p style={{ fontSize: 11.5, color: "#92400e", margin: 0 }}>
+                          You are currently opted out. Face analysis will be disabled in rooms until you enable this.
+                        </p>
+                      )}
+                    </div>
+                    <label style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, cursor: "pointer", flexShrink: 0 }}>
+                      <div
+                        onClick={() => updateField("aiMonitorConsent", !profile.aiMonitorConsent)}
+                        style={{
+                          width: 44, height: 24, borderRadius: 12, cursor: "pointer",
+                          background: profile.aiMonitorConsent ? "#7c3aed" : "#d1d5db",
+                          position: "relative", transition: "background 0.2s",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <div style={{
+                          position: "absolute", top: 3, left: profile.aiMonitorConsent ? 23 : 3,
+                          width: 18, height: 18, borderRadius: "50%", background: "#fff",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s",
+                        }} />
+                      </div>
+                    </label>
+                  </div>
                 </Section>
 
                 <Section icon={GraduationCap} title="I Am A">
