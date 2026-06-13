@@ -115,9 +115,18 @@ function scoreDetection(det, recentSamples = []) {
   return { score, label, expression: dominant, lookingForward: true, facePresent: true, noteTaking: false, avgEAR };
 }
 
+function isMobileBrowser() {
+  if (typeof navigator === "undefined") return false;
+  return /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
 // ── Hook ──────────────────────────────────────────────────────────────────────
 export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
   const { cameraTrack, microphoneTrack } = useLocalParticipant();
+
+  // TensorFlow.js WebGL inference is not reliable on mobile browsers —
+  // it can exhaust WebGL contexts and crash the tab. Disable on mobile.
+  const effectiveEnabled = enabled && !isMobileBrowser();
 
   const [status, setStatus] = useState("idle");
   const [currentLevel, setCurrentLevel] = useState(null);
@@ -164,14 +173,16 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
   }, []);
 
   // Watch mic track from LiveKit — no extra permission needed
+  // Skip on mobile: AudioContext can behave unpredictably on mobile browsers
   useEffect(() => {
+    if (!effectiveEnabled) return;
     const micMST = microphoneTrack?.track?.mediaStreamTrack;
     if (micMST) {
       setupAudio(micMST);
     } else {
       teardownAudio();
     }
-  }, [microphoneTrack, setupAudio, teardownAudio]);
+  }, [effectiveEnabled, microphoneTrack, setupAudio, teardownAudio]);
 
   // ── Camera video element ──────────────────────────────────────────────────
   const syncVideo = useCallback(() => {
@@ -295,7 +306,7 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
 
   // ── React to enabled / cameraTrack changes ────────────────────────────────
   useEffect(() => {
-    if (!enabled) {
+    if (!effectiveEnabled) {
       if (activeRef.current) teardown();
       setStatus("idle");
       setCurrentLevel(null);
@@ -316,7 +327,7 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
     } else {
       syncVideo();
     }
-  }, [enabled, cameraTrack]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [effectiveEnabled, cameraTrack]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => () => { teardown(); teardownAudio(); }, [teardown, teardownAudio]);
 
