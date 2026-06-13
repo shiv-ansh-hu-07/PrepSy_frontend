@@ -5,12 +5,13 @@ import {
 import { useCallback, useState } from "react";
 
 function getScreenShareSupport() {
-  if (typeof navigator === "undefined" || typeof window === "undefined") {
-    return false;
-  }
-  // Allow all devices — getDisplayMedia is supported on Chrome/Firefox/Safari
-  // on both desktop and mobile. Let the browser surface its own error if not.
-  return true;
+  if (typeof navigator === "undefined" || typeof window === "undefined") return false;
+  return typeof navigator.mediaDevices?.getDisplayMedia === "function";
+}
+
+function isMobile() {
+  if (typeof navigator === "undefined") return false;
+  return /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
 export default function useMediaControls() {
@@ -23,6 +24,7 @@ export default function useMediaControls() {
   const room = useRoomContext();
 
   const [screenShareSupported] = useState(getScreenShareSupport);
+  const [screenShareError, setScreenShareError] = useState("");
 
   const ensureRoomAudioStarted = useCallback(async () => {
     if (!room || typeof room.startAudio !== "function") return;
@@ -48,15 +50,11 @@ export default function useMediaControls() {
     try {
       await localParticipant.setCameraEnabled(!camEnabled);
     } catch (error) {
-      // Stale device ID in localStorage — enumerate real devices and retry
       if (!camEnabled && error?.name === "NotFoundError") {
         try {
           const devices = await navigator.mediaDevices.enumerateDevices();
           const cam = devices.find((d) => d.kind === "videoinput");
-          if (!cam) {
-            console.warn("No camera device found on this device.");
-            return;
-          }
+          if (!cam) { console.warn("No camera device found on this device."); return; }
           await room.switchActiveDevice("videoinput", cam.deviceId);
           await localParticipant.setCameraEnabled(true);
         } catch (retryErr) {
@@ -70,25 +68,51 @@ export default function useMediaControls() {
 
   const toggleScreenShare = useCallback(async () => {
     if (!localParticipant || room?.state !== "connected") return;
-    if (!screenShareSupported) return;
+
+    if (!screenShareSupported) {
+      setScreenShareError("Screen sharing is not supported on this browser. Try Chrome on Android or a desktop browser.");
+      setTimeout(() => setScreenShareError(""), 4000);
+      return;
+    }
+
+    if (screenEnabled) {
+      try {
+        await localParticipant.setScreenShareEnabled(false);
+      } catch (err) {
+        console.warn("Unable to stop screen share:", err);
+      }
+      return;
+    }
 
     try {
       await ensureRoomAudioStarted();
+      const mobile = isMobile();
 
-      if (!screenEnabled) {
+      if (mobile) {
+        // Mobile browsers reject audio capture and high-res constraints in getDisplayMedia
         await localParticipant.setScreenShareEnabled(true, {
-          audio: true,
-          video: {
-            width: 1920,
-            height: 1080,
-            frameRate: 30,
-          },
+          video: true,
+          audio: false,
         });
       } else {
-        await localParticipant.setScreenShareEnabled(false);
+        await localParticipant.setScreenShareEnabled(true, {
+          audio: true,
+          video: { width: 1920, height: 1080, frameRate: 30 },
+        });
       }
     } catch (error) {
-      console.warn("Unable to toggle screen share:", error);
+      if (error?.name === "NotAllowedError") {
+        // User denied the screen share permission prompt — no message needed
+        return;
+      }
+      // Fallback: retry with no constraints at all
+      try {
+        await localParticipant.setScreenShareEnabled(true);
+      } catch (fallbackErr) {
+        console.warn("Screen share failed:", fallbackErr);
+        setScreenShareError("Unable to share screen on this device. Try Chrome on Android.");
+        setTimeout(() => setScreenShareError(""), 4000);
+      }
     }
   }, [
     ensureRoomAudioStarted,
@@ -112,5 +136,6 @@ export default function useMediaControls() {
     camEnabled,
     screenEnabled,
     screenShareSupported,
+    screenShareError,
   };
 }

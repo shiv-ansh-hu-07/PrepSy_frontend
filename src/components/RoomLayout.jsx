@@ -32,7 +32,7 @@ export default function RoomLayout({
     micEnabled,
     camEnabled,
     screenEnabled,
-    screenShareSupported,
+    screenShareError,
   } = useMediaControls();
 
   const focusMonitor = useFocusMonitor({ enabled: camEnabled && aiMonitorEnabled, intervalMs: 5000 });
@@ -153,6 +153,17 @@ export default function RoomLayout({
 
   return (
     <div style={styles.page}>
+      {screenShareError && (
+        <div style={{
+          position: "fixed", top: 80, left: "50%", transform: "translateX(-50%)",
+          background: "#1e293b", color: "#f8fafc", fontSize: 13, fontWeight: 500,
+          padding: "10px 18px", borderRadius: 12, zIndex: 9999,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.3)", whiteSpace: "nowrap",
+          maxWidth: "90vw", textAlign: "center",
+        }}>
+          {screenShareError}
+        </div>
+      )}
       <div style={styles.centerWrap(isMobile)}>
         <div style={styles.stageWrap}>
           <div style={styles.roomHeaderBar}>
