@@ -8,8 +8,9 @@ function getScreenShareSupport() {
   if (typeof navigator === "undefined" || typeof window === "undefined") {
     return false;
   }
-
-  return typeof navigator.mediaDevices?.getDisplayMedia === "function";
+  // Allow all devices — getDisplayMedia is supported on Chrome/Firefox/Safari
+  // on both desktop and mobile. Let the browser surface its own error if not.
+  return true;
 }
 
 export default function useMediaControls() {

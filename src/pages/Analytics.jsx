@@ -92,7 +92,7 @@ export default function Analytics() {
     <div style={styles.page}>
       <style>{analyticsTransitionStyles}</style>
       <div style={styles.layout(isNarrow)}>
-        <AppSideNav />
+        {!isNarrow && <AppSideNav />}
 
         <main style={styles.main}>
           <header style={styles.header}>

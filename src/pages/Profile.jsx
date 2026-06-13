@@ -333,7 +333,7 @@ export default function Profile() {
   return (
     <div style={styles.page}>
       <div style={styles.layout(isNarrow)}>
-        <AppSideNav />
+        {!isNarrow && <AppSideNav />}
 
         <main style={styles.main}>
           <header style={styles.header}>

@@ -174,6 +174,7 @@ export default function RoomPage() {
         data-lk-room-metadata={user?.id ?? "host"}
         audio={false}
         video={false}
+        options={{ disconnectOnPageLeave: false }}
         style={{
           width: "100%",
         }}

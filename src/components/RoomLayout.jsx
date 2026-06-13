@@ -107,10 +107,6 @@ export default function RoomLayout({
   };
 
   const handleScreenShare = () => {
-    if (!screenShareSupported) {
-      window.alert("Screen sharing is supported on desktop browsers only.");
-      return;
-    }
     toggleScreenShare();
   };
 
@@ -142,8 +138,7 @@ export default function RoomLayout({
       <Control
         icon={ScreenShare}
         active={screenEnabled}
-        disabled={!screenShareSupported}
-        title={screenShareSupported ? "Share screen" : "Screen sharing is available on desktop browsers only"}
+        title="Share screen"
         onClick={handleScreenShare}
       />
       <Control
