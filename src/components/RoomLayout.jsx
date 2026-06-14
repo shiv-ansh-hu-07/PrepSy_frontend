@@ -35,6 +35,8 @@ export default function RoomLayout({
     screenShareError,
   } = useMediaControls();
 
+  const [aiMonitorEnabled, setAiMonitorEnabled] = useState(false);
+
   const focusMonitor = useFocusMonitor({ enabled: camEnabled && aiMonitorEnabled, intervalMs: 5000 });
 
   const navigate = useNavigate();
@@ -47,7 +49,6 @@ export default function RoomLayout({
   const [showSummary, setShowSummary] = useState(false);
   const [summary, setSummary] = useState(null);
   const [focusSummary, setFocusSummary] = useState(null);
-  const [aiMonitorEnabled, setAiMonitorEnabled] = useState(false);
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth < 980 : false
   );
