@@ -5,6 +5,7 @@ import {
 } from "@livekit/components-react";
 
 const BREAK_DURATION = 5 * 60;
+const SETTLE_DURATION = 60;
 const RADIUS = 70;
 const STROKE = 10;
 const ARC_LENGTH = Math.PI * RADIUS;
@@ -25,6 +26,9 @@ export default function PomodoroTimer({ onLeaveRoom, roomDurationMinutes = 90 })
     [roomDurationMinutes],
   );
 
+  // Single source of "now" — updated by interval and visibilitychange.
+  // All countdowns are derived from (now - startTimestamp), so browser
+  // tab throttling only delays the UI refresh, never loses actual time.
   const [now, setNow] = useState(() => Date.now());
   const completionHandledRef = useRef(false);
 
@@ -35,9 +39,16 @@ export default function PomodoroTimer({ onLeaveRoom, roomDurationMinutes = 90 })
   const [statusMessage, setStatusMessage] = useState("");
   const [showNextSessionPrompt, setShowNextSessionPrompt] = useState(false);
   const [showBreakPrompt, setShowBreakPrompt] = useState(false);
-  const [breakSecondsLeft, setBreakSecondsLeft] = useState(BREAK_DURATION);
+  const [breakStartedAt, setBreakStartedAt] = useState(null);
   const [showSettlePrompt, setShowSettlePrompt] = useState(true);
-  const [settleSecondsLeft, setSettleSecondsLeft] = useState(60);
+  // settleStartedAt is fixed at mount — never changes
+  const [settleStartedAt] = useState(() => Date.now());
+
+  // Derived countdowns — always accurate regardless of throttling
+  const breakSecondsLeft = breakStartedAt
+    ? Math.max(0, BREAK_DURATION - Math.floor((now - breakStartedAt) / 1000))
+    : BREAK_DURATION;
+  const settleSecondsLeft = Math.max(0, SETTLE_DURATION - Math.floor((now - settleStartedAt) / 1000));
 
   useEffect(() => {
     if (!isRunning && !phaseStartedAt && !showBreakPrompt && !showNextSessionPrompt) {
@@ -46,7 +57,6 @@ export default function PomodoroTimer({ onLeaveRoom, roomDurationMinutes = 90 })
   }, [autoSessions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   let timeLeft = SESSION_DURATION;
-
   if (phaseStartedAt) {
     const elapsed = now - phaseStartedAt;
     timeLeft = Math.max(SESSION_DURATION - Math.floor(elapsed / 1000), 0);
@@ -54,15 +64,24 @@ export default function PomodoroTimer({ onLeaveRoom, roomDurationMinutes = 90 })
 
   const isUrgent = timeLeft <= 60 && timeLeft > 0;
 
+  // Single ticker for all active phases — using Date.now() so throttled
+  // intervals still produce the correct time when they do fire.
+  const needsTicking = isRunning || showSettlePrompt || showBreakPrompt;
   useEffect(() => {
-    if (!isRunning) return;
-
-    const id = setInterval(() => {
-      setNow(Date.now());
-    }, 1000);
-
+    if (!needsTicking) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [isRunning]);
+  }, [needsTicking]);
+
+  // Re-sync the moment the user brings the tab/window back — eliminates
+  // the visible "jump" when coming back from a minimized or backgrounded state.
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (!document.hidden) setNow(Date.now());
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
 
   useEffect(() => {
     if (!room || !localParticipant) return;
@@ -86,7 +105,7 @@ export default function PomodoroTimer({ onLeaveRoom, roomDurationMinutes = 90 })
       setStatusMessage(msg.statusMessage || "");
       setShowNextSessionPrompt(Boolean(msg.showNextSessionPrompt));
       setShowBreakPrompt(Boolean(msg.showBreakPrompt));
-      setBreakSecondsLeft(msg.breakSecondsLeft ?? BREAK_DURATION);
+      setBreakStartedAt(msg.breakStartedAt ?? null);
       setShowSettlePrompt(false);
       completionHandledRef.current = Boolean(msg.showNextSessionPrompt);
     };
@@ -109,27 +128,27 @@ export default function PomodoroTimer({ onLeaveRoom, roomDurationMinutes = 90 })
   }, [localParticipant, room]);
 
   const start = useCallback(() => {
-    const now = Date.now();
+    const ts = Date.now();
 
-    setNow(now);
-    setPhaseStartedAt(now);
+    setNow(ts);
+    setPhaseStartedAt(ts);
     setIsRunning(true);
     setStatusMessage("");
     setShowNextSessionPrompt(false);
     setShowBreakPrompt(false);
-    setBreakSecondsLeft(BREAK_DURATION);
+    setBreakStartedAt(null);
     setShowSettlePrompt(false);
     completionHandledRef.current = false;
 
     broadcast({
-      phaseStartedAt: now,
+      phaseStartedAt: ts,
       isRunning: true,
       totalSessions,
       completedSessions,
       statusMessage: "",
       showNextSessionPrompt: false,
       showBreakPrompt: false,
-      breakSecondsLeft: BREAK_DURATION,
+      breakStartedAt: null,
     });
   }, [broadcast, completedSessions, totalSessions]);
 
@@ -146,7 +165,7 @@ export default function PomodoroTimer({ onLeaveRoom, roomDurationMinutes = 90 })
       statusMessage: "Break complete. Ready for the next session?",
       showNextSessionPrompt: true,
       showBreakPrompt: false,
-      breakSecondsLeft: 0,
+      breakStartedAt: null,
     });
   }, [broadcast, completedSessions, totalSessions]);
 
@@ -156,13 +175,14 @@ export default function PomodoroTimer({ onLeaveRoom, roomDurationMinutes = 90 })
     const nextStatusMessage = reachedTarget
       ? "Nice work. Session complete. Time for a break."
       : `${nextCompletedSessions}/${totalSessions} sessions completed. Break time.`;
+    const breakTs = Date.now();
 
     setIsRunning(false);
     setPhaseStartedAt(null);
     setCompletedSessions(nextCompletedSessions);
     setStatusMessage(nextStatusMessage);
     setShowBreakPrompt(true);
-    setBreakSecondsLeft(BREAK_DURATION);
+    setBreakStartedAt(breakTs);
     setShowNextSessionPrompt(false);
 
     broadcast({
@@ -173,10 +193,11 @@ export default function PomodoroTimer({ onLeaveRoom, roomDurationMinutes = 90 })
       statusMessage: nextStatusMessage,
       showNextSessionPrompt: false,
       showBreakPrompt: true,
-      breakSecondsLeft: BREAK_DURATION,
+      breakStartedAt: breakTs,
     });
   }, [broadcast, completedSessions, totalSessions]);
 
+  // Auto-start after settle countdown
   useEffect(() => {
     if (
       !showSettlePrompt ||
@@ -184,45 +205,28 @@ export default function PomodoroTimer({ onLeaveRoom, roomDurationMinutes = 90 })
       phaseStartedAt ||
       showNextSessionPrompt ||
       showBreakPrompt
-    ) {
-      return;
-    }
+    ) return;
 
     if (settleSecondsLeft <= 0) {
       queueMicrotask(start);
-      return;
     }
-
-    const timerId = setTimeout(() => {
-      setSettleSecondsLeft((seconds) => Math.max(0, seconds - 1));
-    }, 1000);
-
-    return () => clearTimeout(timerId);
   }, [
+    settleSecondsLeft,
     isRunning,
     phaseStartedAt,
-    settleSecondsLeft,
     start,
     showBreakPrompt,
     showNextSessionPrompt,
     showSettlePrompt,
   ]);
 
+  // Auto-advance after break countdown
   useEffect(() => {
-    if (!showBreakPrompt || isRunning || phaseStartedAt || showNextSessionPrompt) {
-      return;
-    }
+    if (!showBreakPrompt || isRunning || phaseStartedAt || showNextSessionPrompt) return;
 
     if (breakSecondsLeft <= 0) {
       queueMicrotask(showNextSessionReady);
-      return;
     }
-
-    const timerId = setTimeout(() => {
-      setBreakSecondsLeft((seconds) => Math.max(0, seconds - 1));
-    }, 1000);
-
-    return () => clearTimeout(timerId);
   }, [
     breakSecondsLeft,
     isRunning,
