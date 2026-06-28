@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import useMediaControls from "../hooks/useMediaControl";
 import useFocusMonitor from "../hooks/useFocusMonitor";
+import YouTubeRoom from "./YouTubeRoom";
 import { useNavigate } from "react-router-dom";
 import PomodoroTimer from "./PomodoroTimer";
 import { useParticipants } from "@livekit/components-react";
@@ -23,6 +24,7 @@ export default function RoomLayout({
   onToggleChat,
   hasUnreadMessages = false,
   roomDurationMinutes = 90,
+  youtubeVideoId = null,
 }) {
   const {
     toggleMic,
@@ -37,7 +39,7 @@ export default function RoomLayout({
 
   const [aiMonitorEnabled, setAiMonitorEnabled] = useState(false);
 
-  const focusMonitor = useFocusMonitor({ enabled: camEnabled && aiMonitorEnabled, intervalMs: 5000 });
+  const focusMonitor = useFocusMonitor({ enabled: camEnabled && aiMonitorEnabled && !youtubeVideoId, intervalMs: 5000 });
 
   const navigate = useNavigate();
   const participants = useParticipants();
@@ -135,13 +137,17 @@ export default function RoomLayout({
   const controls = (
     <>
       <Control icon={micEnabled ? Mic : MicOff} active={micEnabled} onClick={toggleMic} />
-      <Control icon={camEnabled ? Video : VideoOff} active={camEnabled} onClick={toggleCamera} />
-      <Control
-        icon={ScreenShare}
-        active={screenEnabled}
-        title="Share screen"
-        onClick={handleScreenShare}
-      />
+      {!youtubeVideoId && (
+        <Control icon={camEnabled ? Video : VideoOff} active={camEnabled} onClick={toggleCamera} />
+      )}
+      {!youtubeVideoId && (
+        <Control
+          icon={ScreenShare}
+          active={screenEnabled}
+          title="Share screen"
+          onClick={handleScreenShare}
+        />
+      )}
       <Control
         icon={MessageSquare}
         onClick={onToggleChat}
@@ -190,12 +196,16 @@ export default function RoomLayout({
             {!isMobile && (
               <div style={styles.sessionBadgeDesktop}>
                 <span style={styles.liveDot} />
-                {participantCount} {participantCount === 1 ? "person" : "people"} studying
+                {participantCount} {participantCount === 1 ? "person" : "people"} {youtubeVideoId ? "watching" : "studying"}
                 <span style={styles.sessionDivider}>•</span>
-                Focus session
+                {youtubeVideoId ? "Watch party" : "Focus session"}
               </div>
             )}
-            {children}
+            {youtubeVideoId ? (
+              <YouTubeRoom videoId={youtubeVideoId} />
+            ) : (
+              children
+            )}
             {!isMobile && <div style={styles.bottomBarDesktop}>{controls}</div>}
           </div>
 

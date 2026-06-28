@@ -2,6 +2,19 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
+function parseYouTubeUrl(url) {
+  try {
+    const u = new URL(url.trim());
+    const videoId =
+      u.searchParams.get("v") ||
+      (u.hostname === "youtu.be" ? u.pathname.slice(1).split("?")[0] : null);
+    const playlistId = u.searchParams.get("list");
+    return { videoId: videoId || null, playlistId: playlistId || null };
+  } catch {
+    return { videoId: null, playlistId: null };
+  }
+}
+
 function useWindowWidth() {
   const [w, setW] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1200));
   useEffect(() => {
@@ -222,6 +235,8 @@ export default function CreateRoom() {
   const [durationMinutes, setDurationMinutes] = useState("90");
   const [timezone, setTimezone] = useState(normalizeTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata"));
   const [submitting, setSubmitting] = useState(false);
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const ytParsed = parseYouTubeUrl(youtubeUrl);
 
   const windowWidth = useWindowWidth();
   const isMobile = windowWidth < 640;
@@ -253,6 +268,8 @@ export default function CreateRoom() {
         scheduleTime: scheduleEnabled ? scheduleTime : null,
         timezone: scheduleEnabled ? timezone : null,
         isRecurring: scheduleEnabled,
+        youtubeVideoId: ytParsed.videoId || null,
+        youtubePlaylistId: ytParsed.playlistId || null,
       });
       navigate(`/room/${res.data.roomId}`);
     } catch (err) {
@@ -428,6 +445,31 @@ export default function CreateRoom() {
               <select style={{ ...inputBase, appearance: "auto" }} value={timezone} onChange={(e) => setTimezone(normalizeTimeZone(e.target.value))}>
                 {Array.from(new Set(TIMEZONE_OPTIONS)).map((tz) => <option key={tz} value={tz}>{tz}</option>)}
               </select>
+            </div>
+          )}
+
+          {/* ── YouTube Watch Party ── */}
+          <SectionHeader>YouTube Watch Party (optional)</SectionHeader>
+          <p style={{ margin: "-8px 0 10px", fontSize: 12, color: "#9aa4c7" }}>
+            Paste a YouTube video URL to watch together in sync. Everyone loads their own player — creator views are counted per person.
+          </p>
+          <input
+            style={inputBase}
+            value={youtubeUrl}
+            onChange={(e) => setYoutubeUrl(e.target.value)}
+            placeholder="https://www.youtube.com/watch?v=..."
+          />
+          {youtubeUrl && (
+            <div style={{
+              marginTop: 6, marginBottom: 10, padding: "10px 14px",
+              borderRadius: 12, fontSize: 12,
+              ...(ytParsed.videoId
+                ? { background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#166534" }
+                : { background: "#fff7ed", border: "1px solid #fed7aa", color: "#9a3412" }),
+            }}>
+              {ytParsed.videoId
+                ? `Video ID: ${ytParsed.videoId}${ytParsed.playlistId ? ` · Playlist: ${ytParsed.playlistId}` : ""}`
+                : "Could not detect a video ID — check the URL and try again"}
             </div>
           )}
 
