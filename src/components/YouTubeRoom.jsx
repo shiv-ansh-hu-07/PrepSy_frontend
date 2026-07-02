@@ -12,7 +12,7 @@ const REQUEST_TYPE = "YT_REQUEST_SYNC";
 const DRIFT_TOLERANCE_S = 2; // only re-seek if drift > 2 seconds
 const HEARTBEAT_MS = 15000;  // periodic sync every 15s to prevent drift
 
-export default function YouTubeRoom({ videoId }) {
+export default function YouTubeRoom({ videoId, playlistId }) {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
   const participants = useParticipants();
@@ -135,7 +135,11 @@ export default function YouTubeRoom({ videoId }) {
 
   const onReady = useCallback((e) => {
     playerRef.current = e.target;
-  }, []);
+    // Playlist-only mode: load the playlist after player initialises
+    if (!videoId && playlistId) {
+      e.target.loadPlaylist({ list: playlistId, listType: "playlist", index: 0 });
+    }
+  }, [videoId, playlistId]);
 
   const onStateChange = useCallback((e) => {
     if (isSyncingRef.current) return; // skip — this change was caused by applySync
@@ -174,7 +178,7 @@ export default function YouTubeRoom({ videoId }) {
       {/* YouTube player */}
       <div style={styles.playerWrap}>
         <YouTube
-          videoId={videoId}
+          videoId={videoId || "videoseries"}
           opts={{
             width: "100%",
             height: "100%",
@@ -183,6 +187,7 @@ export default function YouTubeRoom({ videoId }) {
               modestbranding: 1,
               rel: 0,
               fs: 1,
+              ...(playlistId ? { list: playlistId, listType: "playlist" } : {}),
             },
           }}
           style={styles.ytEmbed}

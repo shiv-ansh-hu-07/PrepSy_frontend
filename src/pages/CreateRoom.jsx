@@ -55,6 +55,8 @@ const ROOM_TYPE_OPTIONS = [
   { value: "discussion", label: "Discussion", icon: "💬", desc: "Talk through ideas and topics" },
 ];
 
+const YT_ROOM_TYPE = { value: "youtube-watch-party", label: "YouTube Watch Party", icon: "▶️", desc: "Watch YouTube videos in sync — everyone loads their own player" };
+
 const VISIBILITY_OPTIONS = [
   { value: "PRIVATE", label: "Private", icon: "🔒", desc: "Invite-only, not listed publicly" },
   { value: "PUBLIC", label: "Public", icon: "🌐", desc: "Discoverable by anyone in the community" },
@@ -251,6 +253,8 @@ export default function CreateRoom() {
     if (scheduleEnabled && !scheduleTime) { alert("Start time is required for a scheduled room"); return; }
     const parsedDuration = Number(durationMinutes);
     if (!Number.isFinite(parsedDuration) || parsedDuration <= 0) { alert("Enter a valid session duration in minutes"); return; }
+    const isYtRoom = expertise === "youtube-watch-party";
+    if (isYtRoom && !ytParsed.videoId && !ytParsed.playlistId) { alert("Paste a valid YouTube video or playlist URL"); return; }
 
     const finalTags = Array.from(new Set([expertise, ...goals, ...customTags]));
     try {
@@ -268,8 +272,8 @@ export default function CreateRoom() {
         scheduleTime: scheduleEnabled ? scheduleTime : null,
         timezone: scheduleEnabled ? timezone : null,
         isRecurring: scheduleEnabled,
-        youtubeVideoId: ytParsed.videoId || null,
-        youtubePlaylistId: ytParsed.playlistId || null,
+        youtubeVideoId: isYtRoom ? (ytParsed.videoId || null) : null,
+        youtubePlaylistId: isYtRoom ? (ytParsed.playlistId || null) : null,
       });
       navigate(`/room/${res.data.roomId}`);
     } catch (err) {
@@ -332,7 +336,7 @@ export default function CreateRoom() {
           {/* ── Room Type ── */}
           <SectionHeader>Room Type</SectionHeader>
           <p style={{ margin: "-8px 0 12px", fontSize: 12, color: "#9aa4c7" }}>What kind of session will this be?</p>
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: 10, marginBottom: 6 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: 10, marginBottom: 10 }}>
             {ROOM_TYPE_OPTIONS.map((opt) => {
               const active = expertise === opt.value;
               return (
@@ -350,6 +354,66 @@ export default function CreateRoom() {
               );
             })}
           </div>
+
+          {/* YouTube Watch Party — full-width card */}
+          {(() => {
+            const active = expertise === YT_ROOM_TYPE.value;
+            return (
+              <div style={{ marginBottom: 6 }}>
+                <div
+                  onClick={() => setExpertise(YT_ROOM_TYPE.value)}
+                  style={{
+                    border: `2px solid ${active ? "#7c3aed" : "#e2e6f3"}`,
+                    borderRadius: 14, padding: "14px 16px",
+                    cursor: "pointer", background: active ? "#f3eeff" : "#fafbff",
+                    display: "flex", alignItems: "center", gap: 14,
+                    transition: "border-color 0.15s, background 0.15s",
+                  }}
+                >
+                  <div style={{ fontSize: 26, flexShrink: 0 }}>{YT_ROOM_TYPE.icon}</div>
+                  <div>
+                    <p style={{ margin: "0 0 2px", fontSize: 13, fontWeight: 700, color: active ? "#6f3bd6" : "#2f3b63" }}>
+                      {YT_ROOM_TYPE.label}
+                    </p>
+                    <p style={{ margin: 0, fontSize: 11, color: active ? "#9b77e0" : "#9aa4c7", lineHeight: 1.4 }}>
+                      {YT_ROOM_TYPE.desc}
+                    </p>
+                  </div>
+                </div>
+
+                {active && (
+                  <div style={{ marginTop: 10, padding: "14px 16px", background: "#fafbff", border: "1px solid #e2e6f3", borderRadius: 14 }}>
+                    <p style={{ margin: "0 0 8px", fontSize: 12, color: "#6b78a0", fontWeight: 500 }}>
+                      Paste a YouTube video or playlist URL
+                    </p>
+                    <input
+                      style={{ ...inputBase, marginBottom: 8 }}
+                      value={youtubeUrl}
+                      onChange={(e) => setYoutubeUrl(e.target.value)}
+                      placeholder="https://www.youtube.com/watch?v=… or /playlist?list=…"
+                    />
+                    {youtubeUrl && (() => {
+                      const hasYt = !!(ytParsed.videoId || ytParsed.playlistId);
+                      return (
+                        <div style={{
+                          padding: "9px 13px", borderRadius: 10, fontSize: 12,
+                          ...(hasYt
+                            ? { background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#166534" }
+                            : { background: "#fff7ed", border: "1px solid #fed7aa", color: "#9a3412" }),
+                        }}>
+                          {hasYt
+                            ? (ytParsed.videoId
+                              ? `✓ Video: ${ytParsed.videoId}${ytParsed.playlistId ? ` · Playlist: ${ytParsed.playlistId}` : ""}`
+                              : `✓ Playlist: ${ytParsed.playlistId}`)
+                            : "Could not detect a video or playlist ID — check the URL and try again"}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ── Visibility ── */}
           <SectionHeader>Visibility</SectionHeader>
@@ -445,31 +509,6 @@ export default function CreateRoom() {
               <select style={{ ...inputBase, appearance: "auto" }} value={timezone} onChange={(e) => setTimezone(normalizeTimeZone(e.target.value))}>
                 {Array.from(new Set(TIMEZONE_OPTIONS)).map((tz) => <option key={tz} value={tz}>{tz}</option>)}
               </select>
-            </div>
-          )}
-
-          {/* ── YouTube Watch Party ── */}
-          <SectionHeader>YouTube Watch Party (optional)</SectionHeader>
-          <p style={{ margin: "-8px 0 10px", fontSize: 12, color: "#9aa4c7" }}>
-            Paste a YouTube video URL to watch together in sync. Everyone loads their own player — creator views are counted per person.
-          </p>
-          <input
-            style={inputBase}
-            value={youtubeUrl}
-            onChange={(e) => setYoutubeUrl(e.target.value)}
-            placeholder="https://www.youtube.com/watch?v=..."
-          />
-          {youtubeUrl && (
-            <div style={{
-              marginTop: 6, marginBottom: 10, padding: "10px 14px",
-              borderRadius: 12, fontSize: 12,
-              ...(ytParsed.videoId
-                ? { background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#166534" }
-                : { background: "#fff7ed", border: "1px solid #fed7aa", color: "#9a3412" }),
-            }}>
-              {ytParsed.videoId
-                ? `Video ID: ${ytParsed.videoId}${ytParsed.playlistId ? ` · Playlist: ${ytParsed.playlistId}` : ""}`
-                : "Could not detect a video ID — check the URL and try again"}
             </div>
           )}
 

@@ -25,6 +25,7 @@ export default function RoomLayout({
   hasUnreadMessages = false,
   roomDurationMinutes = 90,
   youtubeVideoId = null,
+  youtubePlaylistId = null,
 }) {
   const {
     toggleMic,
@@ -39,7 +40,8 @@ export default function RoomLayout({
 
   const [aiMonitorEnabled, setAiMonitorEnabled] = useState(false);
 
-  const focusMonitor = useFocusMonitor({ enabled: camEnabled && aiMonitorEnabled && !youtubeVideoId, intervalMs: 5000 });
+  const isYoutubeMode = !!(youtubeVideoId || youtubePlaylistId);
+  const focusMonitor = useFocusMonitor({ enabled: camEnabled && aiMonitorEnabled && !isYoutubeMode, intervalMs: 5000 });
 
   const navigate = useNavigate();
   const participants = useParticipants();
@@ -137,10 +139,10 @@ export default function RoomLayout({
   const controls = (
     <>
       <Control icon={micEnabled ? Mic : MicOff} active={micEnabled} onClick={toggleMic} />
-      {!youtubeVideoId && (
+      {!isYoutubeMode && (
         <Control icon={camEnabled ? Video : VideoOff} active={camEnabled} onClick={toggleCamera} />
       )}
-      {!youtubeVideoId && (
+      {!isYoutubeMode && (
         <Control
           icon={ScreenShare}
           active={screenEnabled}
@@ -196,13 +198,13 @@ export default function RoomLayout({
             {!isMobile && (
               <div style={styles.sessionBadgeDesktop}>
                 <span style={styles.liveDot} />
-                {participantCount} {participantCount === 1 ? "person" : "people"} {youtubeVideoId ? "watching" : "studying"}
+                {participantCount} {participantCount === 1 ? "person" : "people"} {isYoutubeMode ? "watching" : "studying"}
                 <span style={styles.sessionDivider}>•</span>
-                {youtubeVideoId ? "Watch party" : "Focus session"}
+                {isYoutubeMode ? "Watch party" : "Focus session"}
               </div>
             )}
-            {youtubeVideoId ? (
-              <YouTubeRoom videoId={youtubeVideoId} />
+            {isYoutubeMode ? (
+              <YouTubeRoom videoId={youtubeVideoId} playlistId={youtubePlaylistId} />
             ) : (
               children
             )}

@@ -21,6 +21,7 @@ export default function RoomPage() {
   const [roomName, setRoomName] = useState("");
   const [roomDurationMinutes, setRoomDurationMinutes] = useState(90);
   const [youtubeVideoId, setYoutubeVideoId] = useState(null);
+  const [youtubePlaylistId, setYoutubePlaylistId] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [joinError, setJoinError] = useState(null);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
@@ -46,6 +47,7 @@ export default function RoomPage() {
           setRoomName(res.data.roomName || "Study Room");
           setRoomDurationMinutes(res.data.durationMinutes || 90);
           setYoutubeVideoId(res.data.youtubeVideoId || null);
+          setYoutubePlaylistId(res.data.youtubePlaylistId || null);
           setJoinError(null);
         }
       })
@@ -192,6 +194,7 @@ export default function RoomPage() {
           roomName={roomName}
           roomDurationMinutes={roomDurationMinutes}
           youtubeVideoId={youtubeVideoId}
+          youtubePlaylistId={youtubePlaylistId}
           onToggleChat={() =>
             setChatOpen((value) => {
               const next = !value;
