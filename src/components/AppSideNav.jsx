@@ -84,7 +84,16 @@ export default function AppSideNav() {
 
       {user ? (
         <div style={styles.profileCard}>
-          <div style={styles.avatar}>{getInitials(user.name || user.email)}</div>
+          {user.avatarUrl ? (
+            <img
+              src={user.avatarUrl}
+              alt=""
+              style={styles.avatarImage}
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div style={styles.avatar}>{getInitials(user.name || user.email)}</div>
+          )}
           <div style={{ minWidth: 0 }}>
             <p style={styles.profileName}>{user.name || "PrepSy Learner"}</p>
             <p style={styles.profileMeta}>{user.email}</p>
@@ -228,6 +237,15 @@ const styles = {
     fontWeight: 800,
     flexShrink: 0,
     border: "1px solid rgba(190,200,235,0.7)",
+  },
+  avatarImage: {
+    width: 38,
+    height: 38,
+    borderRadius: "50%",
+    objectFit: "cover",
+    flexShrink: 0,
+    border: "1px solid rgba(190,200,235,0.7)",
+    background: "#ffffff",
   },
   profileName: {
     margin: 0,

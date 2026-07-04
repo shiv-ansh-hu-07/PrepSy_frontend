@@ -16,10 +16,17 @@ import {
 import AppSideNav from "../components/AppSideNav";
 import { fetchMyAnalytics } from "../services/api";
 
+const analyticsTabs = [
+  { id: "focus", label: "Focus" },
+  { id: "consistency", label: "Consistency" },
+  { id: "achievements", label: "Achievements" },
+];
+
 export default function Analytics() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activeAnalyticsTab, setActiveAnalyticsTab] = useState("focus");
   const [isNarrow, setIsNarrow] = useState(
     typeof window !== "undefined" ? window.innerWidth < 1060 : false
   );
@@ -59,9 +66,14 @@ export default function Analytics() {
       ),
     [analytics]
   );
+  const activeTabIndex = Math.max(
+    0,
+    analyticsTabs.findIndex((tab) => tab.id === activeAnalyticsTab)
+  );
 
   return (
     <div style={styles.page}>
+      <style>{analyticsTransitionStyles}</style>
       <div style={styles.layout(isNarrow)}>
         <AppSideNav />
 
@@ -128,23 +140,47 @@ export default function Analytics() {
                 />
               </section>
 
-              <section style={styles.twoColumn(isNarrow)}>
-                <Heatmap analytics={analytics} />
-                <WeeklyFocusChart entries={analytics.weeklyFocus || []} total={weeklyTotal} />
-              </section>
+              <section style={styles.analyticsTabsShell}>
+                <div style={styles.tabRail} role="tablist" aria-label="Analytics sections">
+                  <span style={styles.tabIndicator(activeTabIndex)} />
+                  {analyticsTabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={activeAnalyticsTab === tab.id}
+                      onClick={() => setActiveAnalyticsTab(tab.id)}
+                      style={styles.tabButton(activeAnalyticsTab === tab.id)}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
 
-              <section style={styles.lowerGrid(isNarrow)}>
-                <MostActiveRooms rooms={analytics.rooms || []} />
-                <ConsistencyCard summary={summary} />
-                <Achievements achievements={analytics.achievements || []} />
-              </section>
+                <div key={activeAnalyticsTab} style={styles.analyticsTabPanel(isNarrow)}>
+                  {activeAnalyticsTab === "focus" ? (
+                    <div style={styles.focusTabGrid(isNarrow)}>
+                      <Heatmap analytics={analytics} />
+                      <WeeklyFocusChart entries={analytics.weeklyFocus || []} total={weeklyTotal} />
+                      <TopicsStudied topics={analytics.topics || []} />
+                      <ClassHistory classes={analytics.classes || []} />
+                    </div>
+                  ) : null}
 
-              <section style={styles.twoColumn(isNarrow)}>
-                <TopicsStudied topics={analytics.topics || []} />
-                <ClassHistory classes={analytics.classes || []} />
-              </section>
+                  {activeAnalyticsTab === "consistency" ? (
+                    <div style={styles.consistencyTabGrid(isNarrow)}>
+                      <MostActiveRooms rooms={analytics.rooms || []} />
+                      <ConsistencyCard summary={summary} />
+                    </div>
+                  ) : null}
 
-              <JoinedRooms rooms={analytics.joinedRooms || []} />
+                  {activeAnalyticsTab === "achievements" ? (
+                    <div style={styles.singleTabGrid}>
+                      <Achievements achievements={analytics.achievements || []} />
+                    </div>
+                  ) : null}
+                </div>
+              </section>
             </>
           )}
         </main>
@@ -442,33 +478,6 @@ function ClassHistory({ classes }) {
   );
 }
 
-function JoinedRooms({ rooms }) {
-  return (
-    <Panel>
-      <SectionHeader icon={Users} title="All Joined Rooms" meta={`${rooms.length} rooms`} />
-      {rooms.length === 0 ? (
-        <EmptyState text="No joined rooms found on your account." />
-      ) : (
-        <div style={styles.joinedRoomGrid}>
-          {rooms.map((room) => (
-            <article key={room.roomId} style={styles.joinedRoom}>
-              <p style={styles.rowTitle}>{room.name}</p>
-              <p style={styles.smallMuted}>Joined {formatDateKey(room.joinedAt.slice(0, 10), { month: "short", day: "numeric", year: "numeric" })}</p>
-              <div style={styles.tags}>
-                {(room.tags || []).map((tag) => (
-                  <span key={`${room.roomId}-${tag}`} style={styles.tag}>
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
-    </Panel>
-  );
-}
-
 function SectionHeader({ icon: Icon, title, meta }) {
   return (
     <div style={styles.sectionHeader}>
@@ -533,6 +542,19 @@ function formatDateTime(value) {
     timeStyle: "short",
   }).format(new Date(value));
 }
+
+const analyticsTransitionStyles = `
+@keyframes analyticsFade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+`;
 
 const styles = {
   page: {
@@ -656,6 +678,78 @@ const styles = {
     padding: 20,
     minWidth: 0,
     boxSizing: "border-box",
+  },
+  analyticsTabsShell: {
+    borderRadius: 24,
+    border: "1px solid rgba(190,200,235,0.52)",
+    background: "rgba(255,255,255,0.58)",
+    boxShadow: "0 16px 42px rgba(74,90,133,0.08)",
+    padding: 18,
+    display: "grid",
+    gap: 16,
+    minWidth: 0,
+    boxSizing: "border-box",
+  },
+  tabRail: {
+    position: "relative",
+    display: "grid",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    gap: 4,
+    borderRadius: 16,
+    padding: 4,
+    background: "#eef2ff",
+    border: "1px solid rgba(190,200,235,0.5)",
+    overflow: "hidden",
+  },
+  tabIndicator: (activeIndex) => ({
+    position: "absolute",
+    top: 4,
+    bottom: 4,
+    left: `calc(${(activeIndex * 100) / 3}% + ${4 - activeIndex * (8 / 3)}px)`,
+    width: "calc(33.333333% - 2.666px)",
+    borderRadius: 13,
+    background: "#ffffff",
+    boxShadow: "0 10px 22px rgba(95,111,163,0.14)",
+    transition: "left 0.24s ease",
+  }),
+  tabButton: (active) => ({
+    position: "relative",
+    zIndex: 1,
+    height: 42,
+    border: "none",
+    borderRadius: 13,
+    background: "transparent",
+    color: active ? "#3f4f7a" : "#6b78a0",
+    fontWeight: active ? 900 : 800,
+    cursor: "pointer",
+  }),
+  analyticsTabPanel: (isNarrow) => ({
+    height: isNarrow ? "auto" : 660,
+    minHeight: isNarrow ? 0 : 660,
+    overflow: isNarrow ? "visible" : "hidden",
+    animation: "analyticsFade 0.22s ease",
+  }),
+  focusTabGrid: (isNarrow) => ({
+    height: "100%",
+    display: "grid",
+    gridTemplateColumns: isNarrow ? "1fr" : "minmax(0, 1fr) minmax(0, 1.08fr)",
+    gridTemplateRows: isNarrow ? "auto" : "minmax(285px, 0.98fr) minmax(285px, 1fr)",
+    gap: 18,
+    alignItems: "stretch",
+    minWidth: 0,
+  }),
+  consistencyTabGrid: (isNarrow) => ({
+    height: "100%",
+    display: "grid",
+    gridTemplateColumns: isNarrow ? "1fr" : "minmax(0, 1fr) minmax(320px, 0.9fr)",
+    gap: 18,
+    alignItems: "stretch",
+    minWidth: 0,
+  }),
+  singleTabGrid: {
+    height: "100%",
+    display: "grid",
+    minWidth: 0,
   },
   equalPanel: {
     height: "100%",
@@ -993,18 +1087,6 @@ const styles = {
     padding: "4px 8px",
     fontSize: 11,
     fontWeight: 800,
-  },
-  joinedRoomGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-    gap: 12,
-  },
-  joinedRoom: {
-    borderRadius: 16,
-    border: "1px solid rgba(190,200,235,0.44)",
-    background: "rgba(248,250,255,0.78)",
-    padding: 14,
-    minWidth: 0,
   },
   stateText: {
     margin: 0,

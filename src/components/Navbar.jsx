@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ChevronDown, Flame } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function Navbar() {
@@ -192,22 +193,23 @@ export default function Navbar() {
 
               {user ? (
                 <>
-                  <span
-                    style={{
-                      fontSize: isCompact ? "13px" : "14px",
-                      color: "#8a97c4",
-                      whiteSpace: "nowrap",
-                    }}
+                  <Link
+                    to="/profile"
+                    title="Open profile"
+                    style={accountLinkStyle(isCompact, isActive("/profile"))}
                   >
-                    {isCompact ? greetingLabel : `Hi, ${greetingLabel}`}
-                  </span>
+                    <UserAvatar user={user} size={30} />
+                    <span>{isCompact ? greetingLabel : `Hi, ${greetingLabel}`}</span>
+                    <ChevronDown size={14} strokeWidth={2.4} />
+                  </Link>
 
                   {showAttendanceStreak ? (
                     <div
                       title={`Daily attendance streak: ${attendanceStreak}`}
                       style={streakPillStyle(isCompact)}
                     >
-                      <span style={{ fontSize: isCompact ? "12px" : "14px" }}>
+                      <Flame size={15} fill="#f97316" color="#f97316" />
+                      <span style={{ display: "none" }}>
                         🔥
                       </span>
                       <span
@@ -233,28 +235,29 @@ export default function Navbar() {
         {isMobileNav && menuOpen ? (
           <div style={mobilePanelStyle}>
             {user ? (
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: "12px",
-                  paddingBottom: "14px",
-                  marginBottom: "14px",
-                  borderBottom: "1px solid rgba(190,200,235,0.45)",
-                }}
-              >
-                <div>
-                  <p style={{ margin: 0, color: "#8a97c4", fontSize: "12px" }}>
-                    Signed in
-                  </p>
-                  <p style={{ margin: "4px 0 0", color: "#3f4f7a", fontWeight: 600 }}>
-                    {user.name || user.email}
-                  </p>
-                </div>
+              <div style={mobileAccountRowStyle}>
+                <Link
+                  to="/profile"
+                  onClick={() => setMenuOpen(false)}
+                  style={mobileAccountLinkStyle}
+                >
+                  <UserAvatar user={user} size={38} />
+                  <span style={{ minWidth: 0 }}>
+                    <span style={mobileAccountCaptionStyle}>Signed in</span>
+                    <span style={mobileAccountNameStyle}>{user.name || user.email}</span>
+                  </span>
+                  <ChevronDown size={15} strokeWidth={2.4} style={{ flexShrink: 0 }} />
+                </Link>
                 {showAttendanceStreak ? (
                   <div style={streakPillStyle(true)}>
-                    <span style={{ fontSize: "12px", fontWeight: 600 }}>
+                    <Flame size={14} fill="#f97316" color="#f97316" />
+                    <span style={{ color: "#8a5a12", fontSize: "12px", fontWeight: 600 }}>
+                      {attendanceStreak} day{attendanceStreak === 1 ? "" : "s"}
+                    </span>
+                    <span style={{ display: "none" }}>
+                      ðŸ”¥
+                    </span>
+                    <span style={{ display: "none" }}>
                       🔥 {attendanceStreak} day{attendanceStreak === 1 ? "" : "s"}
                     </span>
                   </div>
@@ -328,7 +331,6 @@ function buildDesktopLinks({ user, isHomePage, isFeaturePage, isLoginPage, isAct
   if ((user || !isHomePage || isLoginPage) && user) {
     links.push({ label: "Home", path: "/dashboard", active: isActive("/dashboard") });
     links.push({ label: "Analytics", path: "/analytics", active: isActive("/analytics") });
-    links.push({ label: "Profile", path: "/profile", active: isActive("/profile") });
   }
 
   return links;
@@ -343,7 +345,6 @@ function buildMobileLinks({ user, isHomePage, isFeaturePage }) {
     links.push({ label: "Features", path: "/feature", active: false });
     links.push({ label: "My Rooms", path: "/myRooms", active: false });
     links.push({ label: "Analytics", path: "/analytics", active: false });
-    links.push({ label: "Profile", path: "/profile", active: false });
     links.push({ label: "Create Room", path: "/create-room", active: false });
     links.push({ label: "Join Room", path: "/join-room", active: false });
   } else {
@@ -364,6 +365,27 @@ function buildMobileLinks({ user, isHomePage, isFeaturePage }) {
     active:
       typeof window !== "undefined" ? window.location.pathname === item.path : false,
   }));
+}
+
+function UserAvatar({ user, size }) {
+  const initials = getInitials(user?.name || user?.email || "PrepSy");
+
+  return user?.avatarUrl ? (
+    <img
+      src={user.avatarUrl}
+      alt=""
+      style={accountPhotoStyle(size)}
+      referrerPolicy="no-referrer"
+    />
+  ) : (
+    <span style={accountInitialsStyle(size)}>{initials}</span>
+  );
+}
+
+function getInitials(value = "") {
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "PS";
+  return parts.map((part) => part[0]?.toUpperCase()).join("").slice(0, 2);
 }
 
 function streakPillStyle(isCompact) {
@@ -394,6 +416,88 @@ const logoutButtonStyle = {
   whiteSpace: "nowrap",
   display: "inline-flex",
   alignItems: "center",
+};
+
+function accountLinkStyle(isCompact, active) {
+  return {
+    minHeight: "42px",
+    borderRadius: "999px",
+    border: active ? "1px solid rgba(138,155,214,0.46)" : "1px solid transparent",
+    background: active ? "rgba(138,155,214,0.14)" : "transparent",
+    color: "#5f6fa3",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: isCompact ? "6px" : "9px",
+    padding: isCompact ? "5px 8px" : "5px 10px 5px 6px",
+    textDecoration: "none",
+    fontSize: isCompact ? "13px" : "14px",
+    fontWeight: active ? 700 : 600,
+    whiteSpace: "nowrap",
+  };
+}
+
+function accountPhotoStyle(size) {
+  return {
+    width: size,
+    height: size,
+    borderRadius: "50%",
+    objectFit: "cover",
+    border: "1px solid rgba(190,200,235,0.72)",
+    background: "#ffffff",
+    flexShrink: 0,
+  };
+}
+
+function accountInitialsStyle(size) {
+  return {
+    width: size,
+    height: size,
+    borderRadius: "50%",
+    background: "#ffffff",
+    color: "#5f6fa3",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    border: "1px solid rgba(190,200,235,0.72)",
+    fontSize: size > 34 ? "13px" : "11px",
+    fontWeight: 800,
+    flexShrink: 0,
+  };
+}
+
+const mobileAccountRowStyle = {
+  display: "grid",
+  gap: "10px",
+  paddingBottom: "14px",
+  marginBottom: "14px",
+  borderBottom: "1px solid rgba(190,200,235,0.45)",
+};
+
+const mobileAccountLinkStyle = {
+  minWidth: 0,
+  display: "grid",
+  gridTemplateColumns: "38px minmax(0, 1fr) 16px",
+  alignItems: "center",
+  gap: "10px",
+  color: "#3f4f7a",
+  textDecoration: "none",
+};
+
+const mobileAccountCaptionStyle = {
+  display: "block",
+  margin: 0,
+  color: "#8a97c4",
+  fontSize: "12px",
+};
+
+const mobileAccountNameStyle = {
+  display: "block",
+  margin: "4px 0 0",
+  color: "#3f4f7a",
+  fontWeight: 700,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
 };
 
 const mobileToggleStyle = {

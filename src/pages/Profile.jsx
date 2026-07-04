@@ -78,7 +78,7 @@ const emptyProfile = {
 };
 
 export default function Profile() {
-  const { refreshUser } = useAuth();
+  const { refreshUser, user } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(emptyProfile);
   const [analytics, setAnalytics] = useState(null);
@@ -115,6 +115,13 @@ export default function Profile() {
         setAnalytics(analyticsResp.analytics);
       } catch (err) {
         if (!cancelled) {
+          setProfile(
+            normalizeProfile({
+              fullName: user?.name || "",
+              email: user?.email || "",
+              avatarUrl: user?.avatarUrl || "",
+            })
+          );
           setError(err?.response?.data?.message || "Unable to load your profile.");
         }
       } finally {
@@ -127,7 +134,7 @@ export default function Profile() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [user?.avatarUrl, user?.email, user?.name]);
 
   const missingRequired = useMemo(() => getMissingRequired(profile), [profile]);
   const missingRecommendations = useMemo(
@@ -334,6 +341,15 @@ export default function Profile() {
                     />
                   </Field>
 
+                  <Field label="Profile Photo URL">
+                    <input
+                      value={profile.avatarUrl}
+                      onChange={(event) => updateField("avatarUrl", event.target.value)}
+                      placeholder="Paste a public image URL"
+                      style={styles.input}
+                    />
+                  </Field>
+
                   <Field label="Age" required>
                     <input
                       type="number"
@@ -377,10 +393,20 @@ export default function Profile() {
                 <div style={styles.segmentGrid}>
                   <SegmentCard
                     icon={GraduationCap}
-                    title="Student"
-                    description="School or college learner"
-                    active={profile.institutionType === "student"}
-                    onClick={() => updateField("institutionType", "student")}
+                    title="School Student"
+                    description="Class, board, and exam prep"
+                    active={profile.institutionType === "school"}
+                    onClick={() => updateField("institutionType", "school")}
+                  />
+                  <SegmentCard
+                    icon={GraduationCap}
+                    title="College Student"
+                    description="Course, semester, and branch"
+                    active={
+                      profile.institutionType === "college" ||
+                      profile.institutionType === "student"
+                    }
+                    onClick={() => updateField("institutionType", "college")}
                   />
                   <SegmentCard
                     icon={BriefcaseBusiness}
@@ -399,52 +425,241 @@ export default function Profile() {
                 </div>
               </Section>
 
+              {profile.institutionType === "working_professional" ? (
+                <Section
+                  icon={BriefcaseBusiness}
+                  title="Working Professional Details"
+                  caption="Used for career-stage matching, interview practice, and work-friendly study groups."
+                >
+                  <div style={styles.fieldGrid}>
+                    <Field label="Company">
+                      <input
+                        value={profile.company}
+                        onChange={(event) => updateField("company", event.target.value)}
+                        placeholder="Company or organization"
+                        style={styles.input}
+                      />
+                    </Field>
+                    <Field label="Role">
+                      <input
+                        value={profile.role}
+                        onChange={(event) => updateField("role", event.target.value)}
+                        placeholder="Software Engineer, Analyst"
+                        style={styles.input}
+                      />
+                    </Field>
+                    <Field label="Experience Level">
+                      <select
+                        value={profile.experienceLevel}
+                        onChange={(event) => updateField("experienceLevel", event.target.value)}
+                        style={styles.input}
+                      >
+                        <option value="">Select level</option>
+                        <option value="fresher">Fresher</option>
+                        <option value="0-2">0-2 years</option>
+                        <option value="3-5">3-5 years</option>
+                        <option value="5-plus">5+ years</option>
+                      </select>
+                    </Field>
+                    <Field label="Work Mode">
+                      <select
+                        value={profile.workMode}
+                        onChange={(event) => updateField("workMode", event.target.value)}
+                        style={styles.input}
+                      >
+                        <option value="">Select work mode</option>
+                        <option value="remote">Remote</option>
+                        <option value="hybrid">Hybrid</option>
+                        <option value="onsite">On-site</option>
+                      </select>
+                    </Field>
+                    <Field label="Career Track">
+                      <input
+                        value={profile.degree}
+                        onChange={(event) => updateField("degree", event.target.value)}
+                        placeholder="Backend, frontend, data, product"
+                        style={styles.input}
+                      />
+                    </Field>
+                    <Field label="Target Timeline">
+                      <input
+                        value={profile.expectedGraduation}
+                        onChange={(event) =>
+                          updateField("expectedGraduation", event.target.value)
+                        }
+                        placeholder="Switching by Dec 2026"
+                        style={styles.input}
+                      />
+                    </Field>
+                  </div>
+                </Section>
+              ) : null}
+
+              {profile.institutionType === "school" ? (
+                <Section
+                  icon={GraduationCap}
+                  title="School Details"
+                  caption="Separate school profile fields for class, board, stream, and school-based matching."
+                >
+                  <div style={styles.fieldGrid}>
+                    <Field label="School Name">
+                      <input
+                        value={profile.institutionName}
+                        onChange={(event) => updateField("institutionName", event.target.value)}
+                        placeholder="Your school name"
+                        style={styles.input}
+                      />
+                    </Field>
+                    <Field label="Class / Grade">
+                      <input
+                        value={profile.semester}
+                        onChange={(event) => updateField("semester", event.target.value)}
+                        placeholder="Class 10, Class 12"
+                        style={styles.input}
+                      />
+                    </Field>
+                    <Field label="Board">
+                      <select
+                        value={profile.degree}
+                        onChange={(event) => updateField("degree", event.target.value)}
+                        style={styles.input}
+                      >
+                        <option value="">Select board</option>
+                        <option value="CBSE">CBSE</option>
+                        <option value="ICSE">ICSE</option>
+                        <option value="State Board">State Board</option>
+                        <option value="IB">IB</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </Field>
+                    <Field label="Stream">
+                      <input
+                        value={profile.branch}
+                        onChange={(event) => updateField("branch", event.target.value)}
+                        placeholder="Science, Commerce, Arts"
+                        style={styles.input}
+                      />
+                    </Field>
+                    <Field label="Target Exams">
+                      <TagInput
+                        value={profile.examTargets}
+                        onChange={(next) => updateField("examTargets", next)}
+                        placeholder="JEE, NEET, boards, olympiad"
+                      />
+                    </Field>
+                  </div>
+                </Section>
+              ) : null}
+
+              {profile.institutionType === "college" ||
+              profile.institutionType === "student" ? (
+                <Section
+                  icon={GraduationCap}
+                  title="College Details"
+                  caption="Useful for matching people by college, course, semester, and branch."
+                >
+                  <div style={styles.fieldGrid}>
+                    <Field label="College / University">
+                      <input
+                        value={profile.institutionName}
+                        onChange={(event) => updateField("institutionName", event.target.value)}
+                        placeholder="College or university"
+                        style={styles.input}
+                      />
+                    </Field>
+                    <Field label="Degree / Course">
+                      <input
+                        value={profile.degree}
+                        onChange={(event) => updateField("degree", event.target.value)}
+                        placeholder="B.Tech, B.Sc, MBA"
+                        style={styles.input}
+                      />
+                    </Field>
+                    <Field label="Semester / Year">
+                      <input
+                        value={profile.semester}
+                        onChange={(event) => updateField("semester", event.target.value)}
+                        placeholder="4th Semester"
+                        style={styles.input}
+                      />
+                    </Field>
+                    <Field label="Branch / Major">
+                      <input
+                        value={profile.branch}
+                        onChange={(event) => updateField("branch", event.target.value)}
+                        placeholder="Computer Science"
+                        style={styles.input}
+                      />
+                    </Field>
+                    <Field label="Expected Graduation">
+                      <input
+                        value={profile.expectedGraduation}
+                        onChange={(event) =>
+                          updateField("expectedGraduation", event.target.value)
+                        }
+                        placeholder="May 2026"
+                        style={styles.input}
+                      />
+                    </Field>
+                  </div>
+                </Section>
+              ) : null}
+
+              {profile.institutionType === "self_learner" ? (
+                <Section
+                  icon={Sparkles}
+                  title="Self Learner Setup"
+                  caption="Helps PrepSy recommend independent learners with similar goals and schedules."
+                >
+                  <div style={styles.fieldGrid}>
+                    <Field label="Learning Track">
+                      <input
+                        value={profile.degree}
+                        onChange={(event) => updateField("degree", event.target.value)}
+                        placeholder="Full-stack, DSA, design, aptitude"
+                        style={styles.input}
+                      />
+                    </Field>
+                    <Field label="Current Level">
+                      <select
+                        value={profile.semester}
+                        onChange={(event) => updateField("semester", event.target.value)}
+                        style={styles.input}
+                      >
+                        <option value="">Select level</option>
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                      </select>
+                    </Field>
+                    <Field label="Primary Platform">
+                      <input
+                        value={profile.institutionName}
+                        onChange={(event) => updateField("institutionName", event.target.value)}
+                        placeholder="YouTube, Coursera, LeetCode, offline"
+                        style={styles.input}
+                      />
+                    </Field>
+                    <Field label="Target Timeline">
+                      <input
+                        value={profile.expectedGraduation}
+                        onChange={(event) =>
+                          updateField("expectedGraduation", event.target.value)
+                        }
+                        placeholder="3 months, before placements"
+                        style={styles.input}
+                      />
+                    </Field>
+                  </div>
+                </Section>
+              ) : null}
+
               <Section
-                icon={GraduationCap}
-                title="Academic and Location Details"
-                caption="Useful for matching people by city, institution type, and background."
+                icon={MapPin}
+                title="Location Context"
+                caption="City and timezone help recommend nearby collaborators and compatible schedules."
               >
                 <div style={styles.fieldGrid}>
-                  <Field label="Institution Name">
-                    <input
-                      value={profile.institutionName}
-                      onChange={(event) => updateField("institutionName", event.target.value)}
-                      placeholder="College, university, school, or bootcamp"
-                      style={styles.input}
-                    />
-                  </Field>
-                  <Field label="Degree / Course">
-                    <input
-                      value={profile.degree}
-                      onChange={(event) => updateField("degree", event.target.value)}
-                      placeholder="B.Tech, B.Sc, Class 12, MBA"
-                      style={styles.input}
-                    />
-                  </Field>
-                  <Field label="Semester / Year">
-                    <input
-                      value={profile.semester}
-                      onChange={(event) => updateField("semester", event.target.value)}
-                      placeholder="4th Semester"
-                      style={styles.input}
-                    />
-                  </Field>
-                  <Field label="Branch / Major">
-                    <input
-                      value={profile.branch}
-                      onChange={(event) => updateField("branch", event.target.value)}
-                      placeholder="Computer Science"
-                      style={styles.input}
-                    />
-                  </Field>
-                  <Field label="Expected Graduation">
-                    <input
-                      value={profile.expectedGraduation}
-                      onChange={(event) => updateField("expectedGraduation", event.target.value)}
-                      placeholder="May 2026"
-                      style={styles.input}
-                    />
-                  </Field>
                   <Field label="Timezone">
                     <input
                       value={profile.timezone}
@@ -568,57 +783,6 @@ export default function Profile() {
                 </label>
               </Section>
 
-              <Section
-                icon={BriefcaseBusiness}
-                title="Working Professional Details"
-                caption="Optional, but useful for career-stage matching."
-              >
-                <div style={styles.fieldGrid}>
-                  <Field label="Company">
-                    <input
-                      value={profile.company}
-                      onChange={(event) => updateField("company", event.target.value)}
-                      placeholder="Company or organization"
-                      style={styles.input}
-                    />
-                  </Field>
-                  <Field label="Role">
-                    <input
-                      value={profile.role}
-                      onChange={(event) => updateField("role", event.target.value)}
-                      placeholder="Software Engineer, Analyst"
-                      style={styles.input}
-                    />
-                  </Field>
-                  <Field label="Experience Level">
-                    <select
-                      value={profile.experienceLevel}
-                      onChange={(event) => updateField("experienceLevel", event.target.value)}
-                      style={styles.input}
-                    >
-                      <option value="">Select level</option>
-                      <option value="student">Student</option>
-                      <option value="fresher">Fresher</option>
-                      <option value="0-2">0-2 years</option>
-                      <option value="3-5">3-5 years</option>
-                      <option value="5-plus">5+ years</option>
-                    </select>
-                  </Field>
-                  <Field label="Work Mode">
-                    <select
-                      value={profile.workMode}
-                      onChange={(event) => updateField("workMode", event.target.value)}
-                      style={styles.input}
-                    >
-                      <option value="">Select work mode</option>
-                      <option value="remote">Remote</option>
-                      <option value="hybrid">Hybrid</option>
-                      <option value="onsite">On-site</option>
-                    </select>
-                  </Field>
-                </div>
-              </Section>
-
               <Section icon={MapPin} title="Links">
                 <div style={styles.fieldGrid}>
                   <Field label="Portfolio URL">
@@ -642,14 +806,6 @@ export default function Profile() {
                       value={profile.githubUrl}
                       onChange={(event) => updateField("githubUrl", event.target.value)}
                       placeholder="https://github.com/..."
-                      style={styles.input}
-                    />
-                  </Field>
-                  <Field label="Avatar URL">
-                    <input
-                      value={profile.avatarUrl}
-                      onChange={(event) => updateField("avatarUrl", event.target.value)}
-                      placeholder="Paste an image URL"
                       style={styles.input}
                     />
                   </Field>
@@ -753,6 +909,9 @@ function normalizeProfile(profile) {
     ...emptyProfile,
     ...(profile || {}),
     age: profile?.age || "",
+    institutionType: profile?.institutionType === "student"
+      ? "college"
+      : profile?.institutionType || "",
     goals: profile?.goals || [],
     interests: profile?.interests || [],
     skills: profile?.skills || [],
