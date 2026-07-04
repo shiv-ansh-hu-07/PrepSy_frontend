@@ -667,10 +667,10 @@ function AlertPanel({ tone, title, text }) {
   const toneStyle = styles.alertTone[tone] || styles.alertTone.info;
   return (
     <div style={{ ...styles.alert, ...toneStyle }}>
-      <AlertCircle size={18} />
-      <div>
-        <strong>{title}</strong>
-        <p>{text}</p>
+      <AlertCircle size={18} style={styles.alertIcon} />
+      <div style={styles.alertBody}>
+        <strong style={styles.alertTitle}>{title}</strong>
+        <p style={styles.alertText}>{text}</p>
       </div>
     </div>
   );
@@ -723,9 +723,9 @@ function SegmentCard({ icon: Icon, title, description, active, onClick }) {
       <span style={styles.segmentIcon(active)}>
         <Icon size={22} />
       </span>
-      <span>
-        <strong>{title}</strong>
-        <small>{description}</small>
+      <span style={styles.segmentText}>
+        <strong style={styles.segmentTitle}>{title}</strong>
+        <small style={styles.segmentDescription}>{description}</small>
       </span>
       <span style={styles.segmentCheck(active)}>
         {active ? <CheckCircle2 size={18} /> : null}
@@ -737,10 +737,12 @@ function SegmentCard({ icon: Icon, title, description, active, onClick }) {
 function MiniStat({ icon: Icon, label, value }) {
   return (
     <div style={styles.miniStat}>
-      <Icon size={17} />
-      <div>
-        <strong>{value}</strong>
-        <span>{label}</span>
+      <span style={styles.miniStatIcon}>
+        <Icon size={17} />
+      </span>
+      <div style={styles.miniStatText}>
+        <strong style={styles.miniStatValue}>{value}</strong>
+        <span style={styles.miniStatLabel}>{label}</span>
       </div>
     </div>
   );
@@ -832,24 +834,26 @@ const styles = {
     padding: "32px 24px 56px",
   },
   layout: (isNarrow) => ({
-    maxWidth: 1280,
+    width: "100%",
+    maxWidth: 1360,
     margin: "0 auto",
     display: "grid",
-    gridTemplateColumns: isNarrow ? "1fr" : "280px minmax(0, 1fr)",
+    gridTemplateColumns: isNarrow ? "1fr" : "288px minmax(0, 1fr)",
     gap: 24,
     alignItems: "start",
   }),
   main: {
     display: "grid",
-    gap: 16,
+    gap: 18,
     minWidth: 0,
   },
   header: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "center",
     gap: 16,
     flexWrap: "wrap",
+    minWidth: 0,
   },
   eyebrow: {
     margin: 0,
@@ -883,11 +887,13 @@ const styles = {
     fontWeight: 800,
     cursor: saving ? "wait" : "pointer",
     boxShadow: "0 12px 26px rgba(111,127,192,0.24)",
+    whiteSpace: "nowrap",
+    flexShrink: 0,
   }),
   contentGrid: (isNarrow) => ({
     display: "grid",
-    gridTemplateColumns: isNarrow ? "1fr" : "270px minmax(0, 1fr)",
-    gap: 18,
+    gridTemplateColumns: isNarrow ? "1fr" : "minmax(270px, 300px) minmax(0, 1fr)",
+    gap: 22,
     alignItems: "start",
   }),
   profileCard: {
@@ -901,6 +907,8 @@ const styles = {
     gap: 12,
     position: "sticky",
     top: 98,
+    width: "100%",
+    boxSizing: "border-box",
   },
   avatarWrap: {
     position: "relative",
@@ -996,14 +1004,45 @@ const styles = {
     marginTop: 6,
   },
   miniStat: {
-    display: "flex",
+    display: "grid",
+    gridTemplateColumns: "34px minmax(0, 1fr)",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
     color: "#5f6fa3",
     background: "#f5f7ff",
     border: "1px solid rgba(190,200,235,0.42)",
     borderRadius: 16,
     padding: 12,
+    minWidth: 0,
+    boxSizing: "border-box",
+  },
+  miniStatIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#eef2ff",
+    color: "#6f7fc0",
+  },
+  miniStatText: {
+    minWidth: 0,
+    display: "grid",
+    gap: 2,
+  },
+  miniStatValue: {
+    color: "#2f3b63",
+    fontSize: 15,
+    lineHeight: 1.1,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  miniStatLabel: {
+    color: "#65749f",
+    fontSize: 12,
+    lineHeight: 1.25,
   },
   secondaryButton: {
     width: "100%",
@@ -1026,23 +1065,27 @@ const styles = {
     boxShadow: "0 16px 42px rgba(74,90,133,0.1)",
     padding: 22,
     display: "grid",
-    gap: 22,
+    gap: 24,
+    minWidth: 0,
+    boxSizing: "border-box",
   },
   section: {
     display: "grid",
-    gap: 14,
+    gap: 16,
     paddingBottom: 20,
     borderBottom: "1px solid rgba(190,200,235,0.4)",
   },
   sectionHeader: {
     display: "grid",
-    gap: 4,
+    gap: 5,
+    minWidth: 0,
   },
   sectionTitleWrap: {
     display: "flex",
     alignItems: "center",
     gap: 9,
     color: "#6f3bd6",
+    minWidth: 0,
   },
   sectionTitle: {
     margin: 0,
@@ -1054,11 +1097,14 @@ const styles = {
     margin: 0,
     color: "#65749f",
     fontSize: 13,
+    lineHeight: 1.45,
+    maxWidth: 720,
   },
   fieldGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
-    gap: 16,
+    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+    columnGap: 18,
+    rowGap: 16,
   },
   field: {
     display: "grid",
@@ -1114,7 +1160,7 @@ const styles = {
   },
   segmentGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
     gap: 14,
   },
   segment: (active) => ({
@@ -1130,6 +1176,7 @@ const styles = {
     padding: 14,
     cursor: "pointer",
     boxSizing: "border-box",
+    minWidth: 0,
   }),
   segmentIcon: (active) => ({
     width: 42,
@@ -1143,7 +1190,28 @@ const styles = {
   }),
   segmentCheck: (active) => ({
     color: active ? "#7c3aed" : "transparent",
+    display: "flex",
+    justifyContent: "flex-end",
   }),
+  segmentText: {
+    display: "grid",
+    gap: 4,
+    minWidth: 0,
+    textAlign: "left",
+  },
+  segmentTitle: {
+    color: "#2f3b63",
+    fontSize: 14,
+    lineHeight: 1.2,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  segmentDescription: {
+    color: "#65749f",
+    fontSize: 12,
+    lineHeight: 1.3,
+  },
   toggleRow: {
     display: "flex",
     alignItems: "flex-start",
@@ -1163,6 +1231,24 @@ const styles = {
     borderRadius: 16,
     padding: 14,
     border: "1px solid",
+    alignItems: "flex-start",
+  },
+  alertIcon: {
+    marginTop: 1,
+    flexShrink: 0,
+  },
+  alertBody: {
+    minWidth: 0,
+  },
+  alertTitle: {
+    display: "block",
+    fontSize: 13,
+    lineHeight: 1.25,
+  },
+  alertText: {
+    margin: "4px 0 0",
+    fontSize: 13,
+    lineHeight: 1.45,
   },
   alertTone: {
     warning: {

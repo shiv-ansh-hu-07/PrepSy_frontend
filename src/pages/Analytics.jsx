@@ -163,7 +163,7 @@ function StatCard({ icon: Icon, label, value, detail, accent }) {
       <div style={{ ...styles.statIcon, background: `${accent}1f`, color: accent }}>
         <Icon size={22} />
       </div>
-      <div>
+      <div style={styles.statText}>
         <p style={styles.statLabel}>{label}</p>
         <p style={styles.statValue}>{value}</p>
         <p style={styles.statDetail}>{detail}</p>
@@ -417,7 +417,7 @@ function ClassHistory({ classes }) {
         <div style={styles.classList}>
           {classes.map((session) => (
             <article key={session.id} style={styles.classRow}>
-              <div>
+              <div style={styles.classInfo}>
                 <p style={styles.rowTitle}>{session.roomName}</p>
                 <p style={styles.smallMuted}>{formatDateTime(session.joinedAt)}</p>
                 <div style={styles.tags}>
@@ -543,16 +543,16 @@ const styles = {
   },
   layout: (isNarrow) => ({
     width: "100%",
-    maxWidth: 1280,
+    maxWidth: 1360,
     margin: "0 auto",
     display: "grid",
-    gridTemplateColumns: isNarrow ? "1fr" : "280px minmax(0, 1fr)",
+    gridTemplateColumns: isNarrow ? "1fr" : "288px minmax(0, 1fr)",
     gap: 24,
     alignItems: "start",
   }),
   main: {
     display: "grid",
-    gap: 18,
+    gap: 20,
     minWidth: 0,
   },
   header: {
@@ -597,8 +597,9 @@ const styles = {
   },
   statGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
     gap: 14,
+    alignItems: "stretch",
   },
   statCard: {
     minHeight: 128,
@@ -610,6 +611,8 @@ const styles = {
     display: "flex",
     gap: 14,
     alignItems: "center",
+    minWidth: 0,
+    boxSizing: "border-box",
   },
   statIcon: {
     width: 48,
@@ -620,6 +623,11 @@ const styles = {
     justifyContent: "center",
     flexShrink: 0,
   },
+  statText: {
+    minWidth: 0,
+    display: "grid",
+    gap: 4,
+  },
   statLabel: {
     margin: 0,
     color: "#65749f",
@@ -627,7 +635,7 @@ const styles = {
     fontWeight: 800,
   },
   statValue: {
-    margin: "5px 0 4px",
+    margin: 0,
     color: "#2f3b63",
     fontSize: 28,
     lineHeight: 1,
@@ -637,6 +645,7 @@ const styles = {
     margin: 0,
     color: "#7a89b8",
     fontSize: 13,
+    lineHeight: 1.35,
   },
   panel: {
     borderRadius: 24,
@@ -656,14 +665,15 @@ const styles = {
   },
   twoColumn: (isNarrow) => ({
     display: "grid",
-    gridTemplateColumns: isNarrow ? "1fr" : "minmax(0, 1fr) minmax(360px, 0.82fr)",
+    gridTemplateColumns: isNarrow ? "1fr" : "minmax(0, 0.95fr) minmax(420px, 1.05fr)",
     gap: 18,
+    alignItems: "stretch",
   }),
   lowerGrid: (isNarrow) => ({
     display: "grid",
     gridTemplateColumns: isNarrow
       ? "1fr"
-      : "minmax(270px, 0.95fr) minmax(270px, 0.9fr) minmax(360px, 1.2fr)",
+      : "minmax(250px, 0.92fr) minmax(250px, 0.84fr) minmax(340px, 1.35fr)",
     gap: 18,
     alignItems: "stretch",
   }),
@@ -671,8 +681,9 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     gap: 12,
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: 16,
+    minWidth: 0,
   },
   sectionTitleWrap: {
     display: "flex",
@@ -680,6 +691,7 @@ const styles = {
     gap: 9,
     color: "#4a5a85",
     minWidth: 0,
+    flex: 1,
   },
   sectionTitle: {
     margin: 0,
@@ -745,6 +757,7 @@ const styles = {
     gap: 12,
     alignItems: "end",
     paddingTop: 8,
+    minWidth: 0,
   },
   chartColumn: {
     minWidth: 0,
@@ -794,6 +807,7 @@ const styles = {
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
+    minWidth: 0,
   },
   rowTitle: {
     display: "block",
@@ -875,6 +889,7 @@ const styles = {
   achievementGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gridAutoRows: "1fr",
     gap: 12,
     flex: 1,
   },
@@ -887,6 +902,7 @@ const styles = {
     gridTemplateRows: "auto auto 1fr auto auto",
     gap: 9,
     minHeight: 0,
+    boxSizing: "border-box",
   }),
   achievementBadge: (achieved) => ({
     width: 42,
@@ -924,9 +940,15 @@ const styles = {
     gap: 7,
   },
   topicName: {
+    display: "block",
+    flex: 1,
     color: "#2f3b63",
     fontSize: 14,
     fontWeight: 900,
+    minWidth: 0,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
   },
   classList: {
     display: "grid",
@@ -944,6 +966,11 @@ const styles = {
     alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 14,
+    minWidth: 0,
+  },
+  classInfo: {
+    minWidth: 0,
+    flex: 1,
   },
   classMeta: {
     display: "grid",
