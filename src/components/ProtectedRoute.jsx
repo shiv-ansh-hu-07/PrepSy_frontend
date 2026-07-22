@@ -1,12 +1,13 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import LoadingScreen from "./LoadingScreen";
 
 export default function ProtectedRoute({ children, allowGuest = false }) {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="p-6 text-center">Loading...</div>;
+    return <LoadingScreen />;
   }
 
   if (allowGuest) {
