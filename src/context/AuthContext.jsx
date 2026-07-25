@@ -83,9 +83,11 @@ export const AuthProvider = ({ children }) => {
       try {
         await api.post("/auth/presence");
       } catch {
-        if (!cancelled) {
-          return;
-        }
+        return;
+      }
+
+      if (!cancelled) {
+        await loadUser();
       }
     };
 
@@ -108,7 +110,7 @@ export const AuthProvider = ({ children }) => {
       window.clearInterval(intervalId);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [user?.id]);
+  }, [user?.id, loadUser]);
 
   // Email / password login
   const login = async (email, password) => {
