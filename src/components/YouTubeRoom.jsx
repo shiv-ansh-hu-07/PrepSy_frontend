@@ -12,10 +12,15 @@ const REQUEST_TYPE = "YT_REQUEST_SYNC";
 const DRIFT_TOLERANCE_S = 2; // only re-seek if drift > 2 seconds
 const HEARTBEAT_MS = 15000;  // periodic sync every 15s to prevent drift
 
-export default function YouTubeRoom({ videoId, playlistId }) {
+export default function YouTubeRoom({ videoId, playlistId, locked = false }) {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
   const participants = useParticipants();
+
+  const lockedRef = useRef(locked);
+  useEffect(() => {
+    lockedRef.current = locked;
+  }, [locked]);
 
   const playerRef = useRef(null);       // YT.Player instance
   const isSyncingRef = useRef(false);   // suppress re-broadcast while applying remote sync
@@ -63,7 +68,13 @@ export default function YouTubeRoom({ videoId, playlistId }) {
       if (Math.abs(currentTime - targetTime) > DRIFT_TOLERANCE_S) {
         player.seekTo(targetTime, true);
       }
-      player.playVideo();
+      // Still land at the synced position, but don't let it audibly/visibly
+      // play until the local prep countdown has finished.
+      if (lockedRef.current) {
+        player.pauseVideo();
+      } else {
+        player.playVideo();
+      }
     } else if (msg.action === "SEEK") {
       player.seekTo(targetTime, true);
       // maintain current play/pause state
@@ -108,6 +119,16 @@ export default function YouTubeRoom({ videoId, playlistId }) {
     return () => room.off("dataReceived", handler);
   }, [room, localParticipant, applySync, handleSyncRequest]);
 
+  // ── Auto-start once the prep-timer lock naturally releases ────────────────
+
+  const wasLockedRef = useRef(locked);
+  useEffect(() => {
+    if (wasLockedRef.current && !locked) {
+      playerRef.current?.playVideo?.();
+    }
+    wasLockedRef.current = locked;
+  }, [locked]);
+
   // ── Request sync on mount (new joiner) ────────────────────────────────────
 
   useEffect(() => {
@@ -139,13 +160,26 @@ export default function YouTubeRoom({ videoId, playlistId }) {
     if (!videoId && playlistId) {
       e.target.loadPlaylist({ list: playlistId, listType: "playlist", index: 0 });
     }
+    // Safety net: some browsers/embeds can start playback right on load
+    // despite autoplay:0. Never let that slip past the prep-timer lock.
+    if (lockedRef.current) {
+      e.target.pauseVideo?.();
+    }
   }, [videoId, playlistId]);
 
   const onStateChange = useCallback((e) => {
-    if (isSyncingRef.current) return; // skip — this change was caused by applySync
     const YT_PLAYING = 1;
     const YT_PAUSED = 2;
     const YT_ENDED = 0;
+
+    // While locked, playback is not allowed under any circumstance — force
+    // it back to paused and don't tell anyone else it "played".
+    if (lockedRef.current && e.data === YT_PLAYING) {
+      e.target.pauseVideo?.();
+      return;
+    }
+
+    if (isSyncingRef.current) return; // skip — this change was caused by applySync
     if (e.data === YT_PLAYING) broadcastState("PLAY");
     if (e.data === YT_PAUSED) broadcastState("PAUSE");
     if (e.data === YT_ENDED) broadcastState("PAUSE");

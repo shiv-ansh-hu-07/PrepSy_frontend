@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRoomContext, useLocalParticipant } from "@livekit/components-react";
 import { DataPacket_Kind } from "livekit-client";
 
-export default function ChatDrawer({ onClose, currentUser }) {
+export default function ChatDrawer({ onClose, currentUser, embedded = false }) {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
 
@@ -142,19 +142,26 @@ export default function ChatDrawer({ onClose, currentUser }) {
   /* ================= UI ================= */
 
   return (
-    <div className="fixed right-0 top-0 h-screen w-[380px] bg-white shadow-2xl border-l border-gray-200 flex flex-col z-50">
-      
+    <div
+      className={
+        embedded
+          ? "h-full w-full bg-white flex flex-col"
+          : "fixed right-0 top-0 h-screen w-[380px] bg-white shadow-2xl border-l border-gray-200 flex flex-col z-50"
+      }
+    >
       {/* Header */}
-      <div style={{ background: "#8a9bd6" }}
-      className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-linear-to-r color - #8a9bd6 text-white">
-        <h2 className="font-semibold text-lg">Room Chat</h2>
-        <button
-          onClick={onClose}
-          className="opacity-80 hover:opacity-100 transition"
-        >
-          ✕
-        </button>
-      </div>
+      {!embedded && (
+        <div style={{ background: "#8a9bd6" }}
+        className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-linear-to-r color - #8a9bd6 text-white">
+          <h2 className="font-semibold text-lg">Room Chat</h2>
+          <button
+            onClick={onClose}
+            className="opacity-80 hover:opacity-100 transition"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-gray-50">

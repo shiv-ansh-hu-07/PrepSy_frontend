@@ -56,6 +56,11 @@ export async function uploadAvatar(formData) {
   return data;
 }
 
+export async function fetchVideoSummary(roomId) {
+  const { data } = await api.get(`/rooms/${roomId}/video-summary`);
+  return data;
+}
+
 export async function fetchRooms() {
   return {
     rooms: [

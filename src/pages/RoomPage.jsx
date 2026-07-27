@@ -8,6 +8,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import RoomLayout from "../components/RoomLayout";
+import WatchPartyLayout from "../components/WatchPartyLayout";
 import TeamsRoom from "../components/teamsRoom";
 import ChatDrawer from "../components/ChatDrawer";
 import { useEffect, useState } from "react";
@@ -22,13 +23,15 @@ export default function RoomPage() {
   const [roomDurationMinutes, setRoomDurationMinutes] = useState(90);
   const [youtubeVideoId, setYoutubeVideoId] = useState(null);
   const [youtubePlaylistId, setYoutubePlaylistId] = useState(null);
+  const [startTime, setStartTime] = useState(null);
+  const [roomTags, setRoomTags] = useState([]);
   const [chatOpen, setChatOpen] = useState(false);
   const [joinError, setJoinError] = useState(null);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const [guestIdentity] = useState(() => crypto.randomUUID());
 
   const identity = user?.id ?? guestIdentity;
-  const name = user?.name || "Guest";
+  const name = user?.name || user?.email?.split("@")[0] || "Guest";
 
   useEffect(() => {
     if (user?.id) return;
@@ -48,6 +51,8 @@ export default function RoomPage() {
           setRoomDurationMinutes(res.data.durationMinutes || 90);
           setYoutubeVideoId(res.data.youtubeVideoId || null);
           setYoutubePlaylistId(res.data.youtubePlaylistId || null);
+          setStartTime(res.data.startTime || null);
+          setRoomTags(res.data.tags || []);
           setJoinError(null);
         }
       })
@@ -189,31 +194,43 @@ export default function RoomPage() {
           onUnreadMessage={() => setHasUnreadMessages(true)}
         />
 
-        <RoomLayout
-          roomId={roomId}
-          roomName={roomName}
-          roomDurationMinutes={roomDurationMinutes}
-          youtubeVideoId={youtubeVideoId}
-          youtubePlaylistId={youtubePlaylistId}
-          onToggleChat={() =>
-            setChatOpen((value) => {
-              const next = !value;
-              if (next) {
-                setHasUnreadMessages(false);
-              }
-              return next;
-            })
-          }
-          hasUnreadMessages={hasUnreadMessages}
-        >
-          <TeamsRoom />
-        </RoomLayout>
-
-        {chatOpen && (
-          <ChatDrawer
-            onClose={() => setChatOpen(false)}
+        {youtubeVideoId || youtubePlaylistId ? (
+          <WatchPartyLayout
+            roomId={roomId}
+            roomName={roomName}
+            youtubeVideoId={youtubeVideoId}
+            youtubePlaylistId={youtubePlaylistId}
+            startTime={startTime}
+            tags={roomTags}
             currentUser={user}
           />
+        ) : (
+          <>
+            <RoomLayout
+              roomId={roomId}
+              roomName={roomName}
+              roomDurationMinutes={roomDurationMinutes}
+              onToggleChat={() =>
+                setChatOpen((value) => {
+                  const next = !value;
+                  if (next) {
+                    setHasUnreadMessages(false);
+                  }
+                  return next;
+                })
+              }
+              hasUnreadMessages={hasUnreadMessages}
+            >
+              <TeamsRoom />
+            </RoomLayout>
+
+            {chatOpen && (
+              <ChatDrawer
+                onClose={() => setChatOpen(false)}
+                currentUser={user}
+              />
+            )}
+          </>
         )}
       </LiveKitRoom>
     </div>
