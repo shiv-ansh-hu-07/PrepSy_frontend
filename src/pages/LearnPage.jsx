@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import api from "../services/api";
+import api, { fetchMyProfile } from "../services/api";
 import AppSideNav from "../components/AppSideNav";
 import { Search, ChevronDown, ChevronUp, Users } from "lucide-react";
 
@@ -50,6 +50,32 @@ export default function LearnPage() {
   const [creatingCohort, setCreatingCohort] = useState(false);
   const [cohortError, setCohortError] = useState(null);
 
+  // --- study schedule ---
+  const [hoursPerDay, setHoursPerDay] = useState(2);
+  const [days, setDays] = useState(30);
+  const [hoursFromProfile, setHoursFromProfile] = useState(false);
+  const [scheduling, setScheduling] = useState(false);
+  const [scheduleError, setScheduleError] = useState(null);
+  const [schedule, setSchedule] = useState(null);
+
+  // Prefill hours/day from the user's profile daily study goal (stored as minutes).
+  useEffect(() => {
+    let active = true;
+    fetchMyProfile()
+      .then((p) => {
+        if (!active) return;
+        const mins = p?.dailyStudyGoalMinutes || 0;
+        if (mins > 0) {
+          setHoursPerDay(Math.round((mins / 60) * 10) / 10);
+          setHoursFromProfile(true);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const handleAnalyze = async (e) => {
     e.preventDefault();
     const trimmed = url.trim();
@@ -58,6 +84,8 @@ export default function LearnPage() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setSchedule(null);
+    setScheduleError(null);
     setStepMsg(LOADING_STEPS[0]);
 
     let stepIdx = 0;
@@ -97,6 +125,28 @@ export default function LearnPage() {
       setCohortError(err?.response?.data?.message || "Failed to create cohort");
     } finally {
       setCreatingCohort(false);
+    }
+  };
+
+  const handleSchedule = async () => {
+    if (!result?.id) return;
+    setScheduling(true);
+    setScheduleError(null);
+    setSchedule(null);
+    try {
+      const { data } = await api.post(`/playlists/${result.id}/schedule`, {
+        hoursPerDay: Number(hoursPerDay),
+        days: Number(days),
+      });
+      setSchedule(data);
+    } catch (err) {
+      setScheduleError(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "Couldn't generate a schedule. Please try again.",
+      );
+    } finally {
+      setScheduling(false);
     }
   };
 
@@ -381,6 +431,153 @@ export default function LearnPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Personalized Study Schedule */}
+              <div style={card}>
+                <h3 style={sectionTitle}>📆 Your Study Schedule</h3>
+                <p style={{ margin: "0 0 16px", fontSize: 13, color: "#6b78a0" }}>
+                  Tell us your pace and deadline — we'll fit this playlist into a day-by-day plan, and be honest if it doesn't fit.
+                </p>
+
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: isMobile ? "column" : "row",
+                    gap: 12,
+                    alignItems: isMobile ? "stretch" : "flex-end",
+                  }}
+                >
+                  <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, fontWeight: 700, color: "#4f5fa8", width: isMobile ? "100%" : 150 }}>
+                    Hours / day
+                    <input
+                      type="number"
+                      min="0.5"
+                      step="0.5"
+                      value={hoursPerDay}
+                      onChange={(e) => {
+                        setHoursPerDay(e.target.value);
+                        setHoursFromProfile(false);
+                      }}
+                      style={{ ...inputStyle, padding: "0 14px" }}
+                    />
+                  </label>
+                  <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, fontWeight: 700, color: "#4f5fa8", width: isMobile ? "100%" : 150 }}>
+                    Days available
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={days}
+                      onChange={(e) => setDays(e.target.value)}
+                      style={{ ...inputStyle, padding: "0 14px" }}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleSchedule}
+                    disabled={scheduling || !hoursPerDay || !days}
+                    style={btnPrimary(scheduling || !hoursPerDay || !days)}
+                  >
+                    {scheduling ? "Building…" : "Generate Schedule"}
+                  </button>
+                </div>
+
+                {hoursFromProfile ? (
+                  <p style={{ margin: "8px 0 0", fontSize: 12, color: "#2e7d32" }}>
+                    ✓ Hours/day prefilled from your profile's daily study goal.
+                  </p>
+                ) : (
+                  <p style={{ margin: "8px 0 0", fontSize: 12, color: "#e65100" }}>
+                    Tip: set a daily study goal in your{" "}
+                    <span onClick={() => navigate("/profile")} style={{ textDecoration: "underline", cursor: "pointer" }}>
+                      profile
+                    </span>{" "}
+                    to prefill this.
+                  </p>
+                )}
+
+                {scheduleError && (
+                  <p style={{ margin: "10px 0 0", color: "#c62828", fontSize: 13 }}>{scheduleError}</p>
+                )}
+
+                {schedule && (
+                  <div style={{ marginTop: 18 }}>
+                    <div
+                      style={{
+                        borderRadius: 14,
+                        padding: "14px 16px",
+                        background: schedule.feasible ? "#e8f5e9" : "#fff3e0",
+                        border: `1px solid ${schedule.feasible ? "#a5d6a7" : "#ffcc80"}`,
+                      }}
+                    >
+                      <p style={{ margin: 0, fontWeight: 800, fontSize: 14, color: schedule.feasible ? "#2e7d32" : "#e65100" }}>
+                        {schedule.feasible
+                          ? `✓ It fits — ${schedule.summary.requiredHours}h of study across ${schedule.requiredDays} day${schedule.requiredDays === 1 ? "" : "s"}.`
+                          : `⚠ Doesn't fit as-is — you're ${schedule.summary.gapHours}h over your ${schedule.summary.budgetHours}h budget.`}
+                      </p>
+                      {!schedule.feasible && schedule.options && (
+                        <ul style={{ margin: "10px 0 0", paddingLeft: 18, fontSize: 13, color: "#8a5a00", lineHeight: 1.7 }}>
+                          <li>Study ~{schedule.options.neededHoursPerDay}h/day to finish in {schedule.requestedDays} days, or</li>
+                          <li>Keep your pace but take {schedule.options.neededDays} days, or</li>
+                          <li>Watch at 1.5× → {schedule.options.requiredHoursAt1_5x}h (2× → {schedule.options.requiredHoursAt2x}h)</li>
+                          {schedule.dropped?.length > 0 && (
+                            <li>Skip the {schedule.dropped.length} optional video{schedule.dropped.length === 1 ? "" : "s"} below</li>
+                          )}
+                        </ul>
+                      )}
+                    </div>
+
+                    {schedule.dropped?.length > 0 && (
+                      <div style={{ marginTop: 14 }}>
+                        <p style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 700, color: "#2f3b63" }}>
+                          Skipped · {schedule.dropped.length} optional
+                        </p>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                          {schedule.dropped.map((v, i) => (
+                            <div key={i} style={{ fontSize: 12.5, color: "#6b78a0" }}>
+                              • {v.title}{" "}
+                              <span style={{ color: "#9aa3c0" }}>
+                                ({v.durationMin}m — {v.reason || "optional"})
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div style={{ marginTop: 16 }}>
+                      <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 700, color: "#2f3b63" }}>
+                        Day-by-day plan
+                        {schedule.requiredDays > schedule.requestedDays
+                          ? ` · needs ${schedule.requiredDays} days (${schedule.requiredDays - schedule.requestedDays} over your ${schedule.requestedDays})`
+                          : ""}
+                      </p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 440, overflowY: "auto", paddingRight: 4 }}>
+                        {schedule.days.map((d) => (
+                          <div
+                            key={d.day}
+                            style={{
+                              borderRadius: 12,
+                              border: "1px solid rgba(190,200,235,0.5)",
+                              background: "rgba(248,249,255,0.7)",
+                              padding: "10px 14px",
+                            }}
+                          >
+                            <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 700, color: "#4f5fa8" }}>
+                              Day {d.day} · ~{d.studyHours}h
+                            </p>
+                            {d.videos.map((v, j) => (
+                              <div key={j} style={{ fontSize: 12.5, color: "#5e6c92", padding: "2px 0" }}>
+                                • {v.title} <span style={{ color: "#9aa3c0" }}>({v.durationMin}m)</span>
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Create Cohort CTA */}
