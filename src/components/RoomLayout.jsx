@@ -36,8 +36,20 @@ export default function RoomLayout({
   } = useMediaControls();
 
   const [aiMonitorEnabled, setAiMonitorEnabled] = useState(false);
+  const [hasConsent, setHasConsent] = useState(false);
+  const [consentMsg, setConsentMsg] = useState("");
 
-  const focusMonitor = useFocusMonitor({ enabled: camEnabled && aiMonitorEnabled, intervalMs: 5000 });
+  // Focus monitoring only ever runs with explicit camera-analysis consent.
+  const focusMonitor = useFocusMonitor({ enabled: camEnabled && aiMonitorEnabled && hasConsent, intervalMs: 5000 });
+
+  const handleToggleAiMonitor = () => {
+    if (!hasConsent) {
+      setConsentMsg("Enable “AI Focus Analysis Consent” in your Profile before using focus monitoring.");
+      window.setTimeout(() => setConsentMsg(""), 4000);
+      return;
+    }
+    setAiMonitorEnabled((v) => !v);
+  };
 
   const navigate = useNavigate();
   const participants = useParticipants();
@@ -69,7 +81,9 @@ export default function RoomLayout({
 
   useEffect(() => {
     fetchMyProfile().then((res) => {
-      if (res?.profile?.aiMonitorConsent) setAiMonitorEnabled(true);
+      const consent = !!res?.profile?.aiMonitorConsent;
+      setHasConsent(consent);
+      if (consent) setAiMonitorEnabled(true);
     }).catch(() => {});
   }, []);
 
@@ -224,7 +238,10 @@ export default function RoomLayout({
             monitor={focusMonitor}
             camEnabled={camEnabled}
             aiMonitorEnabled={aiMonitorEnabled}
-            onToggleAiMonitor={() => setAiMonitorEnabled((v) => !v)}
+            onToggleAiMonitor={handleToggleAiMonitor}
+            hasConsent={hasConsent}
+            consentMsg={consentMsg}
+            isMobile={isMobile}
           />
         </div>
       </div>
@@ -243,10 +260,11 @@ export default function RoomLayout({
 
 // ── AI Focus Monitor sidebar card ────────────────────────────────────────────
 
-function FocusMonitorCard({ monitor, camEnabled, aiMonitorEnabled, onToggleAiMonitor }) {
+function FocusMonitorCard({ monitor, camEnabled, aiMonitorEnabled, onToggleAiMonitor, hasConsent, consentMsg, isMobile }) {
   const { status, currentLevel, sampleCount } = monitor;
 
   const statusLine = () => {
+    if (!hasConsent) return { text: "Enable “AI Focus Analysis Consent” in your Profile to use focus monitoring.", muted: true };
     if (!aiMonitorEnabled) return { text: "Face analysis disabled for this session. Toggle to enable.", muted: true };
     if (!camEnabled) return { text: "Camera off — turn on camera to monitor focus", muted: true };
     if (status === "loading") return { text: "Loading AI models…", muted: true };
@@ -260,7 +278,7 @@ function FocusMonitorCard({ monitor, camEnabled, aiMonitorEnabled, onToggleAiMon
   const isLive = aiMonitorEnabled && status === "active";
 
   return (
-    <div style={styles.card}>
+    <div style={{ ...styles.card, minHeight: isMobile ? 210 : 250 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <h3 style={styles.cardTitle}>AI Focus Monitor</h3>
         <span style={{ fontSize: 11, color: isLive ? "#22c55e" : "#b0b8d8", fontWeight: 600 }}>
@@ -274,12 +292,13 @@ function FocusMonitorCard({ monitor, camEnabled, aiMonitorEnabled, onToggleAiMon
           type="button"
           onClick={onToggleAiMonitor}
           style={{
-            width: 38, height: 20, borderRadius: 10, border: "none", cursor: "pointer",
+            width: 38, height: 20, borderRadius: 10, border: "none",
+            cursor: hasConsent ? "pointer" : "not-allowed",
             background: aiMonitorEnabled ? "#7c3aed" : "#d1d5db",
             position: "relative", transition: "background 0.2s", flexShrink: 0,
-            padding: 0,
+            padding: 0, opacity: hasConsent ? 1 : 0.55,
           }}
-          title={aiMonitorEnabled ? "Disable face analysis for this session" : "Enable face analysis for this session"}
+          title={!hasConsent ? "Provide AI Focus Analysis Consent in your Profile first" : aiMonitorEnabled ? "Disable face analysis for this session" : "Enable face analysis for this session"}
         >
           <div style={{
             position: "absolute", top: 2, left: aiMonitorEnabled ? 20 : 2,
@@ -288,6 +307,12 @@ function FocusMonitorCard({ monitor, camEnabled, aiMonitorEnabled, onToggleAiMon
           }} />
         </button>
       </div>
+
+      {consentMsg && (
+        <p style={{ margin: "0 0 10px", fontSize: 11, color: "#e65100", lineHeight: 1.5 }}>
+          {consentMsg}
+        </p>
+      )}
 
       <p style={{ margin: "0 0 12px", fontSize: 11, color: "#9aa4c7", lineHeight: 1.5 }}>
         {info.text}
