@@ -46,6 +46,7 @@ export default function CohortPage() {
   const [joining, setJoining] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const handleCopyInvite = async () => {
     try {
@@ -123,10 +124,22 @@ export default function CohortPage() {
     setLeaving(true);
     try {
       await api.delete(`/cohorts/${id}/leave`);
-      navigate("/learn");
+      navigate("/cohorts");
     } catch (err) {
       alert(err?.response?.data?.message || "Failed to leave cohort");
       setLeaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Delete this cohort for everyone? This cannot be undone.")) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/cohorts/${id}`);
+      navigate("/cohorts");
+    } catch (err) {
+      alert(err?.response?.data?.message || "Failed to delete cohort");
+      setDeleting(false);
     }
   };
 
@@ -290,6 +303,15 @@ export default function CohortPage() {
                     style={{ ...btnPrimary(leaving), background: leaving ? "#e5e7eb" : "#fee2e2", color: "#c62828" }}
                   >
                     {leaving ? "Leaving…" : "Leave"}
+                  </button>
+                )}
+                {cohort.createdById === user?.id && (
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    style={{ ...btnPrimary(deleting), background: deleting ? "#e5e7eb" : "#fee2e2", color: "#c62828" }}
+                  >
+                    {deleting ? "Deleting…" : "Delete"}
                   </button>
                 )}
               </div>

@@ -8,7 +8,6 @@ import {
   Lock,
   MessageCircle,
   PlusCircle,
-  Users,
   UserRound,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -16,8 +15,7 @@ import { useAuth } from "../context/AuthContext";
 
 const navItems = [
   { label: "Home", path: "/dashboard", icon: Home },
-  { label: "YouTube Learning", path: "/learn", icon: Youtube, requiresUser: true },
-  { label: "Cohorts", path: "/cohorts", icon: Users, requiresUser: true },
+  { label: "YouTube Cohort", path: "/cohorts", icon: Youtube, requiresUser: true },
   { label: "Community", path: "/community", icon: MessageCircle },
   { label: "My Rooms", path: "/myRooms", icon: BookOpenCheck, requiresUser: true },
   { label: "Create Room", path: "/create-room", icon: PlusCircle, requiresUser: true },

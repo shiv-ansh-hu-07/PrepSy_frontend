@@ -67,13 +67,18 @@ export default function MyCohorts() {
         {!isTablet && <AppSideNav />}
 
         <main style={{ minWidth: 0 }}>
-          <div style={{ marginBottom: 24 }}>
-            <h1 style={{ margin: 0, fontSize: isMobile ? 22 : 28, fontFamily: "Georgia, serif", color: "#2f3b63" }}>
-              My Cohorts
-            </h1>
-            <p style={{ margin: "6px 0 0", fontSize: 14, color: "#6b78a0" }}>
-              Study groups you've created or joined. Open one to see its roadmap, sessions, discussions, and quizzes.
-            </p>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 24 }}>
+            <div style={{ minWidth: 0 }}>
+              <h1 style={{ margin: 0, fontSize: isMobile ? 22 : 28, fontFamily: "Georgia, serif", color: "#2f3b63" }}>
+                YouTube Cohorts
+              </h1>
+              <p style={{ margin: "6px 0 0", fontSize: 14, color: "#6b78a0" }}>
+                Study groups built from YouTube playlists. Open one for its roadmap, sessions, discussions, and quizzes.
+              </p>
+            </div>
+            <button onClick={() => navigate("/learn")} style={btnPrimary(false)}>
+              + Create Cohort
+            </button>
           </div>
 
           {loading ? (
@@ -88,7 +93,7 @@ export default function MyCohorts() {
                 Analyze a YouTube playlist and create a study cohort to learn together.
               </p>
               <button onClick={() => navigate("/learn")} style={btnPrimary(false)}>
-                Go to YouTube Learning →
+                Create a Cohort →
               </button>
             </div>
           ) : (
