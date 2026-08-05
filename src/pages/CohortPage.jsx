@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import AppSideNav from "../components/AppSideNav";
-import { Users, BookOpen, MessageSquare, Brain, Calendar, ChevronDown, ChevronUp } from "lucide-react";
+import { Users, BookOpen, MessageSquare, Brain, Calendar, ChevronDown, ChevronUp, Link2 } from "lucide-react";
 
 const PAGE_BG = "radial-gradient(ellipse at top, #eef1fb 0%, #f3f5fc 48%, #f8f9fe 100%)";
 
@@ -45,6 +45,17 @@ export default function CohortPage() {
   const [activeTab, setActiveTab] = useState("roadmap");
   const [joining, setJoining] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyInvite = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      /* clipboard unavailable */
+    }
+  };
 
   // Discussions state
   const [discussions, setDiscussions] = useState([]);
@@ -259,6 +270,14 @@ export default function CohortPage() {
                 )}
               </div>
               <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                <button
+                  onClick={handleCopyInvite}
+                  style={{ ...btnPrimary(false), background: "rgba(138,155,214,0.16)", color: "#4f5fa8" }}
+                  title="Copy invite link to share this cohort"
+                >
+                  <Link2 size={15} style={{ verticalAlign: "middle", marginRight: 6 }} />
+                  {copied ? "Copied!" : "Invite"}
+                </button>
                 {!cohort.isMember && user && (
                   <button onClick={handleJoin} disabled={joining} style={btnPrimary(joining)}>
                     {joining ? "Joining…" : "Join Cohort"}
