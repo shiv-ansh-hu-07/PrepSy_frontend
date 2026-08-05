@@ -104,7 +104,7 @@ export default function CohortPage() {
     if (!cohort?.isMember) return;
     if (activeTab === "discussions") {
       api.get(`/cohorts/${id}/discussions`).then(({ data }) => setDiscussions(data)).catch(() => {});
-    } else if (activeTab === "sessions") {
+    } else if (activeTab === "sessions" || activeTab === "roadmap") {
       api.get(`/cohorts/${id}/sessions`).then(({ data }) => setSessions(data)).catch(() => {});
     } else if (activeTab === "quiz") {
       api.get(`/cohorts/${id}/quiz/attempts`).then(({ data }) => setPastAttempts(data)).catch(() => {});
@@ -415,6 +415,37 @@ export default function CohortPage() {
               );
             })}
           </div>
+
+          {/* Tab: Roadmap — daily schedule preview */}
+          {activeTab === "roadmap" && sessions.length > 0 && (
+            <div style={card}>
+              <h3 style={sectionTitle}>📆 Daily Schedule</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {sessions.slice(0, 5).map((s) => {
+                  const dt = new Date(s.scheduledAt);
+                  return (
+                    <div key={s.id} style={{ display: "flex", gap: 12, alignItems: "center", padding: "8px 12px", borderRadius: 10, border: "1px solid rgba(190,200,235,0.4)", background: "rgba(248,249,255,0.6)" }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "#8a9bd6", flexShrink: 0, width: 58 }}>
+                        {dt.toLocaleDateString([], { month: "short", day: "numeric" })}
+                      </span>
+                      <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: "#2f3b63", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {s.topic}
+                      </span>
+                      {s.studyHours ? (
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "#166534", flexShrink: 0 }}>~{s.studyHours}h</span>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => setActiveTab("sessions")}
+                style={{ marginTop: 12, background: "none", border: "none", color: "#8a9bd6", fontSize: 13, fontWeight: 600, cursor: "pointer", padding: 0 }}
+              >
+                View all {sessions.length} day{sessions.length === 1 ? "" : "s"} in Sessions →
+              </button>
+            </div>
+          )}
 
           {/* Tab: Roadmap */}
           {activeTab === "roadmap" && (
