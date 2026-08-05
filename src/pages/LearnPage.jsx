@@ -49,6 +49,8 @@ export default function LearnPage() {
   const [cohortMaxSize, setCohortMaxSize] = useState(10);
   const [creatingCohort, setCreatingCohort] = useState(false);
   const [cohortError, setCohortError] = useState(null);
+  const [startMode, setStartMode] = useState("NOW");
+  const [cohortStart, setCohortStart] = useState("");
 
   // --- study schedule ---
   const [hoursPerDay, setHoursPerDay] = useState(2);
@@ -115,11 +117,23 @@ export default function LearnPage() {
     setCreatingCohort(true);
     setCohortError(null);
     try {
-      const { data } = await api.post("/cohorts", {
+      const sessions = (schedule?.days || []).map((d) => ({
+        topic: d.videos?.[0]?.title ? `Day ${d.day}: ${d.videos[0].title}` : `Day ${d.day}`,
+        description: (d.videos || []).map((v) => v.title).join(" • "),
+      }));
+      const payload = {
         playlistId: result.id,
         name: cohortName.trim(),
         maxSize: cohortMaxSize,
-      });
+        startMode,
+        sessions,
+      };
+      if (startMode === "SCHEDULED" && cohortStart) {
+        const dt = new Date(cohortStart);
+        payload.startDate = dt.toISOString();
+        payload.dailyTime = `${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
+      }
+      const { data } = await api.post("/cohorts", payload);
       navigate(`/cohort/${data.id}`);
     } catch (err) {
       setCohortError(err?.response?.data?.message || "Failed to create cohort");
@@ -617,13 +631,45 @@ export default function LearnPage() {
                   <button
                     type="button"
                     onClick={handleCreateCohort}
-                    disabled={creatingCohort || !cohortName.trim() || !user}
-                    style={btnPrimary(creatingCohort || !cohortName.trim() || !user)}
+                    disabled={creatingCohort || !cohortName.trim() || !user || (startMode === "SCHEDULED" && !cohortStart)}
+                    style={btnPrimary(creatingCohort || !cohortName.trim() || !user || (startMode === "SCHEDULED" && !cohortStart))}
                     title={!user ? "Sign in to create a cohort" : ""}
                   >
                     {creatingCohort ? "Creating…" : "Create Cohort →"}
                   </button>
                 </div>
+
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 14, alignItems: "center" }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#4f5fa8" }}>Start:</span>
+                  {["NOW", "SCHEDULED"].map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setStartMode(mode)}
+                      style={{
+                        padding: "7px 14px", borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                        border: `1.5px solid ${startMode === mode ? "#8a9bd6" : "rgba(138,155,214,0.4)"}`,
+                        background: startMode === mode ? "rgba(138,155,214,0.16)" : "#fff",
+                        color: startMode === mode ? "#3f4f7a" : "#6b78a0",
+                      }}
+                    >
+                      {mode === "NOW" ? "Start now" : "Schedule for later"}
+                    </button>
+                  ))}
+                  {startMode === "SCHEDULED" && (
+                    <input
+                      type="datetime-local"
+                      value={cohortStart}
+                      onChange={(e) => setCohortStart(e.target.value)}
+                      style={{ height: 42, borderRadius: 10, border: "1.5px solid rgba(138,155,214,0.4)", background: "#fff", padding: "0 12px", fontSize: 13, color: "#2f3b63", outline: "none" }}
+                    />
+                  )}
+                </div>
+                <p style={{ margin: "8px 0 0", fontSize: 12, color: schedule?.days?.length ? "#6b78a0" : "#9aa3c0" }}>
+                  {schedule?.days?.length
+                    ? `${schedule.days.length} daily sessions will be created from your schedule; members join the same room each day.`
+                    : "Tip: generate a schedule above to auto-create daily sessions for this cohort."}
+                </p>
                 {cohortError && (
                   <p style={{ margin: "8px 0 0", color: "#c62828", fontSize: 12 }}>{cohortError}</p>
                 )}

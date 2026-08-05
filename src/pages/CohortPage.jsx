@@ -47,6 +47,10 @@ export default function CohortPage() {
   const [leaving, setLeaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editTime, setEditTime] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const handleCopyInvite = async () => {
     try {
@@ -112,6 +116,7 @@ export default function CohortPage() {
     try {
       await api.post(`/cohorts/${id}/join`);
       await fetchCohort();
+      if (cohort?.roomId) navigate(`/room/${cohort.roomId}`);
     } catch (err) {
       alert(err?.response?.data?.message || "Failed to join cohort");
     } finally {
@@ -140,6 +145,26 @@ export default function CohortPage() {
     } catch (err) {
       alert(err?.response?.data?.message || "Failed to delete cohort");
       setDeleting(false);
+    }
+  };
+
+  const openEdit = () => {
+    setEditName(cohort?.name || "");
+    setEditTime(cohort?.dailyTime || "");
+    setEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editName.trim()) return;
+    setSavingEdit(true);
+    try {
+      await api.patch(`/cohorts/${id}`, { name: editName.trim(), dailyTime: editTime });
+      await fetchCohort();
+      setEditing(false);
+    } catch (err) {
+      alert(err?.response?.data?.message || "Failed to save changes");
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -296,6 +321,19 @@ export default function CohortPage() {
                     {joining ? "Joining…" : "Join Cohort"}
                   </button>
                 )}
+                {cohort.isMember && cohort.roomId && (
+                  <button onClick={() => navigate(`/room/${cohort.roomId}`)} style={btnPrimary(false)}>
+                    Enter Room →
+                  </button>
+                )}
+                {cohort.createdById === user?.id && (
+                  <button
+                    onClick={openEdit}
+                    style={{ ...btnPrimary(false), background: "rgba(138,155,214,0.16)", color: "#4f5fa8" }}
+                  >
+                    Edit
+                  </button>
+                )}
                 {cohort.isMember && cohort.createdById !== user?.id && (
                   <button
                     onClick={handleLeave}
@@ -317,6 +355,34 @@ export default function CohortPage() {
               </div>
             </div>
           </div>
+
+          {/* Edit panel */}
+          {editing && (
+            <div style={{ ...card, marginBottom: 16 }}>
+              <h3 style={sectionTitle}>Edit cohort</h3>
+              <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 10 }}>
+                <input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Cohort name"
+                  style={{ flex: 1, height: 42, borderRadius: 10, border: "1.5px solid rgba(138,155,214,0.4)", background: "#fff", padding: "0 12px", fontSize: 14, color: "#2f3b63", outline: "none" }}
+                />
+                <input
+                  type="time"
+                  value={editTime}
+                  onChange={(e) => setEditTime(e.target.value)}
+                  title="Daily session time"
+                  style={{ height: 42, borderRadius: 10, border: "1.5px solid rgba(138,155,214,0.4)", background: "#fff", padding: "0 12px", fontSize: 14, color: "#2f3b63", outline: "none" }}
+                />
+                <button onClick={handleSaveEdit} disabled={savingEdit || !editName.trim()} style={{ ...btnPrimary(savingEdit || !editName.trim()), height: 42 }}>
+                  {savingEdit ? "Saving…" : "Save"}
+                </button>
+                <button onClick={() => setEditing(false)} style={{ ...btnPrimary(false), height: 42, background: "rgba(138,155,214,0.16)", color: "#4f5fa8" }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Tabs */}
           <div style={{ display: "flex", gap: 4, marginBottom: 16, overflowX: "auto", paddingBottom: 4 }}>
