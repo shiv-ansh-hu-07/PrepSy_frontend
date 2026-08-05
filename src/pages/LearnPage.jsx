@@ -120,6 +120,7 @@ export default function LearnPage() {
       const sessions = (schedule?.days || []).map((d) => ({
         topic: d.videos?.[0]?.title ? `Day ${d.day}: ${d.videos[0].title}` : `Day ${d.day}`,
         description: (d.videos || []).map((v) => v.title).join(" • "),
+        studyHours: d.studyHours,
       }));
       const payload = {
         playlistId: result.id,

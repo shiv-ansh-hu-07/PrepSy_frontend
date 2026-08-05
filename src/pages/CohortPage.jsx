@@ -711,19 +711,32 @@ export default function CohortPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {sessions.map((s) => {
                     const dt = new Date(s.scheduledAt);
-                    const isPast = dt < new Date();
+                    const st =
+                      s.status === "COMPLETED"
+                        ? { bg: "#e8f5e9", color: "#2e7d32", label: "Completed" }
+                        : s.status === "POSTPONED"
+                        ? { bg: "#fff3e0", color: "#e65100", label: "Postponed" }
+                        : { bg: "#eef2ff", color: "#4f5fa8", label: "Scheduled" };
                     return (
-                      <div key={s.id} style={{ padding: "14px 16px", borderRadius: 14, border: "1px solid rgba(190,200,235,0.45)", display: "flex", gap: 14, alignItems: "center", opacity: isPast ? 0.65 : 1 }}>
+                      <div key={s.id} style={{ padding: "14px 16px", borderRadius: 14, border: "1px solid rgba(190,200,235,0.45)", display: "flex", gap: 14, alignItems: "flex-start" }}>
                         <div style={{ width: 46, textAlign: "center", flexShrink: 0 }}>
                           <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#8a9bd6", textTransform: "uppercase" }}>{dt.toLocaleString("default", { month: "short" })}</p>
                           <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#2f3b63" }}>{dt.getDate()}</p>
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#2f3b63" }}>{s.topic}</p>
-                          <p style={{ margin: "3px 0 0", fontSize: 12, color: "#6b78a0" }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#2f3b63" }}>{s.topic}</p>
+                            <span style={{ padding: "2px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: st.bg, color: st.color }}>{st.label}</span>
+                            {s.studyHours ? (
+                              <span style={{ padding: "2px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: "rgba(34,197,94,0.12)", color: "#166534" }}>⏱ ~{s.studyHours}h</span>
+                            ) : null}
+                          </div>
+                          <p style={{ margin: "3px 0 0", fontSize: 12, color: "#8a9bd6" }}>
                             {dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                            {isPast ? " · Completed" : ""}
                           </p>
+                          {s.description ? (
+                            <p style={{ margin: "6px 0 0", fontSize: 12.5, color: "#5e6c92", lineHeight: 1.5 }}>{s.description}</p>
+                          ) : null}
                         </div>
                       </div>
                     );
