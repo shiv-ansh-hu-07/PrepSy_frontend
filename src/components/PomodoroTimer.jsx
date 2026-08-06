@@ -276,7 +276,7 @@ export default function PomodoroTimer({ onLeaveRoom, roomDurationMinutes = 90 })
           <path
             d="M 20 90 A 70 70 0 0 1 160 90"
             fill="none"
-            stroke={isUrgent ? "#fb7185" : "#8a9bd6"}
+            stroke={isUrgent ? "#fb7185" : "var(--accent)"}
             strokeWidth={STROKE}
             strokeDasharray={ARC_LENGTH}
             strokeDashoffset={
@@ -308,7 +308,7 @@ export default function PomodoroTimer({ onLeaveRoom, roomDurationMinutes = 90 })
         <div style={styles.sessionCountRow}>
           <span>Sessions: </span>
           <span style={styles.sessionCount}>{totalSessions}</span>
-          <span style={{ color: "#9aa4c7", fontSize: 11 }}>
+          <span style={{ color: "var(--text-muted)", fontSize: 11 }}>
             ({Math.round(SESSION_DURATION / 60)}m each)
           </span>
         </div>
@@ -379,7 +379,7 @@ const styles = {
     justifyContent: "flex-start",
     gap: 8,
     fontFamily: "Inter, system-ui",
-    color: "#4a5a85",
+    color: "var(--text-secondary)",
     position: "relative",
   },
   title: {
@@ -424,7 +424,7 @@ const styles = {
   },
   sessionCount: {
     fontWeight: 600,
-    color: "#4a5a85",
+    color: "var(--text-secondary)",
   },
   runningButton: {
     background: "#E5EAFB",
@@ -455,7 +455,7 @@ const styles = {
   promptCard: {
     width: "100%",
     maxWidth: 290,
-    background: "#FFFFFF",
+    background: "var(--card-bg)",
     borderRadius: 22,
     padding: "18px 18px 16px",
     boxShadow: "0 20px 40px rgba(15,23,42,0.18)",
@@ -490,8 +490,8 @@ const styles = {
     gap: 10,
   },
   primaryPromptButton: {
-    background: "#8a9bd6",
-    borderColor: "#8a9bd6",
+    background: "var(--accent)",
+    borderColor: "var(--accent)",
     color: "#FFFFFF",
   },
   settleTimer: {
@@ -502,16 +502,16 @@ const styles = {
     padding: "10px 14px",
     borderRadius: 999,
     background: "#EEF2FF",
-    color: "#4a5a85",
+    color: "var(--text-secondary)",
     fontWeight: 700,
     fontSize: 14,
   },
 };
 
 const buttonStyle = {
-  background: "#FFFFFF",
+  background: "var(--card-bg)",
   border: "1px solid #E5E7EB",
-  color: "#4a5a85",
+  color: "var(--text-secondary)",
   padding: "6px 12px",
   minWidth: 96,
   borderRadius: 10,

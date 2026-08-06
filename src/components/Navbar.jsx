@@ -77,7 +77,7 @@ export default function Navbar() {
         backdropFilter: "blur(10px)",
         background:
           "linear-gradient(to bottom, rgba(246,248,254,0.92), rgba(246,248,254,0.82))",
-        borderBottom: "1px solid rgba(190,200,235,0.4)",
+        borderBottom: "1px solid var(--card-border)",
       }}
     >
       <div
@@ -112,7 +112,7 @@ export default function Navbar() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#5f6fa3",
+                color: "var(--text-secondary)",
                 fontWeight: 600,
                 fontSize: "14px",
                 flexShrink: 0,
@@ -126,7 +126,7 @@ export default function Navbar() {
               style={{
                 fontFamily: "Georgia, serif",
                 fontSize: isCompact ? "16px" : "20px",
-                color: "#3f4f7a",
+                color: "var(--text-primary)",
                 textDecoration: "none",
                 whiteSpace: "nowrap",
               }}
@@ -167,7 +167,7 @@ export default function Navbar() {
                   to={item.path}
                   style={{
                     fontSize: isCompact ? "13px" : "14px",
-                    color: item.active ? "#3f4f7a" : "#6b7bb0",
+                    color: item.active ? "var(--text-primary)" : "#6b7bb0",
                     fontWeight: item.active ? 500 : 400,
                     textDecoration: "none",
                     position: "relative",
@@ -183,7 +183,7 @@ export default function Navbar() {
                         right: 0,
                         bottom: "-6px",
                         height: "2px",
-                        backgroundColor: "#8a9bd6",
+                        backgroundColor: "var(--accent)",
                         borderRadius: "2px",
                       }}
                     />
@@ -279,7 +279,7 @@ export default function Navbar() {
                     background: item.active
                       ? "rgba(138,155,214,0.16)"
                       : "transparent",
-                    color: item.active ? "#3f4f7a" : "#5f6fa3",
+                    color: item.active ? "var(--text-primary)" : "var(--text-secondary)",
                     fontWeight: item.active ? 600 : 500,
                   }}
                 >
@@ -409,7 +409,7 @@ const logoutButtonStyle = {
   padding: "8px 14px",
   borderRadius: "999px",
   backgroundColor: "#eef2ff",
-  color: "#5f6fa3",
+  color: "var(--text-secondary)",
   fontSize: "13px",
   border: "none",
   cursor: "pointer",
@@ -425,7 +425,7 @@ function accountLinkStyle(isCompact, active) {
     borderRadius: "999px",
     border: active ? "1px solid rgba(138,155,214,0.46)" : "1px solid transparent",
     background: active ? "rgba(138,155,214,0.14)" : "transparent",
-    color: "#5f6fa3",
+    color: "var(--text-secondary)",
     display: "inline-flex",
     alignItems: "center",
     gap: isCompact ? "6px" : "9px",
@@ -444,7 +444,7 @@ function accountPhotoStyle(size) {
     borderRadius: "50%",
     objectFit: "cover",
     border: "1px solid rgba(190,200,235,0.72)",
-    background: "#ffffff",
+    background: "var(--card-bg)",
     flexShrink: 0,
   };
 }
@@ -454,8 +454,8 @@ function accountInitialsStyle(size) {
     width: size,
     height: size,
     borderRadius: "50%",
-    background: "#ffffff",
-    color: "#5f6fa3",
+    background: "var(--card-bg)",
+    color: "var(--text-secondary)",
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
@@ -471,7 +471,7 @@ const mobileAccountRowStyle = {
   gap: "10px",
   paddingBottom: "14px",
   marginBottom: "14px",
-  borderBottom: "1px solid rgba(190,200,235,0.45)",
+  borderBottom: "1px solid var(--card-border)",
 };
 
 const mobileAccountLinkStyle = {
@@ -480,7 +480,7 @@ const mobileAccountLinkStyle = {
   gridTemplateColumns: "38px minmax(0, 1fr) 16px",
   alignItems: "center",
   gap: "10px",
-  color: "#3f4f7a",
+  color: "var(--text-primary)",
   textDecoration: "none",
 };
 
@@ -494,7 +494,7 @@ const mobileAccountCaptionStyle = {
 const mobileAccountNameStyle = {
   display: "block",
   margin: "4px 0 0",
-  color: "#3f4f7a",
+  color: "var(--text-primary)",
   fontWeight: 700,
   overflow: "hidden",
   textOverflow: "ellipsis",
@@ -532,7 +532,7 @@ function mobileToggleLineStyle(menuOpen, position) {
     top: topMap[position],
     height: "2px",
     borderRadius: "999px",
-    background: "#5f6fa3",
+    background: "var(--text-secondary)",
     transform: transformMap[position],
     transition: "all 0.2s ease",
     transformOrigin: "center",
@@ -544,6 +544,6 @@ const mobilePanelStyle = {
   padding: "16px",
   borderRadius: "22px",
   background: "rgba(255,255,255,0.88)",
-  border: "1px solid rgba(190,200,235,0.45)",
+  border: "1px solid var(--card-border)",
   boxShadow: "0 18px 36px rgba(95,111,163,0.12)",
 };

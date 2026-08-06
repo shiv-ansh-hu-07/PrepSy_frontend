@@ -108,7 +108,7 @@ export default function RoomPage() {
           style={{
             width: "100%",
             maxWidth: "520px",
-            background: "#ffffff",
+            background: "var(--card-bg)",
             border: "1px solid #E6EAF8",
             borderRadius: "24px",
             padding: "28px",
@@ -119,7 +119,7 @@ export default function RoomPage() {
           <h2
             style={{
               fontFamily: "Georgia, serif",
-              color: "#2f3b63",
+              color: "var(--text-primary)",
               fontSize: "30px",
               marginBottom: "12px",
             }}
@@ -136,7 +136,7 @@ export default function RoomPage() {
               padding: "0 18px",
               borderRadius: "999px",
               border: "none",
-              background: "#8a9bd6",
+              background: "var(--accent)",
               color: "#ffffff",
               cursor: "pointer",
             }}
@@ -158,7 +158,7 @@ export default function RoomPage() {
           alignItems: "center",
           justifyContent: "center",
           fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont",
-          color: "#4a5a85",
+          color: "var(--text-secondary)",
         }}
       >
         Joining...

@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import api, { fetchStats, fetchMyAnalytics, fetchFocusSummary } from "../services/api";
 import AppSideNav from "../components/AppSideNav";
 
-const PAGE_BG = "radial-gradient(ellipse at top, #eef1fb 0%, #f3f5fc 48%, #f8f9fe 100%)";
+const PAGE_BG = "var(--page-bg)";
 
 function useWindowWidth() {
   const [w, setW] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1200));
@@ -141,11 +141,11 @@ export default function Dashboard() {
           <h1 style={{
             fontFamily: "Georgia, serif",
             fontSize: isMobile ? 22 : 26,
-            color: "#2f3b63", margin: 0, fontWeight: 700,
+            color: "var(--text-primary)", margin: 0, fontWeight: 700,
           }}>
             Welcome back, {firstName}
           </h1>
-          <p style={{ margin: "5px 0 0", fontSize: 13, color: "#6b78a0" }}>
+          <p style={{ margin: "5px 0 0", fontSize: 13, color: "var(--text-secondary)" }}>
             {isGuestViewer
               ? "Guest mode — sign in to save your progress."
               : sessions > 0
@@ -178,7 +178,7 @@ export default function Dashboard() {
           {/* Sessions panel */}
           <div style={panelStyle}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-              <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#2f3b63", display: "flex", alignItems: "center", gap: 7 }}>
+              <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 7 }}>
                 <span style={{ fontSize: 16 }}>📋</span> Active &amp; upcoming sessions
               </h3>
               <button onClick={() => navigate("/join-room")} style={viewAllBtn}>View all →</button>
@@ -195,7 +195,7 @@ export default function Dashboard() {
                   borderRadius: 16, border: "1px dashed rgba(124,58,237,0.2)",
                 }}>
                   <p style={{ fontSize: 28, margin: "0 0 8px" }}>📚</p>
-                  <p style={{ fontWeight: 600, color: "#4a5a85", fontSize: 14, margin: "0 0 4px" }}>No live rooms right now</p>
+                  <p style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: 14, margin: "0 0 4px" }}>No live rooms right now</p>
                   <p style={{ fontSize: 12, color: "#7b88b8", margin: "0 0 16px", lineHeight: 1.5 }}>Be the first to start a session.</p>
                   <button onClick={() => navigate("/create-room")} style={createRoomBtn}>Create a Room →</button>
                 </div>
@@ -232,7 +232,7 @@ export default function Dashboard() {
               </p>
               <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: 999, height: 5, marginBottom: 10 }}>
                 <div style={{
-                  height: 5, borderRadius: 999, background: "#fff",
+                  height: 5, borderRadius: 999, background: "var(--card-bg)",
                   width: `${Math.min(100, ((myAnalytics?.studiedDaysThisWeek ?? 0) / 7) * 100)}%`,
                   transition: "width 0.8s ease",
                 }} />
@@ -246,17 +246,17 @@ export default function Dashboard() {
 
             {/* AI Focus Insight */}
             <div style={panelStyle}>
-              <h3 style={{ margin: "0 0 12px", fontSize: 13, fontWeight: 700, color: "#2f3b63", display: "flex", alignItems: "center", gap: 7 }}>
+              <h3 style={{ margin: "0 0 12px", fontSize: 13, fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 7 }}>
                 <span>🧠</span> AI focus insight
               </h3>
               {avgFocus !== null ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                   <ScoreRing score={avgFocus} />
                   <div>
-                    <p style={{ margin: "0 0 3px", fontWeight: 700, fontSize: 13, color: "#2f3b63" }}>
+                    <p style={{ margin: "0 0 3px", fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>
                       {avgFocus >= 80 ? "Excellent focus!" : avgFocus >= 65 ? "Good focus" : avgFocus >= 50 ? "Room to improve" : "Let's work on focus"}
                     </p>
-                    <p style={{ margin: 0, fontSize: 12, color: "#6b78a0", lineHeight: 1.5 }}>
+                    <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>
                       {focusSummary?.totalAnalyzedSessions > 0
                         ? `Based on ${focusSummary.totalAnalyzedSessions} session${focusSummary.totalAnalyzedSessions !== 1 ? "s" : ""}.`
                         : "Turn on AI monitor in your next session."}
@@ -267,8 +267,8 @@ export default function Dashboard() {
               ) : (
                 <div style={{ textAlign: "center", padding: "12px 0" }}>
                   <p style={{ fontSize: 26, margin: "0 0 6px" }}>📷</p>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: "#4a5a85", margin: "0 0 3px" }}>No focus data yet</p>
-                  <p style={{ fontSize: 12, color: "#9aa4c7", margin: 0, lineHeight: 1.5 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)", margin: "0 0 3px" }}>No focus data yet</p>
+                  <p style={{ fontSize: 12, color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
                     Enable the AI monitor in your next session.
                   </p>
                 </div>
@@ -296,8 +296,8 @@ export default function Dashboard() {
 function StatCard({ icon, label, value, sub }) {
   return (
     <div style={{
-      background: "#fff", borderRadius: 14,
-      border: "1px solid rgba(190,200,235,0.5)",
+      background: "var(--card-bg)", borderRadius: 14,
+      border: "1px solid var(--card-border)",
       boxShadow: "0 2px 12px rgba(100,116,180,0.07)",
       padding: "13px 14px 12px",
     }}>
@@ -309,8 +309,8 @@ function StatCard({ icon, label, value, sub }) {
         }}>{icon}</span>
         <span style={{ fontSize: 11, color: "#7b88b8", fontWeight: 500, lineHeight: 1.2 }}>{label}</span>
       </div>
-      <p style={{ margin: "0 0 2px", fontSize: 20, fontWeight: 800, color: "#2f3b63", lineHeight: 1 }}>{value}</p>
-      <p style={{ margin: 0, fontSize: 10, color: "#9aa4c7" }}>{sub}</p>
+      <p style={{ margin: "0 0 2px", fontSize: 20, fontWeight: 800, color: "var(--text-primary)", lineHeight: 1 }}>{value}</p>
+      <p style={{ margin: 0, fontSize: 10, color: "var(--text-muted)" }}>{sub}</p>
     </div>
   );
 }
@@ -330,7 +330,7 @@ function ScoreRing({ score }) {
       <span style={{
         position: "absolute", inset: 0, display: "flex",
         alignItems: "center", justifyContent: "center",
-        fontSize: 14, fontWeight: 800, color: "#2f3b63",
+        fontSize: 14, fontWeight: 800, color: "var(--text-primary)",
       }}>{score}</span>
     </div>
   );
@@ -356,7 +356,7 @@ function SessionRow({ room, isMobile, onJoin }) {
     <div style={{
       display: "flex", alignItems: "center", gap: isMobile ? 10 : 14,
       padding: isMobile ? "11px 12px" : "13px 14px", borderRadius: 14,
-      border: active ? "1px solid rgba(34,197,94,0.2)" : "1px solid rgba(190,200,235,0.4)",
+      border: active ? "1px solid rgba(34,197,94,0.2)" : "1px solid var(--card-border)",
       background: active ? "rgba(34,197,94,0.03)" : "rgba(255,255,255,0.5)",
       marginBottom: 8,
     }}>
@@ -368,7 +368,7 @@ function SessionRow({ room, isMobile, onJoin }) {
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-          <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: "#2f3b63", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {room.name}
           </p>
           <span style={{
@@ -381,7 +381,7 @@ function SessionRow({ room, isMobile, onJoin }) {
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 11, color: "#9aa4c7" }}>{active ? `${userCount} studying` : `${userCount} joined`}</span>
+          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{active ? `${userCount} studying` : `${userCount} joined`}</span>
           {tags.map((t) => (
             <span key={t} style={{ fontSize: 10, color: "#7c3aed", background: "rgba(124,58,237,0.07)", padding: "1px 6px", borderRadius: 999 }}>#{t}</span>
           ))}
@@ -391,7 +391,7 @@ function SessionRow({ room, isMobile, onJoin }) {
       <button onClick={active ? onJoin : undefined} disabled={!active} style={{
         padding: isMobile ? "6px 12px" : "7px 16px", borderRadius: 10, border: "none",
         background: active ? "#7c3aed" : "#e8eaf6",
-        color: active ? "#fff" : "#9aa4c7",
+        color: active ? "#fff" : "var(--text-muted)",
         fontWeight: 600, fontSize: 12, cursor: active ? "pointer" : "default",
         flexShrink: 0, whiteSpace: "nowrap",
         boxShadow: active ? "0 4px 12px rgba(124,58,237,0.25)" : "none",
@@ -403,8 +403,8 @@ function SessionRow({ room, isMobile, onJoin }) {
 }
 
 const panelStyle = {
-  background: "#fff", borderRadius: 18,
-  border: "1px solid rgba(190,200,235,0.5)",
+  background: "var(--card-bg)", borderRadius: 18,
+  border: "1px solid var(--card-border)",
   boxShadow: "0 4px 24px rgba(100,116,180,0.07)",
   padding: "18px 16px",
 };

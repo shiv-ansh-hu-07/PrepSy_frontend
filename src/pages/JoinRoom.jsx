@@ -128,18 +128,18 @@ export default function JoinRoom() {
 
         {/* Header */}
         <div style={{ marginBottom: isMobile ? 20 : 28, textAlign: "center" }}>
-          <h1 style={{ fontFamily: "Georgia, serif", fontSize: isMobile ? 24 : 30, color: "#2f3b63", margin: "0 0 8px", fontWeight: 700 }}>
+          <h1 style={{ fontFamily: "Georgia, serif", fontSize: isMobile ? 24 : 30, color: "var(--text-primary)", margin: "0 0 8px", fontWeight: 700 }}>
             Find a Study Room
           </h1>
-          <p style={{ color: "#6b78a0", fontSize: 14, margin: 0 }}>
+          <p style={{ color: "var(--text-secondary)", fontSize: 14, margin: 0 }}>
             Join with a Room ID, or discover rooms by topic
           </p>
         </div>
 
         {/* Search card */}
         <div style={{
-          background: "#fff", borderRadius: 20,
-          border: "1px solid rgba(190,200,235,0.5)",
+          background: "var(--card-bg)", borderRadius: 20,
+          border: "1px solid var(--card-border)",
           boxShadow: "0 8px 32px rgba(100,116,180,0.09)",
           padding: isMobile ? "18px 16px" : "22px 24px",
           marginBottom: 20,
@@ -158,7 +158,7 @@ export default function JoinRoom() {
                 value={roomId} onChange={(e) => setRoomId(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleJoin()}
                 placeholder="Paste Room ID..."
-                style={{ flex: 1, height: 42, borderRadius: 11, border: "1px solid #d6d9e8", padding: "0 13px", fontSize: 14, outline: "none", color: "#2f3b63", background: "#fafbff" }}
+                style={{ flex: 1, height: 42, borderRadius: 11, border: "1px solid #d6d9e8", padding: "0 13px", fontSize: 14, outline: "none", color: "var(--text-primary)", background: "#fafbff" }}
               />
               <button onClick={handleJoin} style={{ ...joinBtnStyle, padding: "0 16px", height: 42, fontSize: 13 }}>Join →</button>
             </div>
@@ -168,14 +168,14 @@ export default function JoinRoom() {
           {!isMobile && (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 20px" }}>
               <div style={{ width: 1, height: 42, background: "rgba(190,200,235,0.6)" }} />
-              <span style={{ fontSize: 11, color: "#9aa4c7", margin: "6px 0", fontWeight: 600 }}>OR</span>
+              <span style={{ fontSize: 11, color: "var(--text-muted)", margin: "6px 0", fontWeight: 600 }}>OR</span>
               <div style={{ width: 1, height: 42, background: "rgba(190,200,235,0.6)" }} />
             </div>
           )}
           {isMobile && (
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ flex: 1, height: 1, background: "rgba(190,200,235,0.6)" }} />
-              <span style={{ fontSize: 11, color: "#9aa4c7", fontWeight: 600 }}>OR</span>
+              <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>OR</span>
               <div style={{ flex: 1, height: 1, background: "rgba(190,200,235,0.6)" }} />
             </div>
           )}
@@ -190,7 +190,7 @@ export default function JoinRoom() {
                 value={tagQuery} onChange={(e) => setTagQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleTagSearch()}
                 placeholder="e.g. dsa, react, system design..."
-                style={{ flex: 1, height: 42, borderRadius: 11, border: "1px solid #d6d9e8", padding: "0 13px", fontSize: 14, outline: "none", color: "#2f3b63", background: "#fafbff" }}
+                style={{ flex: 1, height: 42, borderRadius: 11, border: "1px solid #d6d9e8", padding: "0 13px", fontSize: 14, outline: "none", color: "var(--text-primary)", background: "#fafbff" }}
               />
               <button onClick={handleTagSearch} disabled={searching}
                 style={{ ...joinBtnStyle, background: "#f4f0ff", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.2)", boxShadow: "none", padding: "0 14px", height: 42, fontSize: 13 }}>
@@ -214,7 +214,7 @@ export default function JoinRoom() {
                 padding: "7px 16px", borderRadius: 999, flexShrink: 0,
                 border: active ? "1.5px solid #7c3aed" : "1px solid rgba(190,200,235,0.6)",
                 background: active ? "#7c3aed" : "#fff",
-                color: active ? "#fff" : "#4a5a85",
+                color: active ? "#fff" : "var(--text-secondary)",
                 fontWeight: active ? 700 : 500, fontSize: 13, cursor: "pointer",
                 boxShadow: active ? "0 4px 14px rgba(124,58,237,0.25)" : "none",
                 transition: "all 0.15s",
@@ -245,7 +245,7 @@ export default function JoinRoom() {
         {(loading || searching) ? (
           <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 }}>
             {Array.from({ length: cols * 2 }).map((_, i) => (
-              <div key={i} style={{ background: "#fff", borderRadius: 18, border: "1px solid rgba(190,200,235,0.5)", height: 150, opacity: 0.5 }} />
+              <div key={i} style={{ background: "var(--card-bg)", borderRadius: 18, border: "1px solid var(--card-border)", height: 150, opacity: 0.5 }} />
             ))}
           </div>
         ) : displayRooms.length === 0 ? (
@@ -270,8 +270,8 @@ function RoomCard({ room, now, isMobile, onJoin }) {
 
   return (
     <div style={{
-      background: "#fff", borderRadius: 18,
-      border: status.live ? "1px solid rgba(34,197,94,0.2)" : "1px solid rgba(190,200,235,0.5)",
+      background: "var(--card-bg)", borderRadius: 18,
+      border: status.live ? "1px solid rgba(34,197,94,0.2)" : "1px solid var(--card-border)",
       boxShadow: "0 4px 20px rgba(100,116,180,0.07)",
       padding: isMobile ? "16px 14px 14px" : "18px 18px 14px",
       display: "flex", flexDirection: "column",
@@ -290,7 +290,7 @@ function RoomCard({ room, now, isMobile, onJoin }) {
         </span>
       </div>
 
-      <h3 style={{ margin: "0 0 6px", fontSize: 14, fontWeight: 700, color: "#2f3b63", lineHeight: 1.3 }}>
+      <h3 style={{ margin: "0 0 6px", fontSize: 14, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.3 }}>
         {room.name}
       </h3>
 
@@ -312,7 +312,7 @@ function RoomCard({ room, now, isMobile, onJoin }) {
               <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#eef1fb", border: "1px dashed #c5ccec", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>👤</div>
             )}
           </div>
-          <span style={{ fontSize: 11, color: "#9aa4c7" }}>{userCount > 0 ? `${userCount}` : "0"}</span>
+          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{userCount > 0 ? `${userCount}` : "0"}</span>
         </div>
 
         {status.live ? (
@@ -334,12 +334,12 @@ function EmptyRoomsState({ onClear }) {
   return (
     <div style={{ textAlign: "center", padding: "48px 20px", background: "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)", borderRadius: 22, border: "1px dashed rgba(124,58,237,0.2)" }}>
       <p style={{ fontSize: 36, margin: "0 0 12px" }}>🏫</p>
-      <p style={{ fontWeight: 700, color: "#4a5a85", fontSize: 16, margin: "0 0 6px" }}>No rooms found</p>
+      <p style={{ fontWeight: 700, color: "var(--text-secondary)", fontSize: 16, margin: "0 0 6px" }}>No rooms found</p>
       <p style={{ fontSize: 14, color: "#7b88b8", margin: "0 0 22px", lineHeight: 1.6 }}>
         No active rooms match your search.<br />You could be the one to start the next session.
       </p>
       <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-        <button onClick={onClear} style={{ padding: "10px 20px", borderRadius: 12, border: "1px solid rgba(190,200,235,0.7)", background: "#fff", color: "#4a5a85", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+        <button onClick={onClear} style={{ padding: "10px 20px", borderRadius: 12, border: "1px solid rgba(190,200,235,0.7)", background: "var(--card-bg)", color: "var(--text-secondary)", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
           Show all rooms
         </button>
         <button onClick={() => navigate("/create-room")} style={{ padding: "10px 20px", borderRadius: 12, border: "none", background: "#7c3aed", color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 14px rgba(124,58,237,0.3)" }}>

@@ -54,7 +54,7 @@ export default function Login() {
         style={{
           width: "100%",
           maxWidth: "460px",
-          backgroundColor: "#ffffff",
+          backgroundColor: "var(--card-bg)",
           borderRadius: "28px",
           padding: "36px 36px 32px",
           boxShadow: "0 30px 70px rgba(0,0,0,0.08)",
@@ -64,7 +64,7 @@ export default function Login() {
           style={{
             fontFamily: "Georgia, serif",
             fontSize: "32px",
-            color: "#4a5a85",
+            color: "var(--text-secondary)",
             textAlign: "center",
             marginBottom: "6px",
           }}
@@ -76,7 +76,7 @@ export default function Login() {
           style={{
             textAlign: "center",
             fontSize: "15px",
-            color: "#4a5a85",
+            color: "var(--text-secondary)",
             marginBottom: "28px",
           }}
         >
@@ -179,7 +179,7 @@ export default function Login() {
               width: "90%",
               padding: "14px",
               borderRadius: "999px",
-              background: "#8a9bd6",
+              background: "var(--accent)",
               color: "#ffffff",
               fontSize: "15px",
               fontWeight: 500,
@@ -205,7 +205,7 @@ export default function Login() {
               marginTop: "12px",
               borderRadius: "999px",
               background: "#eef2ff",
-              color: "#4a5a85",
+              color: "var(--text-secondary)",
               fontSize: "15px",
               fontWeight: 500,
               textAlign: "center",
@@ -280,7 +280,7 @@ export default function Login() {
             <Link
               to="/register"
               style={{
-                color: "#4a5a85",
+                color: "var(--text-secondary)",
                 fontWeight: 500,
                 textDecoration: "none",
               }}

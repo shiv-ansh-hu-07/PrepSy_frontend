@@ -69,7 +69,7 @@ function MyRooms() {
           style={{
             fontFamily: "Georgia, serif",
             fontSize: "32px",
-            color: "#4a5a85",
+            color: "var(--text-secondary)",
           }}
         >
           Your Study Rooms
@@ -77,7 +77,7 @@ function MyRooms() {
         <p style={{
             fontFamily: "Georgia, serif",
             fontSize: "16px",
-            color: "#4a5a85",
+            color: "var(--text-secondary)",
           }}>
           Continue where you left off or join a new session
         </p>
@@ -156,7 +156,7 @@ function MyRooms() {
                 style={{
                   padding: "10px 18px",
                   borderRadius: "10px",
-                  backgroundColor: "#8a9bd6",        // HomesWork-like lavender blue
+                  backgroundColor: "var(--accent)",        // HomesWork-like lavender blue
                   color: "#ffffff",
                   fontSize: "14px",
                   fontWeight: 500,
@@ -172,7 +172,7 @@ function MyRooms() {
                   e.currentTarget.style.transform = "translateY(-1px)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "#8a9bd6";
+                  e.currentTarget.style.backgroundColor = "var(--accent)";
                   e.currentTarget.style.boxShadow =
                     "0 6px 20px rgba(138,155,214,0.45)";
                   e.currentTarget.style.transform = "translateY(0)";
@@ -187,7 +187,7 @@ function MyRooms() {
                   style={{
                     padding: "10px 18px",
                     borderRadius: "10px",
-                    backgroundColor: "#8a9bd6",        // HomesWork-like lavender blue
+                    backgroundColor: "var(--accent)",        // HomesWork-like lavender blue
                     color: "#ffffff",
                     fontSize: "14px",
                     fontWeight: 500,
@@ -203,7 +203,7 @@ function MyRooms() {
                     e.currentTarget.style.transform = "translateY(-1px)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "#8a9bd6";
+                    e.currentTarget.style.backgroundColor = "var(--accent)";
                     e.currentTarget.style.boxShadow =
                       "0 6px 20px rgba(138,155,214,0.45)";
                     e.currentTarget.style.transform = "translateY(0)";

@@ -41,7 +41,7 @@ export default function App() {
             #F4F5FA 100%
           )
         `,
-        color: "#2f3b63",
+        color: "var(--text-primary)",
       }}
     >
       {/* Navbar always visible */}
@@ -209,7 +209,7 @@ function RouteFallback() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        color: "#5f6fa3",
+        color: "var(--text-secondary)",
         fontSize: "15px",
       }}
     >

@@ -287,7 +287,7 @@ function FocusMonitorCard({ monitor, camEnabled, aiMonitorEnabled, onToggleAiMon
       </div>
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-        <span style={{ fontSize: 11, color: "#9aa4c7" }}>Face analysis</span>
+        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Face analysis</span>
         <button
           type="button"
           onClick={onToggleAiMonitor}
@@ -302,7 +302,7 @@ function FocusMonitorCard({ monitor, camEnabled, aiMonitorEnabled, onToggleAiMon
         >
           <div style={{
             position: "absolute", top: 2, left: aiMonitorEnabled ? 20 : 2,
-            width: 16, height: 16, borderRadius: "50%", background: "#fff",
+            width: 16, height: 16, borderRadius: "50%", background: "var(--card-bg)",
             boxShadow: "0 1px 2px rgba(0,0,0,0.2)", transition: "left 0.2s",
           }} />
         </button>
@@ -314,7 +314,7 @@ function FocusMonitorCard({ monitor, camEnabled, aiMonitorEnabled, onToggleAiMon
         </p>
       )}
 
-      <p style={{ margin: "0 0 12px", fontSize: 11, color: "#9aa4c7", lineHeight: 1.5 }}>
+      <p style={{ margin: "0 0 12px", fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5 }}>
         {info.text}
       </p>
 
@@ -340,10 +340,10 @@ function FocusMonitorCard({ monitor, camEnabled, aiMonitorEnabled, onToggleAiMon
             </span>
           </div>
           <div>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#2f3b63" }}>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
               {currentLevel.label}
             </p>
-            <p style={{ margin: "3px 0 0", fontSize: 11, color: "#9aa4c7" }}>
+            <p style={{ margin: "3px 0 0", fontSize: 11, color: "var(--text-muted)" }}>
               Updated every 5s
             </p>
           </div>
@@ -353,7 +353,7 @@ function FocusMonitorCard({ monitor, camEnabled, aiMonitorEnabled, onToggleAiMon
           <div style={styles.loadingDot(0)} />
           <div style={styles.loadingDot(120)} />
           <div style={styles.loadingDot(240)} />
-          <span style={{ fontSize: 12, color: "#9aa4c7", marginLeft: 4 }}>Loading models…</span>
+          <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: 4 }}>Loading models…</span>
         </div>
       ) : null}
 
@@ -367,10 +367,10 @@ function FocusMonitorCard({ monitor, camEnabled, aiMonitorEnabled, onToggleAiMon
 function FocusMiniBar({ sampleCount }) {
   return (
     <div style={{ marginTop: 12, padding: "8px 10px", background: "#f8f9ff", borderRadius: 10 }}>
-      <p style={{ margin: "0 0 4px", fontSize: 10, fontWeight: 600, color: "#9aa4c7", textTransform: "uppercase", letterSpacing: 0.5 }}>
+      <p style={{ margin: "0 0 4px", fontSize: 10, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.5 }}>
         This session
       </p>
-      <p style={{ margin: 0, fontSize: 12, color: "#4a5a85" }}>
+      <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)" }}>
         {sampleCount} readings captured · scores saved on exit
       </p>
     </div>
@@ -450,8 +450,8 @@ function FocusSummarySection({ data }) {
         </div>
 
         <div>
-          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#2f3b63" }}>{verdict}</p>
-          <p style={{ margin: "3px 0 0", fontSize: 12, color: "#6b78a0" }}>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>{verdict}</p>
+          <p style={{ margin: "3px 0 0", fontSize: 12, color: "var(--text-secondary)" }}>
             Engagement {data.engagementScore}% · {data.distractionCount} distraction{data.distractionCount === 1 ? "" : "s"}
             {data.offScreenSeconds > 0 ? ` · ${data.offScreenSeconds}s off-screen` : ""}
           </p>
@@ -479,7 +479,7 @@ function FocusSummarySection({ data }) {
           ].map(({ label, pct, color }) => (
             <div key={label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
               <span style={{ width: 8, height: 8, borderRadius: 2, background: color, display: "inline-block" }} />
-              <span style={{ fontSize: 10, color: "#6b78a0" }}>{label} {pct}%</span>
+              <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>{label} {pct}%</span>
             </div>
           ))}
         </div>
@@ -511,7 +511,7 @@ function Control({ icon, danger, active, onClick, disabled, title, alert }) {
         height: 48,
         borderRadius: 14,
         border: "1px solid #E5E7EB",
-        background: disabled ? "#F3F4F6" : danger ? "#F87171" : active ? "#8a9bd6" : "#FFFFFF",
+        background: disabled ? "#F3F4F6" : danger ? "#F87171" : active ? "var(--accent)" : "#FFFFFF",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -523,7 +523,7 @@ function Control({ icon, danger, active, onClick, disabled, title, alert }) {
         position: "relative",
       }}
     >
-      <IconComponent size={20} color={disabled ? "#94A3B8" : danger ? "#FFFFFF" : "#4a5a85"} />
+      <IconComponent size={20} color={disabled ? "#94A3B8" : danger ? "#FFFFFF" : "var(--text-secondary)"} />
       {alert && !disabled && <span style={styles.alertDot} />}
     </button>
   );
@@ -562,7 +562,7 @@ const modalStyles = {
   },
   card: {
     width: "min(100%, 460px)",
-    background: "#fff",
+    background: "var(--card-bg)",
     borderRadius: 20,
     padding: "28px 24px",
     boxShadow: "0 24px 70px rgba(0,0,0,0.22)",
@@ -581,8 +581,8 @@ const modalStyles = {
     color: "#6b7280",
     lineHeight: 1,
   },
-  tag: { fontSize: 11, color: "#8a9bd6", marginBottom: 6, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 },
-  title: { fontSize: 22, fontWeight: 700, color: "#2f3b63", margin: "0 0 8px", fontFamily: "Georgia, serif" },
+  tag: { fontSize: 11, color: "var(--accent)", marginBottom: 6, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 },
+  title: { fontSize: 22, fontWeight: 700, color: "var(--text-primary)", margin: "0 0 8px", fontFamily: "Georgia, serif" },
   text: { fontSize: 14, color: "#6b7280", marginBottom: 18 },
   stats: { display: "flex", gap: 10, justifyContent: "space-between" },
   stat: { flex: 1, background: "#f8f9ff", borderRadius: 12, padding: 12, border: "1px solid #e6e9f8" },
@@ -637,7 +637,7 @@ const styles = {
   sessionBadgeDesktop: {
     position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 20,
     fontSize: 12, color: "#6B7280", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 7,
-    background: "rgba(255,255,255,0.9)", padding: "8px 14px", borderRadius: 999,
+    background: "var(--card-bg)", padding: "8px 14px", borderRadius: 999,
     boxShadow: "0 8px 18px rgba(0,0,0,0.14)", backdropFilter: "blur(8px)",
   },
   liveDot: { width: 7, height: 7, borderRadius: "50%", background: "#22c55e" },
@@ -651,12 +651,12 @@ const styles = {
   bottomBarDesktop: {
     position: "absolute", left: "50%", bottom: 14, transform: "translateX(-50%)",
     width: "fit-content", maxWidth: "100%", display: "flex", gap: 8, flexWrap: "wrap",
-    justifyContent: "center", padding: "8px 14px", background: "#FFFFFF",
+    justifyContent: "center", padding: "8px 14px", background: "var(--card-bg)",
     borderRadius: 20, boxShadow: "0 8px 20px rgba(0,0,0,0.16)", zIndex: 30,
   },
   mobileControls: {
     width: "100%", display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center",
-    padding: "8px 12px", background: "#FFFFFF", borderRadius: 16,
+    padding: "8px 12px", background: "var(--card-bg)", borderRadius: 16,
     boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
   },
   sidePanel: (m) => ({
@@ -668,16 +668,16 @@ const styles = {
     borderRadius: 22, padding: 18, border: "1px solid #EEF2FF",
     boxShadow: "0 10px 22px rgba(0,0,0,0.06)", display: "flex", flexDirection: "column",
   },
-  cardTitle: { marginBottom: 10, fontSize: 15, fontWeight: 600, fontFamily: "Georgia, serif", color: "#4a5a85" },
+  cardTitle: { marginBottom: 10, fontSize: 15, fontWeight: 600, fontFamily: "Georgia, serif", color: "var(--text-secondary)" },
   notesBox: {
     flex: 1, minHeight: 140, borderRadius: 16, border: "1px solid #E5E7EB",
     padding: 12, marginTop: 6, marginBottom: 10, fontSize: 13,
     fontFamily: "'Inter', system-ui, -apple-system", color: "#6B7280",
-    resize: "vertical", background: "#FFFFFF",
+    resize: "vertical", background: "var(--card-bg)",
   },
   saveBtn: {
     display: "flex", alignItems: "center", justifyContent: "center", marginTop: 10,
-    height: 44, borderRadius: 14, border: "none", background: "#8a9bd6",
+    height: 44, borderRadius: 14, border: "none", background: "var(--accent)",
     color: "#FFFFFF", fontWeight: 600, cursor: "pointer",
     boxShadow: "0 8px 22px rgba(99,102,241,0.28)",
   },
@@ -689,7 +689,7 @@ const styles = {
     width: 6,
     height: 6,
     borderRadius: "50%",
-    background: "#9aa4c7",
+    background: "var(--text-muted)",
     animation: `pulse ${1.2}s ${delay}ms infinite`,
   }),
 };

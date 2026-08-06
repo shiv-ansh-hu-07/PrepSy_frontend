@@ -128,7 +128,7 @@ export default function Analytics() {
                     summary.currentStreakDays === 1 ? "" : "s"
                   }`}
                   detail={`Best streak: ${summary.bestStreakDays || 0} days`}
-                  accent="#8a9bd6"
+                  accent="var(--accent)"
                 />
                 <StatCard
                   icon={Clock3}
@@ -291,7 +291,7 @@ function Heatmap({ analytics }) {
                 color:
                   cell.minutes > 0 && getHeatLevel(cell.minutes, maxMinutes) >= 4
                     ? "#ffffff"
-                    : "#4a5a85",
+                    : "var(--text-secondary)",
               }}
             >
               {Number(cell.date.slice(-2))}
@@ -339,12 +339,12 @@ function WeeklyFocusChart({ entries, total, dailyGoalMinutes = 0 }) {
       {hasGoal && (
         <div style={{ display: "flex", gap: 12, marginBottom: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-            <span style={{ width: 10, height: 10, borderRadius: 2, background: "#8a9bd6", display: "inline-block" }} />
-            <span style={{ fontSize: 11, color: "#6b78a0" }}>Studied</span>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--accent)", display: "inline-block" }} />
+            <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>Studied</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
             <span style={{ width: 10, height: 10, borderRadius: 2, background: "#e6e9f8", border: "1px solid #c4cce8", display: "inline-block" }} />
-            <span style={{ fontSize: 11, color: "#6b78a0" }}>Goal</span>
+            <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>Goal</span>
           </div>
         </div>
       )}
@@ -382,7 +382,7 @@ function WeeklyFocusChart({ entries, total, dailyGoalMinutes = 0 }) {
                   bottom: hasGoal ? 0 : undefined,
                   left: hasGoal ? 0 : undefined,
                   right: hasGoal ? 0 : undefined,
-                  background: overGoal ? "#22c55e" : "#8a9bd6",
+                  background: overGoal ? "#22c55e" : "var(--accent)",
                   zIndex: 1,
                 }} />
               </div>
@@ -495,7 +495,7 @@ function Achievements({ achievements }) {
                   style={{
                     ...styles.progressFill,
                     width: `${progress}%`,
-                    background: achievement.achieved ? "#58a978" : "#8a9bd6",
+                    background: achievement.achieved ? "#58a978" : "var(--accent)",
                   }}
                 />
               </div>
@@ -609,7 +609,7 @@ function EmptyState({ text }) {
 function scoreToHeatColor(score) {
   if (score === null) return "#f0f3fc";
   if (score >= 80) return "#6f3bd6";
-  if (score >= 65) return "#8a9bd6";
+  if (score >= 65) return "var(--accent)";
   if (score >= 50) return "#b3bfe8";
   if (score >= 35) return "#d6dcf4";
   return "#eef2ff";
@@ -675,7 +675,7 @@ function PeakFocusHoursChart({ sessions }) {
             {visibleHours.map((h) => {
               const hasData = h.avgScore !== null;
               const bg = scoreToHeatColor(h.avgScore);
-              const textColor = hasData && h.avgScore >= 65 ? "#ffffff" : "#4a5a85";
+              const textColor = hasData && h.avgScore >= 65 ? "#ffffff" : "var(--text-secondary)";
               const isPeak = peakHour && h.hour === peakHour.hour;
               return (
                 <div
@@ -735,12 +735,12 @@ function PeakFocusHoursChart({ sessions }) {
 function MiniMetric({ label, value, unit, color }) {
   return (
     <div style={{ padding: "10px 12px", background: "#f8f9ff", borderRadius: 12, border: "1px solid #eef2ff" }}>
-      <p style={{ margin: "0 0 3px", fontSize: 10, color: "#9aa4c7", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4 }}>
+      <p style={{ margin: "0 0 3px", fontSize: 10, color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4 }}>
         {label}
       </p>
       <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color, lineHeight: 1 }}>
         {value}
-        {unit && <span style={{ fontSize: 11, color: "#9aa4c7", fontWeight: 400, marginLeft: 3 }}>{unit}</span>}
+        {unit && <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400, marginLeft: 3 }}>{unit}</span>}
       </p>
     </div>
   );
@@ -799,7 +799,7 @@ function DistractionBreakdown({ sessions }) {
             </div>
           )}
 
-          <p style={{ margin: "0 0 7px", fontSize: 11, fontWeight: 600, color: "#9aa4c7", textTransform: "uppercase", letterSpacing: 0.5 }}>
+          <p style={{ margin: "0 0 7px", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.5 }}>
             Avg focus quality per session
           </p>
           <div style={{ display: "flex", borderRadius: 999, overflow: "hidden", height: 10, marginBottom: 6 }}>
@@ -815,7 +815,7 @@ function DistractionBreakdown({ sessions }) {
             ].map(({ label, pct, color }) => (
               <div key={label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <span style={{ width: 8, height: 8, borderRadius: 2, background: color, display: "inline-block" }} />
-                <span style={{ fontSize: 11, color: "#6b78a0" }}>{label} {pct}%</span>
+                <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{label} {pct}%</span>
               </div>
             ))}
           </div>
@@ -824,7 +824,7 @@ function DistractionBreakdown({ sessions }) {
             <MiniMetric label="Avg distractions" value={stats.avgDistractions} unit="/session" color="#f59e0b" />
             <MiniMetric label="Off-screen time" value={stats.avgOffScreenMin} unit="m/session" color="#ef4444" />
             <MiniMetric label="Avg engagement" value={`${stats.avgEngagement}%`} color="#22c55e" />
-            <MiniMetric label="Sessions analyzed" value={sessions.length} color="#8a9bd6" />
+            <MiniMetric label="Sessions analyzed" value={sessions.length} color="var(--accent)" />
           </div>
         </>
       )}
@@ -839,7 +839,7 @@ function FocusOverviewPanel({ focusData }) {
     : focusData.avgFocusScore >= 50 ? "#f59e0b" : "#ef4444";
 
   const trendColor = focusData?.trend === "improving" ? "#22c55e"
-    : focusData?.trend === "declining" ? "#ef4444" : "#9aa4c7";
+    : focusData?.trend === "declining" ? "#ef4444" : "var(--text-muted)";
   const trendText = focusData?.trend === "improving" ? "↑ Improving this week"
     : focusData?.trend === "declining" ? "↓ Needs attention"
     : focusData?.trend === "stable" ? "→ Holding steady" : null;
@@ -864,8 +864,8 @@ function FocusOverviewPanel({ focusData }) {
               <span style={{ fontSize: 9, color: scoreColor, fontWeight: 600, opacity: 0.8 }}>/100</span>
             </div>
             <div>
-              <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#2f3b63" }}>Avg Focus Score</p>
-              <p style={{ margin: "3px 0 4px", fontSize: 12, color: "#6b78a0" }}>
+              <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "var(--text-primary)" }}>Avg Focus Score</p>
+              <p style={{ margin: "3px 0 4px", fontSize: 12, color: "var(--text-secondary)" }}>
                 {focusData.totalAnalyzedSessions} session{focusData.totalAnalyzedSessions === 1 ? "" : "s"} analysed ·
                 Best: {focusData.bestFocusScore}/100
               </p>
@@ -878,14 +878,14 @@ function FocusOverviewPanel({ focusData }) {
           </div>
 
           <div style={{ marginBottom: 6 }}>
-            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 600, color: "#9aa4c7", textTransform: "uppercase", letterSpacing: 0.5 }}>
+            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.5 }}>
               Avg engagement
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ flex: 1, height: 6, borderRadius: 999, background: "#e8edf9", overflow: "hidden" }}>
                 <div style={{ height: "100%", width: `${focusData.avgEngagementScore}%`, background: "linear-gradient(90deg, #7c3aed, #a78bfa)", borderRadius: 999 }} />
               </div>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "#4a5a85", flexShrink: 0 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", flexShrink: 0 }}>
                 {focusData.avgEngagementScore}%
               </span>
             </div>
@@ -895,7 +895,7 @@ function FocusOverviewPanel({ focusData }) {
             <p style={{ margin: "0 0 4px", fontSize: 11, fontWeight: 600, color: "#6f3bd6", textTransform: "uppercase", letterSpacing: 0.5 }}>
               How it works
             </p>
-            <p style={{ margin: 0, fontSize: 12, color: "#6b78a0", lineHeight: 1.55 }}>
+            <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.55 }}>
               Face detection tracks your head orientation, eye openness, and expressions every 5 seconds while your camera is on. Scores improve as you build consistent focused study habits.
             </p>
           </div>
@@ -919,10 +919,10 @@ function FocusSessionList({ sessions }) {
             <article key={s.id} style={{ borderRadius: 13, border: "1px solid rgba(190,200,235,0.44)", background: "rgba(248,250,255,0.78)", padding: "11px 13px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <p style={{ margin: "0 0 2px", fontSize: 13, fontWeight: 600, color: "#2f3b63", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <p style={{ margin: "0 0 2px", fontSize: 13, fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {s.roomName || s.roomId}
                   </p>
-                  <p style={{ margin: 0, fontSize: 11, color: "#7a89b8" }}>
+                  <p style={{ margin: 0, fontSize: 11, color: "var(--text-secondary)" }}>
                     {formatDateTime(s.sessionDate)} · {s.durationMinutes}m
                   </p>
                   {/* High/Med/Low bar */}
@@ -931,7 +931,7 @@ function FocusSessionList({ sessions }) {
                     {s.medFocusPercent > 0 && <div style={{ width: `${s.medFocusPercent}%`, background: "#f59e0b" }} />}
                     {s.lowFocusPercent > 0 && <div style={{ width: `${s.lowFocusPercent}%`, background: "#ef4444" }} />}
                   </div>
-                  <p style={{ margin: "4px 0 0", fontSize: 10, color: "#9aa4c7" }}>
+                  <p style={{ margin: "4px 0 0", fontSize: 10, color: "var(--text-muted)" }}>
                     {s.distractionCount} distraction{s.distractionCount === 1 ? "" : "s"}
                     {s.offScreenSeconds > 0 ? ` · ${s.offScreenSeconds}s off-screen` : ""}
                   </p>
@@ -940,7 +940,7 @@ function FocusSessionList({ sessions }) {
                   <span style={{ display: "block", fontSize: 18, fontWeight: 800, color: scoreColor(s.focusScore), lineHeight: 1 }}>
                     {s.focusScore}
                   </span>
-                  <span style={{ display: "block", fontSize: 9, color: "#9aa4c7", fontWeight: 500, marginTop: 1 }}>FOCUS</span>
+                  <span style={{ display: "block", fontSize: 9, color: "var(--text-muted)", fontWeight: 500, marginTop: 1 }}>FOCUS</span>
                 </div>
               </div>
             </article>
@@ -961,7 +961,7 @@ function buildMonthCells(days) {
 const heatPalette = {
   1: "#d9e0f7",
   2: "#b9c6ef",
-  3: "#8a9bd6",
+  3: "var(--accent)",
   4: "#697cc3",
   5: "#46598f",
 };
@@ -1010,7 +1010,7 @@ const analyticsTransitionStyles = `
 const styles = {
   page: {
     minHeight: "calc(100vh - 76px)",
-    background: "radial-gradient(ellipse at top, #eef1fb 0%, #f3f5fc 48%, #f8f9fe 100%)",
+    background: "var(--page-bg)",
     padding: "32px 24px 56px",
   },
   layout: (isNarrow) => ({
@@ -1036,7 +1036,7 @@ const styles = {
   },
   eyebrow: {
     margin: 0,
-    color: "#7a89b8",
+    color: "var(--text-secondary)",
     fontWeight: 600,
     fontSize: 11,
     letterSpacing: "0.04em",
@@ -1045,14 +1045,14 @@ const styles = {
   title: {
     margin: "5px 0 5px",
     fontFamily: "Georgia, serif",
-    color: "#3f4f7a",
+    color: "var(--text-primary)",
     fontSize: 30,
     lineHeight: 1.1,
     fontWeight: 400,
   },
   subtitle: {
     margin: 0,
-    color: "#6b78a0",
+    color: "var(--text-secondary)",
     fontSize: 13,
     lineHeight: 1.6,
     fontWeight: 400,
@@ -1061,8 +1061,8 @@ const styles = {
     height: 36,
     borderRadius: 12,
     border: "1px solid rgba(190,200,235,0.62)",
-    background: "rgba(255,255,255,0.82)",
-    color: "#4a5a85",
+    background: "var(--card-bg)",
+    color: "var(--text-secondary)",
     display: "inline-flex",
     alignItems: "center",
     gap: 7,
@@ -1079,7 +1079,7 @@ const styles = {
   },
   statCard: {
     borderRadius: 18,
-    border: "1px solid rgba(190,200,235,0.52)",
+    border: "1px solid var(--card-border)",
     background: "rgba(255,255,255,0.76)",
     boxShadow: "0 8px 24px rgba(74,90,133,0.08)",
     padding: "14px 16px",
@@ -1111,21 +1111,21 @@ const styles = {
   },
   statValue: {
     margin: 0,
-    color: "#2f3b63",
+    color: "var(--text-primary)",
     fontSize: 22,
     lineHeight: 1.1,
     fontWeight: 600,
   },
   statDetail: {
     margin: 0,
-    color: "#7a89b8",
+    color: "var(--text-secondary)",
     fontSize: 11,
     lineHeight: 1.35,
     fontWeight: 400,
   },
   panel: {
     borderRadius: 20,
-    border: "1px solid rgba(190,200,235,0.52)",
+    border: "1px solid var(--card-border)",
     background: "rgba(255,255,255,0.78)",
     boxShadow: "0 10px 32px rgba(74,90,133,0.08)",
     backdropFilter: "blur(12px)",
@@ -1135,7 +1135,7 @@ const styles = {
   },
   analyticsTabsShell: {
     borderRadius: 20,
-    border: "1px solid rgba(190,200,235,0.52)",
+    border: "1px solid var(--card-border)",
     background: "rgba(255,255,255,0.58)",
     boxShadow: "0 10px 32px rgba(74,90,133,0.06)",
     padding: 16,
@@ -1152,7 +1152,7 @@ const styles = {
     borderRadius: 13,
     padding: 4,
     background: "#eef2ff",
-    border: "1px solid rgba(190,200,235,0.5)",
+    border: "1px solid var(--card-border)",
     overflow: "hidden",
   }),
   tabIndicator: (activeIndex, count = 5) => ({
@@ -1162,7 +1162,7 @@ const styles = {
     left: `calc(${activeIndex * (100 / count)}% + ${4 - activeIndex * (8 / count)}px)`,
     width: `calc(${100 / count}% - 2px)`,
     borderRadius: 9,
-    background: "#ffffff",
+    background: "var(--card-bg)",
     boxShadow: "0 4px 14px rgba(95,111,163,0.12)",
     transition: "left 0.24s ease",
   }),
@@ -1173,7 +1173,7 @@ const styles = {
     border: "none",
     borderRadius: 10,
     background: "transparent",
-    color: active ? "#3f4f7a" : "#6b78a0",
+    color: active ? "var(--text-primary)" : "var(--text-secondary)",
     fontWeight: active ? 600 : 400,
     fontSize: 13,
     cursor: "pointer",
@@ -1219,12 +1219,12 @@ const styles = {
   },
   sectionTitle: {
     margin: 0,
-    color: "#3f4f7a",
+    color: "var(--text-primary)",
     fontSize: 14,
     fontWeight: 600,
   },
   sectionMeta: {
-    color: "#7a89b8",
+    color: "var(--text-secondary)",
     fontSize: 12,
     fontWeight: 400,
     flexShrink: 0,
@@ -1234,7 +1234,7 @@ const styles = {
     gridTemplateColumns: "repeat(7, minmax(28px, 1fr))",
     gap: 8,
     marginBottom: 8,
-    color: "#7a89b8",
+    color: "var(--text-secondary)",
     fontSize: 11,
     fontWeight: 500,
     textAlign: "center",
@@ -1253,7 +1253,7 @@ const styles = {
     justifyContent: "center",
     fontSize: 11,
     fontWeight: 400,
-    border: "1px solid rgba(255,255,255,0.68)",
+    border: "1px solid var(--card-bg)",
   },
   emptyHeatCell: {
     aspectRatio: "1 / 1",
@@ -1273,7 +1273,7 @@ const styles = {
     width: 11,
     height: 11,
     borderRadius: 4,
-    border: "1px solid rgba(190,200,235,0.45)",
+    border: "1px solid var(--card-border)",
   },
   chartWrap: {
     height: 200,
@@ -1313,7 +1313,7 @@ const styles = {
   chartBar: {
     width: "100%",
     borderRadius: "10px 10px 0 0",
-    background: "linear-gradient(180deg, #8a9bd6, #5f6fa3)",
+    background: "linear-gradient(180deg, var(--accent), var(--text-secondary))",
     boxShadow: "0 4px 12px rgba(95,111,163,0.22)",
   },
   chartLabel: {
@@ -1340,7 +1340,7 @@ const styles = {
     display: "block",
     flex: 1,
     margin: 0,
-    color: "#2f3b63",
+    color: "var(--text-primary)",
     fontSize: 13,
     fontWeight: 500,
     minWidth: 0,
@@ -1349,7 +1349,7 @@ const styles = {
     whiteSpace: "nowrap",
   },
   rowMeta: {
-    color: "#4a5a85",
+    color: "var(--text-secondary)",
     fontSize: 12,
     fontWeight: 500,
     flexShrink: 0,
@@ -1364,11 +1364,11 @@ const styles = {
   progressFill: {
     height: "100%",
     borderRadius: 999,
-    background: "linear-gradient(90deg, #8a9bd6, #5f6fa3)",
+    background: "linear-gradient(90deg, var(--accent), var(--text-secondary))",
   },
   smallMuted: {
     margin: 0,
-    color: "#7a89b8",
+    color: "var(--text-secondary)",
     fontSize: 11,
     lineHeight: 1.45,
     fontWeight: 400,
@@ -1394,7 +1394,7 @@ const styles = {
     width: 82,
     height: 82,
     borderRadius: "50%",
-    background: "#ffffff",
+    background: "var(--card-bg)",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -1405,13 +1405,13 @@ const styles = {
   donutScore: {
     fontSize: 19,
     fontWeight: 600,
-    color: "#2f3b63",
+    color: "var(--text-primary)",
     lineHeight: 1,
   },
   donutLabel: {
     fontSize: 9,
     fontWeight: 500,
-    color: "#7a89b8",
+    color: "var(--text-secondary)",
     textTransform: "uppercase",
     letterSpacing: "0.04em",
   },
@@ -1420,7 +1420,7 @@ const styles = {
   },
   bigSentence: {
     margin: 0,
-    color: "#2f3b63",
+    color: "var(--text-primary)",
     fontSize: 13,
     lineHeight: 1.6,
     fontWeight: 400,
@@ -1456,12 +1456,12 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    color: achieved ? "#3e955d" : "#7a89b8",
+    color: achieved ? "#3e955d" : "var(--text-secondary)",
     background: achieved ? "#dff3e7" : "#eef2ff",
   }),
   achievementTitle: {
     margin: 0,
-    color: "#2f3b63",
+    color: "var(--text-primary)",
     fontSize: 12,
     lineHeight: 1.35,
     fontWeight: 600,
@@ -1488,7 +1488,7 @@ const styles = {
   topicName: {
     display: "block",
     flex: 1,
-    color: "#2f3b63",
+    color: "var(--text-primary)",
     fontSize: 13,
     fontWeight: 500,
     minWidth: 0,
@@ -1522,7 +1522,7 @@ const styles = {
     display: "grid",
     gap: 2,
     justifyItems: "end",
-    color: "#4a5a85",
+    color: "var(--text-secondary)",
     fontSize: 11,
     fontWeight: 400,
     flexShrink: 0,
@@ -1536,7 +1536,7 @@ const styles = {
   tag: {
     borderRadius: 999,
     background: "#eef2ff",
-    color: "#5f6fa3",
+    color: "var(--text-secondary)",
     padding: "3px 7px",
     fontSize: 10,
     fontWeight: 500,
@@ -1549,7 +1549,7 @@ const styles = {
   },
   emptyState: {
     margin: 0,
-    color: "#7a89b8",
+    color: "var(--text-secondary)",
     fontSize: 13,
     lineHeight: 1.55,
     fontWeight: 400,

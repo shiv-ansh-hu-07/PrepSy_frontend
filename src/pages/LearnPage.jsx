@@ -237,11 +237,11 @@ export default function LearnPage() {
           {loading && (
             <div style={{ ...card, textAlign: "center", padding: "44px 24px" }}>
               <div style={{ fontSize: 42, marginBottom: 18 }}>🤖</div>
-              <p style={{ margin: 0, fontWeight: 800, color: "#3f4f7a", fontSize: 17 }}>
+              <p style={{ margin: 0, fontWeight: 800, color: "var(--text-primary)", fontSize: 17 }}>
                 Running AI analysis
               </p>
               <p style={{ margin: "10px 0 0", color: "var(--text-secondary)", fontSize: 14 }}>{stepMsg}</p>
-              <p style={{ margin: "6px 0 0", color: "#9aa3c0", fontSize: 12 }}>
+              <p style={{ margin: "6px 0 0", color: "var(--text-muted)", fontSize: 12 }}>
                 This usually takes 30–60 seconds
               </p>
             </div>
@@ -306,7 +306,7 @@ export default function LearnPage() {
                       key={i}
                       style={{
                         borderRadius: 14,
-                        border: "1px solid rgba(190,200,235,0.5)",
+                        border: "1px solid var(--card-border)",
                         overflow: "hidden",
                       }}
                     >
@@ -361,11 +361,11 @@ export default function LearnPage() {
                         <div
                           style={{
                             padding: "12px 16px 14px 54px",
-                            borderTop: "1px solid rgba(190,200,235,0.4)",
+                            borderTop: "1px solid var(--card-border)",
                             background: "rgba(248,249,255,0.5)",
                           }}
                         >
-                          <p style={{ margin: 0, fontSize: 13, color: "#5e6c92", lineHeight: 1.6 }}>
+                          <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
                             {topic.description}
                           </p>
                         </div>
@@ -394,7 +394,7 @@ export default function LearnPage() {
                             width: 36,
                             height: 36,
                             borderRadius: "50%",
-                            background: "linear-gradient(135deg, #8a9bd6, #6f7fc0)",
+                            background: "linear-gradient(135deg, var(--accent), #6f7fc0)",
                             color: "#fff",
                             display: "flex",
                             alignItems: "center",
@@ -552,7 +552,7 @@ export default function LearnPage() {
                           {schedule.dropped.map((v, i) => (
                             <div key={i} style={{ fontSize: 12.5, color: "var(--text-secondary)" }}>
                               • {v.title}{" "}
-                              <span style={{ color: "#9aa3c0" }}>
+                              <span style={{ color: "var(--text-muted)" }}>
                                 ({v.durationMin}m — {v.reason || "optional"})
                               </span>
                             </div>
@@ -574,7 +574,7 @@ export default function LearnPage() {
                             key={d.day}
                             style={{
                               borderRadius: 12,
-                              border: "1px solid rgba(190,200,235,0.5)",
+                              border: "1px solid var(--card-border)",
                               background: "rgba(248,249,255,0.7)",
                               padding: "10px 14px",
                             }}
@@ -583,8 +583,8 @@ export default function LearnPage() {
                               Day {d.day} · ~{d.studyHours}h
                             </p>
                             {d.videos.map((v, j) => (
-                              <div key={j} style={{ fontSize: 12.5, color: "#5e6c92", padding: "2px 0" }}>
-                                • {v.title} <span style={{ color: "#9aa3c0" }}>({v.durationMin}m)</span>
+                              <div key={j} style={{ fontSize: 12.5, color: "var(--text-secondary)", padding: "2px 0" }}>
+                                • {v.title} <span style={{ color: "var(--text-muted)" }}>({v.durationMin}m)</span>
                               </div>
                             ))}
                           </div>
@@ -621,7 +621,7 @@ export default function LearnPage() {
                   <select
                     value={cohortMaxSize}
                     onChange={(e) => setCohortMaxSize(Number(e.target.value))}
-                    style={{ height: 46, borderRadius: 12, border: "1.5px solid rgba(138,155,214,0.4)", background: "#fff", padding: "0 14px", fontSize: 14, color: "var(--text-primary)", outline: "none" }}
+                    style={{ height: 46, borderRadius: 12, border: "1.5px solid rgba(138,155,214,0.4)", background: "var(--card-bg)", padding: "0 14px", fontSize: 14, color: "var(--text-primary)", outline: "none" }}
                   >
                     {[5, 10, 15, 20, 30].map((n) => (
                       <option key={n} value={n}>
@@ -651,7 +651,7 @@ export default function LearnPage() {
                         padding: "7px 14px", borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: "pointer",
                         border: `1.5px solid ${startMode === mode ? "var(--accent)" : "rgba(138,155,214,0.4)"}`,
                         background: startMode === mode ? "rgba(138,155,214,0.16)" : "#fff",
-                        color: startMode === mode ? "#3f4f7a" : "var(--text-secondary)",
+                        color: startMode === mode ? "var(--text-primary)" : "var(--text-secondary)",
                       }}
                     >
                       {mode === "NOW" ? "Start now" : "Schedule for later"}
@@ -662,11 +662,11 @@ export default function LearnPage() {
                       type="datetime-local"
                       value={cohortStart}
                       onChange={(e) => setCohortStart(e.target.value)}
-                      style={{ height: 42, borderRadius: 10, border: "1.5px solid rgba(138,155,214,0.4)", background: "#fff", padding: "0 12px", fontSize: 13, color: "var(--text-primary)", outline: "none" }}
+                      style={{ height: 42, borderRadius: 10, border: "1.5px solid rgba(138,155,214,0.4)", background: "var(--card-bg)", padding: "0 12px", fontSize: 13, color: "var(--text-primary)", outline: "none" }}
                     />
                   )}
                 </div>
-                <p style={{ margin: "8px 0 0", fontSize: 12, color: schedule?.days?.length ? "var(--text-secondary)" : "#9aa3c0" }}>
+                <p style={{ margin: "8px 0 0", fontSize: 12, color: schedule?.days?.length ? "var(--text-secondary)" : "var(--text-muted)" }}>
                   {schedule?.days?.length
                     ? `${schedule.days.length} daily sessions will be created from your schedule; members join the same room each day.`
                     : "Tip: generate a schedule above to auto-create daily sessions for this cohort."}

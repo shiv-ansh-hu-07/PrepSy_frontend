@@ -21,7 +21,7 @@ const input = {
   width: "100%",
   borderRadius: "16px",
   border: "1px solid rgba(190,200,235,0.75)",
-  background: "#fff",
+  background: "var(--card-bg)",
   color: "#4c5d8a",
   padding: "13px 14px",
   fontSize: "14px",
@@ -33,7 +33,7 @@ const primaryBtn = {
   border: "none",
   borderRadius: "999px",
   padding: "11px 18px",
-  background: "#8a9bd6",
+  background: "var(--accent)",
   color: "#fff",
   fontSize: "14px",
   fontWeight: 600,
@@ -47,7 +47,7 @@ const secondaryBtn = {
   borderRadius: "999px",
   padding: "10px 14px",
   background: "#eef2ff",
-  color: "#5f6fa3",
+  color: "var(--text-secondary)",
   fontSize: "13px",
   cursor: "pointer",
   textDecoration: "none",
@@ -343,13 +343,13 @@ export default function Community() {
           }}
         >
           <div style={{ maxWidth: "760px" }}>
-            <p style={{ margin: 0, fontSize: "12px", fontWeight: 600, color: "#6b78a0" }}>
+            <p style={{ margin: 0, fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)" }}>
               PrepSy Community
             </p>
-            <h1 style={{ margin: "8px 0 10px", fontFamily: "Georgia, serif", fontSize: isNarrow ? "30px" : "38px", lineHeight: 1.12, color: "#4a5a85" }}>
+            <h1 style={{ margin: "8px 0 10px", fontFamily: "Georgia, serif", fontSize: isNarrow ? "30px" : "38px", lineHeight: 1.12, color: "var(--text-secondary)" }}>
               Discuss, share opportunities, and help each other grow.
             </h1>
-            <p style={{ margin: 0, color: "#6b78a0", lineHeight: 1.65, fontSize: "15px" }}>
+            <p style={{ margin: 0, color: "var(--text-secondary)", lineHeight: 1.65, fontSize: "15px" }}>
               Browse posts, open opportunities, ask questions, and manage your own posts from one place.
             </p>
           </div>
@@ -401,10 +401,10 @@ export default function Community() {
         >
           <aside style={{ display: "grid", gap: "16px" }}>
             <div style={{ ...card, padding: "20px" }}>
-              <p style={{ margin: 0, fontSize: "12px", fontWeight: 600, color: "#6b78a0" }}>Popular tags</p>
+              <p style={{ margin: 0, fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)" }}>Popular tags</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "12px" }}>
                 {visibleTags.length === 0 ? (
-                  <span style={{ color: "#6b78a0", fontSize: "14px" }}>No tags yet.</span>
+                  <span style={{ color: "var(--text-secondary)", fontSize: "14px" }}>No tags yet.</span>
                 ) : (
                   visibleTags.map((tag) => (
                     <button
@@ -414,8 +414,8 @@ export default function Community() {
                       style={{
                         ...secondaryBtn,
                         padding: "7px 12px",
-                        background: activeTag === tag ? "#8a9bd6" : "#eef2ff",
-                        color: activeTag === tag ? "#fff" : "#5f6fa3",
+                        background: activeTag === tag ? "var(--accent)" : "#eef2ff",
+                        color: activeTag === tag ? "#fff" : "var(--text-secondary)",
                         border: "none",
                       }}
                     >
@@ -430,8 +430,8 @@ export default function Community() {
               <div style={{ ...card, padding: "20px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "center", marginBottom: "12px" }}>
                   <div>
-                    <p style={{ margin: 0, fontSize: "12px", fontWeight: 600, color: "#6b78a0" }}>Your posts</p>
-                    <h2 style={{ margin: "4px 0 0", fontSize: "24px", color: "#4a5a85" }}>Manage posts</h2>
+                    <p style={{ margin: 0, fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)" }}>Your posts</p>
+                    <h2 style={{ margin: "4px 0 0", fontSize: "24px", color: "var(--text-secondary)" }}>Manage posts</h2>
                   </div>
                   <button type="button" onClick={openCreateModal} style={{ ...secondaryBtn, fontWeight: 600 }}>
                     New
@@ -439,21 +439,21 @@ export default function Community() {
                 </div>
 
                 {myPostsLoading ? (
-                  <p style={{ margin: 0, color: "#6b78a0" }}>Loading your posts...</p>
+                  <p style={{ margin: 0, color: "var(--text-secondary)" }}>Loading your posts...</p>
                 ) : myPosts.length === 0 ? (
-                  <p style={{ margin: 0, color: "#6b78a0" }}>Your created posts will appear here.</p>
+                  <p style={{ margin: 0, color: "var(--text-secondary)" }}>Your created posts will appear here.</p>
                 ) : (
                   <div style={{ display: "grid", gap: "10px" }}>
                     {myPosts.map((post) => (
-                      <div key={post.id} style={{ border: "1px solid rgba(190,200,235,0.5)", borderRadius: "16px", padding: "14px" }}>
+                      <div key={post.id} style={{ border: "1px solid var(--card-border)", borderRadius: "16px", padding: "14px" }}>
                         <button
                           type="button"
                           onClick={() => setSelectedPostId(post.id)}
-                          style={{ border: "none", background: "transparent", padding: 0, color: "#4a5a85", fontSize: "15px", fontWeight: 700, cursor: "pointer", textAlign: "left" }}
+                          style={{ border: "none", background: "transparent", padding: 0, color: "var(--text-secondary)", fontSize: "15px", fontWeight: 700, cursor: "pointer", textAlign: "left" }}
                         >
                           {post.title}
                         </button>
-                        <p style={{ margin: "6px 0 10px", fontSize: "12px", color: "#7a89b8" }}>
+                        <p style={{ margin: "6px 0 10px", fontSize: "12px", color: "var(--text-secondary)" }}>
                           {formatDate(post.createdAt)}
                         </p>
                         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
@@ -472,15 +472,15 @@ export default function Community() {
             ) : null}
 
             <div style={{ ...card, padding: "20px" }}>
-              <p style={{ margin: 0, fontSize: "12px", fontWeight: 600, color: "#6b78a0" }}>Community feed</p>
-              <h2 style={{ margin: "4px 0 12px", fontSize: "24px", color: "#4a5a85" }}>All posts</h2>
+              <p style={{ margin: 0, fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)" }}>Community feed</p>
+              <h2 style={{ margin: "4px 0 12px", fontSize: "24px", color: "var(--text-secondary)" }}>All posts</h2>
 
               {listLoading ? (
-                <p style={{ margin: 0, color: "#6b78a0" }}>Loading discussions...</p>
+                <p style={{ margin: 0, color: "var(--text-secondary)" }}>Loading discussions...</p>
               ) : listError ? (
                 <p style={{ margin: 0, color: "#b44b3c" }}>{listError}</p>
               ) : posts.length === 0 ? (
-                <p style={{ margin: 0, color: "#6b78a0" }}>No posts found.</p>
+                <p style={{ margin: 0, color: "var(--text-secondary)" }}>No posts found.</p>
               ) : (
                 <div style={{ display: "grid", gap: "10px" }}>
                   {posts.map((post) => {
@@ -493,7 +493,7 @@ export default function Community() {
                         style={{
                           width: "100%",
                           textAlign: "left",
-                          border: `1px solid ${selected ? "rgba(138,155,214,0.36)" : "rgba(190,200,235,0.5)"}`,
+                          border: `1px solid ${selected ? "rgba(138,155,214,0.36)" : "var(--card-border)"}`,
                           background: selected ? "rgba(138,155,214,0.14)" : "rgba(255,255,255,0.76)",
                           borderRadius: "18px",
                           padding: "16px",
@@ -503,14 +503,14 @@ export default function Community() {
                       >
                         <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", alignItems: "flex-start" }}>
                           <div style={{ minWidth: 0 }}>
-                            <strong style={{ display: "block", color: "#4a5a85", fontSize: "16px", lineHeight: 1.4 }}>
+                            <strong style={{ display: "block", color: "var(--text-secondary)", fontSize: "16px", lineHeight: 1.4 }}>
                               {post.title}
                             </strong>
-                            <p style={{ margin: "6px 0 0", color: "#7a89b8", fontSize: "12px" }}>
+                            <p style={{ margin: "6px 0 0", color: "var(--text-secondary)", fontSize: "12px" }}>
                               {post.author?.name} | {formatDate(post.createdAt)}
                             </p>
                           </div>
-                          <span style={{ minWidth: "28px", height: "28px", borderRadius: "999px", background: "#eef2ff", color: "#5f6fa3", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, flexShrink: 0 }}>
+                          <span style={{ minWidth: "28px", height: "28px", borderRadius: "999px", background: "#eef2ff", color: "var(--text-secondary)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, flexShrink: 0 }}>
                             {post.replyCount}
                           </span>
                         </div>
@@ -519,7 +519,7 @@ export default function Community() {
                           {(post.tags || [])
                             .filter((tag) => !looksLikeUrl(tag))
                             .map((tag) => (
-                              <span key={`${post.id}-${tag}`} style={{ background: "#eef2ff", color: "#5f6fa3", borderRadius: "999px", padding: "5px 10px", fontSize: "12px" }}>
+                              <span key={`${post.id}-${tag}`} style={{ background: "#eef2ff", color: "var(--text-secondary)", borderRadius: "999px", padding: "5px 10px", fontSize: "12px" }}>
                                 #{tag}
                               </span>
                             ))}
@@ -546,17 +546,17 @@ export default function Community() {
           <main style={card}>
             <div style={{ padding: isNarrow ? "22px 20px" : "28px" }}>
               {threadLoading ? (
-                <p style={{ margin: 0, color: "#6b78a0" }}>Loading post...</p>
+                <p style={{ margin: 0, color: "var(--text-secondary)" }}>Loading post...</p>
               ) : replyError && !selectedPost ? (
                 <p style={{ margin: 0, color: "#b44b3c" }}>{replyError}</p>
               ) : !selectedPost ? (
-                <p style={{ margin: 0, color: "#6b78a0" }}>Select a post from the left to view it here.</p>
+                <p style={{ margin: 0, color: "var(--text-secondary)" }}>Select a post from the left to view it here.</p>
               ) : (
                 <>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", flexWrap: "wrap", alignItems: "flex-start" }}>
                     <div>
-                      <p style={{ margin: 0, fontSize: "12px", fontWeight: 600, color: "#6b78a0" }}>Selected post</p>
-                      <h2 style={{ margin: "8px 0 12px", fontFamily: "Georgia, serif", fontSize: isNarrow ? "30px" : "40px", lineHeight: 1.14, color: "#4a5a85" }}>
+                      <p style={{ margin: 0, fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)" }}>Selected post</p>
+                      <h2 style={{ margin: "8px 0 12px", fontFamily: "Georgia, serif", fontSize: isNarrow ? "30px" : "40px", lineHeight: 1.14, color: "var(--text-secondary)" }}>
                         {selectedPost.title}
                       </h2>
                     </div>
@@ -586,12 +586,12 @@ export default function Community() {
                     {selectedPost.content}
                   </p>
 
-                  <p style={{ margin: "16px 0 0", color: "#7a89b8", fontSize: "13px" }}>
+                  <p style={{ margin: "16px 0 0", color: "var(--text-secondary)", fontSize: "13px" }}>
                     Posted by {selectedPost.author?.name} on {formatDate(selectedPost.createdAt)}
                   </p>
 
                   <div style={{ marginTop: "24px", paddingTop: "20px", borderTop: "1px solid rgba(190,200,235,0.55)" }}>
-                    <h3 style={{ margin: "0 0 14px", color: "#4a5a85", fontSize: "20px" }}>
+                    <h3 style={{ margin: "0 0 14px", color: "var(--text-secondary)", fontSize: "20px" }}>
                       Replies ({selectedPost.replies?.length || 0})
                     </h3>
 
@@ -600,8 +600,8 @@ export default function Community() {
                         {selectedPost.replies.map((reply) => (
                           <article key={reply.id} style={{ borderRadius: "18px", background: "rgba(244,247,255,0.85)", border: "1px solid rgba(190,200,235,0.55)", padding: "14px 16px" }}>
                             <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", flexWrap: "wrap", marginBottom: "8px" }}>
-                              <strong style={{ color: "#4a5a85" }}>{reply.author?.name}</strong>
-                              <span style={{ fontSize: "12px", color: "#7a89b8" }}>{formatDate(reply.createdAt)}</span>
+                              <strong style={{ color: "var(--text-secondary)" }}>{reply.author?.name}</strong>
+                              <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>{formatDate(reply.createdAt)}</span>
                             </div>
                             <p style={{ margin: 0, color: "#4c5d8a", lineHeight: 1.7, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
                               {reply.content}
@@ -610,11 +610,11 @@ export default function Community() {
                         ))}
                       </div>
                     ) : (
-                      <p style={{ margin: "0 0 16px", color: "#6b78a0" }}>No replies yet. Be the first person to respond.</p>
+                      <p style={{ margin: "0 0 16px", color: "var(--text-secondary)" }}>No replies yet. Be the first person to respond.</p>
                     )}
 
                     {!user ? (
-                      <p style={{ margin: 0, color: "#6b78a0" }}>Sign in to reply to this post.</p>
+                      <p style={{ margin: 0, color: "var(--text-secondary)" }}>Sign in to reply to this post.</p>
                     ) : (
                       <form onSubmit={handleReplySubmit} style={{ display: "grid", gap: "12px" }}>
                         <textarea
@@ -665,7 +665,7 @@ export default function Community() {
               maxWidth: "760px",
               maxHeight: "calc(100vh - 40px)",
               overflowY: "auto",
-              background: "#fff",
+              background: "var(--card-bg)",
               borderRadius: "28px",
               padding: "24px",
               boxShadow: "0 24px 64px rgba(42,55,98,0.18)",
@@ -673,10 +673,10 @@ export default function Community() {
           >
             <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "flex-start", marginBottom: "18px" }}>
               <div>
-                <p style={{ margin: 0, fontSize: "12px", fontWeight: 600, color: "#6b78a0" }}>
+                <p style={{ margin: 0, fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)" }}>
                   {modalMode === "edit" ? "Edit your post" : "Create a post"}
                 </p>
-                <h2 style={{ margin: "6px 0 0", fontSize: "28px", color: "#4a5a85" }}>
+                <h2 style={{ margin: "6px 0 0", fontSize: "28px", color: "var(--text-secondary)" }}>
                   {modalMode === "edit" ? "Update post" : "New post"}
                 </h2>
               </div>
@@ -728,7 +728,7 @@ export default function Community() {
               {modalError ? <p style={{ margin: 0, color: "#b44b3c" }}>{modalError}</p> : null}
 
               <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
-                <span style={{ fontSize: "12px", color: "#7a89b8" }}>
+                <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
                   Other users will see the pasted link as a button.
                 </span>
                 <button
@@ -756,7 +756,7 @@ export default function Community() {
 function Field({ label, children }) {
   return (
     <div style={{ display: "grid", gap: "8px" }}>
-      <label style={{ fontSize: "13px", fontWeight: 600, color: "#5f6fa3" }}>{label}</label>
+      <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>{label}</label>
       {children}
     </div>
   );

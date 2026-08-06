@@ -253,7 +253,7 @@ const styles = {
   cameraOffInitials: {
     fontSize: 32,
     fontWeight: 700,
-    color: "#8a9bd6",
+    color: "var(--accent)",
     letterSpacing: 2,
     userSelect: "none",
   },

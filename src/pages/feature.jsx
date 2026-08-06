@@ -103,7 +103,7 @@ export default function FeaturesPage() {
     <div className="min-h-screen bg-linear-to-b from-[#f7f9ff] to-[#eef1ff] px-6 py-20">
       {/* Header */}
       <div className="max-w-4xl mx-auto text-center mb-16">
-        <h1 className="text-4xl font-semibold text-[#4a5a85]">
+        <h1 className="text-4xl font-semibold text-[var(--text-secondary)]">
           PrepSy Features
         </h1>
         <p className="mt-4 text-lg text-[#5f6c9a]">

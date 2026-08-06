@@ -151,8 +151,8 @@ export default function ChatDrawer({ onClose, currentUser, embedded = false }) {
     >
       {/* Header */}
       {!embedded && (
-        <div style={{ background: "#8a9bd6" }}
-        className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-linear-to-r color - #8a9bd6 text-white">
+        <div style={{ background: "var(--accent)" }}
+        className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-linear-to-r color - var(--accent) text-white">
           <h2 className="font-semibold text-lg">Room Chat</h2>
           <button
             onClick={onClose}
@@ -182,7 +182,7 @@ export default function ChatDrawer({ onClose, currentUser, embedded = false }) {
               >
                 {/* Sender Name */}
                 {!isMe && (
-                  <div style={{ color: "#8a9bd6", fontWeight: "500", marginBottom: 4 }}>
+                  <div style={{ color: "var(--accent)", fontWeight: "500", marginBottom: 4 }}>
                     {msg.sender}
                   </div>
                 )}
@@ -237,7 +237,7 @@ const styles = {
     height: 23,
     borderRadius: 14,
     border: "none",
-    background: "#8a9bd6",
+    background: "var(--accent)",
     color: "#FFFFFF",
     fontWeight: 500,
     cursor: "pointer",

@@ -509,7 +509,7 @@ export default function Profile() {
                   <div style={{
                     borderRadius: 14,
                     background: profile.aiMonitorConsent ? "linear-gradient(135deg,#f3f0ff 0%,#ede9fe 100%)" : "#f6f8ff",
-                    border: `1.5px solid ${profile.aiMonitorConsent ? "#c4b5fd" : "rgba(190,200,235,0.45)"}`,
+                    border: `1.5px solid ${profile.aiMonitorConsent ? "#c4b5fd" : "var(--card-border)"}`,
                     padding: "16px 18px",
                     display: "flex",
                     alignItems: "flex-start",
@@ -519,7 +519,7 @@ export default function Profile() {
                     <div style={{ flex: 1, display: "grid", gap: 6 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 16 }}>🎯</span>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: "#2f3b63" }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
                           AI Focus Analysis Consent
                         </span>
                         {!profile.aiMonitorConsent && (
@@ -537,7 +537,7 @@ export default function Profile() {
                           }}>ENABLED</span>
                         )}
                       </div>
-                      <p style={{ fontSize: 12.5, color: "#4a5a85", lineHeight: 1.55, margin: 0 }}>
+                      <p style={{ fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.55, margin: 0 }}>
                         Allow PrepSy to analyze your camera feed during study sessions to measure your focus score.
                         Your focus score is saved for Analytics. <strong>We do not store any face video or any PII data</strong> — only the numeric focus score is retained.
                       </p>
@@ -559,7 +559,7 @@ export default function Profile() {
                       >
                         <div style={{
                           position: "absolute", top: 3, left: profile.aiMonitorConsent ? 23 : 3,
-                          width: 18, height: 18, borderRadius: "50%", background: "#fff",
+                          width: 18, height: 18, borderRadius: "50%", background: "var(--card-bg)",
                           boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s",
                         }} />
                       </div>
@@ -855,7 +855,7 @@ function ProfileViewPanel({ profile }) {
         {profile.bio && (
           <div style={{ marginTop: 14 }}>
             <p style={styles.viewLabel}>Bio</p>
-            <p style={{ margin: "5px 0 0", fontSize: 13, color: "#2f3b63", lineHeight: 1.7 }}>{profile.bio}</p>
+            <p style={{ margin: "5px 0 0", fontSize: 13, color: "var(--text-primary)", lineHeight: 1.7 }}>{profile.bio}</p>
           </div>
         )}
       </ViewSection>
@@ -1081,7 +1081,7 @@ function MultiSelect({ value, onChange, options, placeholder, max }) {
             ))
           )}
         </div>
-        <ChevronDown size={15} style={{ flexShrink: 0, color: "#7a89b8", transform: open ? "rotate(180deg)" : "none", transition: "transform 0.18s" }} />
+        <ChevronDown size={15} style={{ flexShrink: 0, color: "var(--text-secondary)", transform: open ? "rotate(180deg)" : "none", transition: "transform 0.18s" }} />
       </div>
       {open && (
         <div style={styles.multiDropdown}>
@@ -1225,12 +1225,12 @@ const styles = {
     display: "flex", justifyContent: "space-between", alignItems: "center",
     gap: 16, flexWrap: "wrap", minWidth: 0,
   },
-  eyebrow: { margin: 0, color: "#7a89b8", fontWeight: 500, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.04em" },
-  title: { margin: "5px 0", fontFamily: "Georgia, serif", fontSize: 30, lineHeight: 1.1, color: "#2f3b63", fontWeight: 400 },
+  eyebrow: { margin: 0, color: "var(--text-secondary)", fontWeight: 500, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.04em" },
+  title: { margin: "5px 0", fontFamily: "Georgia, serif", fontSize: 30, lineHeight: 1.1, color: "var(--text-primary)", fontWeight: 400 },
   subtitle: { margin: 0, color: "#65749f", fontSize: 13, fontWeight: 400 },
   saveButton: (saving) => ({
     height: 42, padding: "0 18px", borderRadius: 13, border: "none",
-    background: saving ? "#b6c0e4" : "linear-gradient(135deg, #8a9bd6, #6f7fc0)",
+    background: saving ? "#b6c0e4" : "linear-gradient(135deg, var(--accent), #6f7fc0)",
     color: "#ffffff", display: "inline-flex", alignItems: "center", justifyContent: "center",
     gap: 8, fontWeight: 600, fontSize: 14, cursor: saving ? "wait" : "pointer",
     boxShadow: "0 10px 24px rgba(111,127,192,0.22)", whiteSpace: "nowrap", flexShrink: 0,
@@ -1238,7 +1238,7 @@ const styles = {
   editButton: {
     height: 42, padding: "0 18px", borderRadius: 13,
     border: "1px solid rgba(138,155,214,0.6)",
-    background: "rgba(255,255,255,0.9)", color: "#4a5a85",
+    background: "var(--card-bg)", color: "var(--text-secondary)",
     display: "inline-flex", alignItems: "center", gap: 8,
     fontWeight: 600, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap",
     boxShadow: "0 4px 12px rgba(74,90,133,0.08)",
@@ -1255,8 +1255,8 @@ const styles = {
     gap: 22, alignItems: "start",
   }),
   profileCard: (isNarrow) => ({
-    borderRadius: 22, border: "1px solid rgba(190,200,235,0.52)",
-    background: "rgba(255,255,255,0.82)", boxShadow: "0 14px 38px rgba(74,90,133,0.1)",
+    borderRadius: 22, border: "1px solid var(--card-border)",
+    background: "var(--card-bg)", boxShadow: "0 14px 38px rgba(74,90,133,0.1)",
     padding: 20, display: "grid", justifyItems: "center", gap: 10,
     position: isNarrow ? "relative" : "sticky", top: isNarrow ? "auto" : 88,
     width: "100%", boxSizing: "border-box",
@@ -1268,7 +1268,7 @@ const styles = {
   },
   avatarFallback: {
     width: "100%", height: "100%", borderRadius: "50%",
-    background: "linear-gradient(135deg, #8a9bd6, #eef2ff)",
+    background: "linear-gradient(135deg, var(--accent), #eef2ff)",
     color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center",
     fontSize: 30, fontWeight: 600, border: "3px solid #ffffff",
     boxShadow: "0 10px 28px rgba(74,90,133,0.14)",
@@ -1280,11 +1280,11 @@ const styles = {
   },
   profileName: { margin: "4px 0 0", color: "#1f2937", fontSize: 20, lineHeight: 1.2, textAlign: "center", overflowWrap: "anywhere", fontWeight: 500 },
   profileHandle: { margin: 0, color: "#65749f", fontSize: 12, textAlign: "center", overflowWrap: "anywhere" },
-  profileBio: { margin: "6px 0 2px", color: "#4a5a85", fontSize: 12, lineHeight: 1.5, textAlign: "center" },
+  profileBio: { margin: "6px 0 2px", color: "var(--text-secondary)", fontSize: 12, lineHeight: 1.5, textAlign: "center" },
   completionBlock: { width: "100%", borderTop: "1px solid rgba(190,200,235,0.42)", paddingTop: 12, marginTop: 2 },
-  completionTopline: { display: "flex", justifyContent: "space-between", color: "#4a5a85", fontSize: 12, marginBottom: 7, fontWeight: 500 },
+  completionTopline: { display: "flex", justifyContent: "space-between", color: "var(--text-secondary)", fontSize: 12, marginBottom: 7, fontWeight: 500 },
   progressTrack: { height: 6, borderRadius: 999, background: "#e8edf9", overflow: "hidden" },
-  progressFill: { height: "100%", borderRadius: 999, background: "linear-gradient(90deg, #8a9bd6, #6f7fc0)" },
+  progressFill: { height: "100%", borderRadius: 999, background: "linear-gradient(90deg, var(--accent), #6f7fc0)" },
   sideStats: { width: "100%", display: "grid", gap: 8, marginTop: 4 },
   miniStat: {
     display: "grid", gridTemplateColumns: "30px minmax(0, 1fr)", alignItems: "center", gap: 9,
@@ -1293,67 +1293,67 @@ const styles = {
   },
   miniStatIcon: { width: 30, height: 30, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "#eef2ff", color: "#6f7fc0" },
   miniStatText: { minWidth: 0, display: "grid", gap: 1 },
-  miniStatValue: { color: "#2f3b63", fontSize: 14, lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 600 },
+  miniStatValue: { color: "var(--text-primary)", fontSize: 14, lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 600 },
   miniStatLabel: { color: "#65749f", fontSize: 11, lineHeight: 1.25 },
   secondaryButton: {
     width: "100%", height: 40, borderRadius: 12, border: "1px solid rgba(138,155,214,0.55)",
-    background: "transparent", color: "#5f6fa3", display: "flex", alignItems: "center",
+    background: "transparent", color: "var(--text-secondary)", display: "flex", alignItems: "center",
     justifyContent: "center", gap: 7, fontWeight: 500, fontSize: 13, cursor: "pointer", boxSizing: "border-box",
   },
   // form panel
   formPanel: {
-    borderRadius: 22, border: "1px solid rgba(190,200,235,0.52)",
+    borderRadius: 22, border: "1px solid var(--card-border)",
     background: "rgba(255,255,255,0.84)", boxShadow: "0 14px 38px rgba(74,90,133,0.08)",
     padding: 22, display: "grid", gap: 22, minWidth: 0, boxSizing: "border-box",
   },
-  section: { display: "grid", gap: 14, paddingBottom: 18, borderBottom: "1px solid rgba(190,200,235,0.4)" },
+  section: { display: "grid", gap: 14, paddingBottom: 18, borderBottom: "1px solid var(--card-border)" },
   sectionHeader: { display: "grid", gap: 4, minWidth: 0 },
   sectionTitleWrap: { display: "flex", alignItems: "center", gap: 8, color: "#6f3bd6", minWidth: 0 },
   sectionTitle: { margin: 0, color: "#6f3bd6", fontSize: 15, fontWeight: 600 },
   sectionCaption: { margin: 0, color: "#65749f", fontSize: 12, lineHeight: 1.45, maxWidth: 720 },
   fieldGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", columnGap: 16, rowGap: 14 },
   field: { display: "grid", gap: 6, minWidth: 0 },
-  label: { color: "#4a5a85", fontSize: 12, fontWeight: 500 },
+  label: { color: "var(--text-secondary)", fontSize: 12, fontWeight: 500 },
   input: {
     width: "100%", minHeight: 40, borderRadius: 11, border: "1px solid rgba(190,200,235,0.7)",
-    background: "#ffffff", color: "#1f2937", padding: "9px 12px", fontSize: 13,
+    background: "var(--card-bg)", color: "#1f2937", padding: "9px 12px", fontSize: 13,
     outline: "none", boxSizing: "border-box",
   },
   inputReadOnly: {
-    width: "100%", minHeight: 40, borderRadius: 11, border: "1px solid rgba(190,200,235,0.5)",
+    width: "100%", minHeight: 40, borderRadius: 11, border: "1px solid var(--card-border)",
     background: "#f6f8ff", color: "#65749f", padding: "9px 12px", fontSize: 13,
     outline: "none", boxSizing: "border-box",
   },
   textarea: {
     width: "100%", borderRadius: 12, border: "1px solid rgba(190,200,235,0.7)",
-    background: "#ffffff", color: "#1f2937", padding: "10px 12px", fontSize: 13,
+    background: "var(--card-bg)", color: "#1f2937", padding: "10px 12px", fontSize: 13,
     lineHeight: 1.6, outline: "none", resize: "vertical", boxSizing: "border-box",
   },
-  helperText: { margin: "3px 0 0", color: "#7a89b8", fontSize: 11 },
+  helperText: { margin: "3px 0 0", color: "var(--text-secondary)", fontSize: 11 },
   segmentGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 },
   segment: (active) => ({
     minHeight: 72, borderRadius: 14,
     border: active ? "1px solid #7c3aed" : "1px solid rgba(190,200,235,0.62)",
     background: active ? "rgba(124,58,237,0.06)" : "#ffffff",
-    color: "#2f3b63", display: "grid", gridTemplateColumns: "38px minmax(0, 1fr) 20px",
+    color: "var(--text-primary)", display: "grid", gridTemplateColumns: "38px minmax(0, 1fr) 20px",
     alignItems: "center", gap: 10, padding: 12, cursor: "pointer", boxSizing: "border-box", minWidth: 0,
   }),
   segmentIcon: (active) => ({
     width: 38, height: 38, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center",
-    color: active ? "#7c3aed" : "#7a89b8", background: active ? "#ede9fe" : "#f1f4ff",
+    color: active ? "#7c3aed" : "var(--text-secondary)", background: active ? "#ede9fe" : "#f1f4ff",
   }),
   segmentCheck: (active) => ({ color: active ? "#7c3aed" : "transparent", display: "flex", justifyContent: "flex-end" }),
   segmentText: { display: "grid", gap: 3, minWidth: 0, textAlign: "left" },
-  segmentTitle: { color: "#2f3b63", fontSize: 13, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 500 },
+  segmentTitle: { color: "var(--text-primary)", fontSize: 13, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 500 },
   segmentDescription: { color: "#65749f", fontSize: 11, lineHeight: 1.3 },
   toggleRow: {
-    display: "flex", alignItems: "flex-start", gap: 10, color: "#4a5a85", fontSize: 13,
+    display: "flex", alignItems: "flex-start", gap: 10, color: "var(--text-secondary)", fontSize: 13,
     lineHeight: 1.5, padding: 12, borderRadius: 12, background: "#f6f8ff",
-    border: "1px solid rgba(190,200,235,0.45)",
+    border: "1px solid var(--card-border)",
   },
   multiTrigger: {
     minHeight: 40, borderRadius: 11, border: "1px solid rgba(190,200,235,0.7)",
-    background: "#ffffff", padding: "6px 10px", display: "flex", alignItems: "center",
+    background: "var(--card-bg)", padding: "6px 10px", display: "flex", alignItems: "center",
     gap: 8, cursor: "pointer", boxSizing: "border-box", width: "100%",
   },
   multiTagsWrap: { flex: 1, display: "flex", flexWrap: "wrap", gap: 5, minWidth: 0 },
@@ -1365,24 +1365,24 @@ const styles = {
   multiTagRemove: { background: "none", border: "none", padding: 0, cursor: "pointer", color: "#7c3aed", display: "flex", alignItems: "center" },
   multiDropdown: {
     position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 100,
-    background: "#ffffff", border: "1px solid rgba(190,200,235,0.7)", borderRadius: 13,
+    background: "var(--card-bg)", border: "1px solid rgba(190,200,235,0.7)", borderRadius: 13,
     boxShadow: "0 10px 28px rgba(74,90,133,0.14)", maxHeight: 260, overflowY: "auto", padding: "6px 0",
   },
   multiOption: (checked) => ({
     display: "flex", alignItems: "center", gap: 10, padding: "8px 14px",
     cursor: "pointer", fontSize: 13,
     background: checked ? "rgba(124,58,237,0.05)" : "transparent",
-    color: checked ? "#5b21b6" : "#2f3b63",
+    color: checked ? "#5b21b6" : "var(--text-primary)",
   }),
   // view panel
   viewPanel: {
-    borderRadius: 22, border: "1px solid rgba(190,200,235,0.52)",
+    borderRadius: 22, border: "1px solid var(--card-border)",
     background: "rgba(255,255,255,0.84)", boxShadow: "0 14px 38px rgba(74,90,133,0.08)",
     padding: 22, display: "grid", gap: 0, minWidth: 0, boxSizing: "border-box",
   },
   viewSection: {
     padding: "18px 0",
-    borderBottom: "1px solid rgba(190,200,235,0.4)",
+    borderBottom: "1px solid var(--card-border)",
   },
   viewGrid: {
     display: "grid",
@@ -1409,7 +1409,7 @@ const styles = {
   alertTone: {
     warning: { color: "#8a5a12", background: "#fff8e7", borderColor: "rgba(227,180,77,0.38)" },
     success: { color: "#2f7d4d", background: "#eef9f2", borderColor: "rgba(88,169,120,0.38)" },
-    info:    { color: "#4a5a85", background: "#f1f4ff", borderColor: "rgba(138,155,214,0.38)" },
+    info:    { color: "var(--text-secondary)", background: "#f1f4ff", borderColor: "rgba(138,155,214,0.38)" },
     danger:  { color: "#a33e3e", background: "#fff2f2", borderColor: "rgba(207,101,101,0.34)" },
   },
   // toast
@@ -1422,6 +1422,6 @@ const styles = {
   },
   loading: {
     minHeight: "calc(100vh - 160px)", display: "flex", alignItems: "center",
-    justifyContent: "center", color: "#5f6fa3", fontSize: 14,
+    justifyContent: "center", color: "var(--text-secondary)", fontSize: 14,
   },
 };

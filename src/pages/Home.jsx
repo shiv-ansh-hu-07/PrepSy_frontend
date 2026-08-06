@@ -6,9 +6,9 @@ const T = {
   bg: "radial-gradient(ellipse at 60% 20%, #eef1fb 0%, #f4f6fd 55%, #f8f9fe 100%)",
   purple: "#7c3aed",
   purpleDark: "#6f3bd6",
-  border: "rgba(190,200,235,0.52)",
-  textDark: "#2f3b63",
-  textMid: "#4a5a85",
+  border: "var(--card-border)",
+  textDark: "var(--text-primary)",
+  textMid: "var(--text-secondary)",
   textLight: "#6b7a99",
 };
 
@@ -281,7 +281,7 @@ function RoleBadge({ emoji, text, color }) {
     <div style={{
       display: "inline-flex", alignItems: "center", gap: "6px",
       padding: "8px 14px", borderRadius: "999px",
-      background: "#fff", border: `1.5px solid ${color}28`,
+      background: "var(--card-bg)", border: `1.5px solid ${color}28`,
       boxShadow: `0 4px 18px ${color}1a`,
       fontSize: "13px", fontWeight: 600, color,
     }}>
@@ -358,7 +358,7 @@ function VerifiedRoomBadge() {
           <span style={{ fontSize: 12, color: row.ok ? "#22c55e" : "#f87171", flexShrink: 0 }}>
             {row.ok ? "✓" : "✗"}
           </span>
-          <span style={{ fontSize: 11, color: "#4a5a85" }}>{row.label}</span>
+          <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{row.label}</span>
         </div>
       ))}
     </div>
@@ -370,7 +370,7 @@ function HeroFeatureCard({ feature, fadeStyle }) {
   const Visual = feature.accent === "#10b981" ? FocusMeterMini : VerifiedRoomBadge;
   return (
     <div className="feat-card" style={{
-      background: "#fff", borderRadius: 24, padding: "30px 28px",
+      background: "var(--card-bg)", borderRadius: 24, padding: "30px 28px",
       border: `1px solid ${T.border}`,
       boxShadow: "0 6px 28px rgba(100,116,180,0.09)",
       position: "relative", overflow: "hidden",
@@ -433,7 +433,7 @@ function HeroFeatureCard({ feature, fadeStyle }) {
 function FeatureCard({ feature, fadeStyle }) {
   return (
     <div className="feat-card" style={{
-      background: "#fff", borderRadius: 22, padding: "24px 22px",
+      background: "var(--card-bg)", borderRadius: 22, padding: "24px 22px",
       border: `1px solid ${T.border}`,
       boxShadow: "0 4px 20px rgba(100,116,180,0.07)",
       position: "relative", overflow: "hidden",
@@ -762,7 +762,7 @@ export default function Home() {
       <section data-s="ai" style={{ padding: `0 ${px} 96px` }}>
         <div style={{
           maxWidth: "1140px", margin: "0 auto",
-          background: "linear-gradient(140deg, #2f3b63 0%, #4a3882 52%, #7c3aed 100%)",
+          background: "linear-gradient(140deg, var(--text-primary) 0%, #4a3882 52%, #7c3aed 100%)",
           borderRadius: "28px", padding: sm ? "44px 24px" : "60px 68px",
           position: "relative", overflow: "hidden",
           ...fi("ai"),
@@ -802,7 +802,7 @@ export default function Home() {
 
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 {AI_BULLETS.map((b) => (
-                  <div key={b} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "14px", color: "rgba(255,255,255,0.82)" }}>
+                  <div key={b} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "14px", color: "var(--card-bg)" }}>
                     <span style={{ color: "#86efac", fontSize: "15px", flexShrink: 0 }}>✓</span>
                     {b}
                   </div>
@@ -829,7 +829,7 @@ export default function Home() {
         <div style={{ display: "grid", gridTemplateColumns: sm ? "1fr" : "repeat(3, 1fr)", gap: "22px" }}>
           {STEPS.map((s, i) => (
             <div key={s.num} data-s={`step-${i}`} className="home-step-card" style={{
-              background: "#fff", borderRadius: "24px", padding: "32px 28px",
+              background: "var(--card-bg)", borderRadius: "24px", padding: "32px 28px",
               border: `1px solid ${T.border}`,
               boxShadow: "0 4px 20px rgba(100,116,180,0.08)",
               position: "relative",
@@ -889,7 +889,7 @@ export default function Home() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", ...fi("analytics", 200) }}>
             {ANALYTICS_CARDS.map((c) => (
               <div key={c.label} className="home-stat-card" style={{
-                background: "#fff", borderRadius: "20px", padding: "22px 20px",
+                background: "var(--card-bg)", borderRadius: "20px", padding: "22px 20px",
                 border: `1px solid ${T.border}`,
                 boxShadow: "0 4px 18px rgba(100,116,180,0.08)",
               }}>
@@ -909,7 +909,7 @@ export default function Home() {
 
       {/* ══════════════ STATS BAR ══════════════ */}
       <div data-s="stats" style={{
-        background: "rgba(255,255,255,0.68)", backdropFilter: "blur(12px)",
+        background: "var(--card-bg)", backdropFilter: "blur(12px)",
         borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}`,
         padding: "52px 32px", marginBottom: "80px",
       }}>
@@ -932,7 +932,7 @@ export default function Home() {
       {/* ══════════════ COMMUNITY ══════════════ */}
       <section data-s="community" style={{ maxWidth: "1140px", margin: "0 auto", padding: `0 ${px} 80px` }}>
         <div style={{
-          background: "#fff", borderRadius: "28px",
+          background: "var(--card-bg)", borderRadius: "28px",
           padding: sm ? "36px 24px" : "56px 60px",
           border: `1px solid ${T.border}`,
           boxShadow: "0 8px 32px rgba(100,116,180,0.08)",
@@ -985,7 +985,7 @@ export default function Home() {
         }}>
           {COMING_SOON.map((c, i) => (
             <div key={c.title} data-s={`coming-${i}`} className="home-coming-card" style={{
-              background: "#fff", borderRadius: "20px", padding: "26px 20px",
+              background: "var(--card-bg)", borderRadius: "20px", padding: "26px 20px",
               border: `1px solid ${T.border}`,
               boxShadow: "0 4px 16px rgba(100,116,180,0.07)",
               textAlign: "center",
@@ -1009,7 +1009,7 @@ export default function Home() {
       {/* ══════════════ CTA ══════════════ */}
       <section data-s="cta" style={{ maxWidth: "860px", margin: "0 auto", padding: `0 ${px} 100px` }}>
         <div style={{
-          background: "linear-gradient(140deg, #2f3b63 0%, #7c3aed 100%)",
+          background: "linear-gradient(140deg, var(--text-primary) 0%, #7c3aed 100%)",
           borderRadius: "28px", padding: sm ? "52px 28px" : "68px 60px",
           textAlign: "center",
           boxShadow: "0 28px 72px rgba(124,58,237,0.24)",
@@ -1029,7 +1029,7 @@ export default function Home() {
             Better prep isn't more hours. It's better structure, better peers, and better momentum. Start today.
           </p>
           <Link to="/login" className="home-cta-btn" style={{
-            background: "#fff", color: T.purple,
+            background: "var(--card-bg)", color: T.purple,
             padding: "15px 44px", borderRadius: "999px",
             fontSize: "15px", fontWeight: 700, textDecoration: "none",
             boxShadow: "0 8px 24px rgba(0,0,0,0.14)",

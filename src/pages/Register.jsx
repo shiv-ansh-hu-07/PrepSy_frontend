@@ -42,7 +42,7 @@ export default function Register() {
         style={{
           width: "100%",
           maxWidth: "460px",
-          backgroundColor: "#ffffff",
+          backgroundColor: "var(--card-bg)",
           borderRadius: "28px",
           padding: "36px 36px 32px",
           boxShadow: "0 30px 70px rgba(0,0,0,0.08)",
@@ -53,7 +53,7 @@ export default function Register() {
           style={{
             fontFamily: "Georgia, serif",
             fontSize: "32px",
-            color: "#4a5a85",
+            color: "var(--text-secondary)",
             marginBottom: "8px",
             textAlign: "center",
           }}
@@ -209,7 +209,7 @@ export default function Register() {
               padding: "14px 0",
               borderRadius: "999px",
               background:
-                "#8a9bd6",
+                "var(--accent)",
               color: "#ffffff",
               fontSize: "15px",
               fontWeight: 500,
@@ -250,7 +250,7 @@ export default function Register() {
             <Link
               to="/login"
               style={{
-                color: "#4a5a85",
+                color: "var(--text-secondary)",
                 fontWeight: 500,
                 textDecoration: "none",
               }}

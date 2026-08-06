@@ -382,7 +382,7 @@ function Control({ icon, danger, active, onClick, title }) {
         height: 48,
         borderRadius: 14,
         border: "1px solid #E5E7EB",
-        background: danger ? "#F87171" : active ? "#8a9bd6" : "#FFFFFF",
+        background: danger ? "#F87171" : active ? "var(--accent)" : "#FFFFFF",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -391,7 +391,7 @@ function Control({ icon, danger, active, onClick, title }) {
         transition: "all 0.2s ease",
       }}
     >
-      <IconComponent size={20} color={danger ? "#FFFFFF" : "#4a5a85"} />
+      <IconComponent size={20} color={danger ? "#FFFFFF" : "var(--text-secondary)"} />
     </button>
   );
 }
@@ -440,7 +440,7 @@ const styles = {
   sessionBadgeDesktop: {
     position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 20,
     fontSize: 12, color: "#6B7280", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 7,
-    background: "rgba(255,255,255,0.9)", padding: "8px 14px", borderRadius: 999,
+    background: "var(--card-bg)", padding: "8px 14px", borderRadius: 999,
     boxShadow: "0 8px 18px rgba(0,0,0,0.14)", backdropFilter: "blur(8px)",
   },
   liveDot: { width: 7, height: 7, borderRadius: "50%", background: "#22c55e" },
@@ -534,13 +534,13 @@ const styles = {
   bottomBar: {
     position: "absolute", left: "50%", bottom: 14, transform: "translateX(-50%)",
     width: "fit-content", maxWidth: "100%", display: "flex", gap: 8, flexWrap: "wrap",
-    justifyContent: "center", padding: "8px 14px", background: "#FFFFFF",
+    justifyContent: "center", padding: "8px 14px", background: "var(--card-bg)",
     borderRadius: 20, boxShadow: "0 8px 20px rgba(0,0,0,0.16)", zIndex: 30,
   },
   sidePanel: (m) => ({
     display: "flex", flexDirection: "column",
     maxWidth: m ? "100%" : 380, width: "100%", justifySelf: "end",
-    background: "#FFFFFF", borderRadius: 22, border: "1px solid #EEF2FF",
+    background: "var(--card-bg)", borderRadius: 22, border: "1px solid #EEF2FF",
     boxShadow: "0 10px 22px rgba(0,0,0,0.06)", overflow: "hidden",
     minHeight: m ? 420 : "auto",
   }),
@@ -554,7 +554,7 @@ const styles = {
     borderBottom: active ? "2px solid #6f3bd6" : "2px solid transparent",
   }),
   tabCount: {
-    display: "inline-block", marginLeft: 4, fontSize: 11, color: "#9aa4c7",
+    display: "inline-block", marginLeft: 4, fontSize: 11, color: "var(--text-muted)",
   },
   tabBody: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column" },
   peopleList: { padding: 12, display: "flex", flexDirection: "column", gap: 8, overflowY: "auto" },
@@ -563,11 +563,11 @@ const styles = {
     borderRadius: 12, background: "#F8FAFF",
   },
   personAvatar: {
-    width: 32, height: 32, borderRadius: "50%", background: "#8a9bd6",
+    width: 32, height: 32, borderRadius: "50%", background: "var(--accent)",
     color: "#fff", fontSize: 12, fontWeight: 700, display: "flex",
     alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
-  personName: { flex: 1, fontSize: 13, color: "#2f3b63", fontWeight: 500 },
+  personName: { flex: 1, fontSize: 13, color: "var(--text-primary)", fontWeight: 500 },
 };
 
 const modalStyles = {
@@ -577,7 +577,7 @@ const modalStyles = {
     zIndex: 9999, padding: 20,
   },
   card: {
-    width: "min(100%, 460px)", background: "#fff", borderRadius: 20,
+    width: "min(100%, 460px)", background: "var(--card-bg)", borderRadius: 20,
     padding: "28px 24px", boxShadow: "0 24px 70px rgba(0,0,0,0.22)",
     textAlign: "center", maxHeight: "90vh", overflowY: "auto", position: "relative",
   },
@@ -585,8 +585,8 @@ const modalStyles = {
     position: "absolute", top: 12, right: 14, border: "none", background: "transparent",
     fontSize: 18, cursor: "pointer", color: "#6b7280", lineHeight: 1,
   },
-  tag: { fontSize: 11, color: "#8a9bd6", marginBottom: 6, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 },
-  title: { fontSize: 22, fontWeight: 700, color: "#2f3b63", margin: "0 0 8px", fontFamily: "Georgia, serif" },
+  tag: { fontSize: 11, color: "var(--accent)", marginBottom: 6, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 },
+  title: { fontSize: 22, fontWeight: 700, color: "var(--text-primary)", margin: "0 0 8px", fontFamily: "Georgia, serif" },
   text: { fontSize: 14, color: "#6b7280", marginBottom: 18 },
   stats: { display: "flex", gap: 10, justifyContent: "space-between" },
   stat: { flex: 1, background: "#f8f9ff", borderRadius: 12, padding: 12, border: "1px solid #e6e9f8" },
