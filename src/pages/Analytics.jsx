@@ -309,7 +309,7 @@ function Heatmap({ analytics }) {
             key={level}
             style={{
               ...styles.legendSwatch,
-              background: level === 0 ? "#eef2ff" : heatPalette[level],
+              background: level === 0 ? "var(--accent-soft)" : heatPalette[level],
             }}
           />
         ))}
@@ -370,7 +370,7 @@ function WeeklyFocusChart({ entries, total, dailyGoalMinutes = 0 }) {
                     left: 0,
                     right: 0,
                     height: goalH,
-                    background: "#eef2ff",
+                    background: "var(--accent-soft)",
                     border: "1px solid #d0d8f0",
                     borderRadius: 6,
                   }} />
@@ -612,7 +612,7 @@ function scoreToHeatColor(score) {
   if (score >= 65) return "var(--accent)";
   if (score >= 50) return "#b3bfe8";
   if (score >= 35) return "#d6dcf4";
-  return "#eef2ff";
+  return "var(--accent-soft)";
 }
 
 function formatHour(hour, short = false) {
@@ -734,7 +734,7 @@ function PeakFocusHoursChart({ sessions }) {
 
 function MiniMetric({ label, value, unit, color }) {
   return (
-    <div style={{ padding: "10px 12px", background: "#f8f9ff", borderRadius: 12, border: "1px solid #eef2ff" }}>
+    <div style={{ padding: "10px 12px", background: "#f8f9ff", borderRadius: 12, border: "1px solid var(--accent-soft)" }}>
       <p style={{ margin: "0 0 3px", fontSize: 10, color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4 }}>
         {label}
       </p>
@@ -973,7 +973,7 @@ function getHeatLevel(minutes, maxMinutes) {
 
 function heatColor(minutes, maxMinutes) {
   const level = getHeatLevel(minutes, maxMinutes);
-  return level === 0 ? "#eef2ff" : heatPalette[level];
+  return level === 0 ? "var(--accent-soft)" : heatPalette[level];
 }
 
 function formatMinutes(minutes = 0) {
@@ -1080,7 +1080,7 @@ const styles = {
   statCard: {
     borderRadius: 18,
     border: "1px solid var(--card-border)",
-    background: "rgba(255,255,255,0.76)",
+    background: "var(--card-bg)",
     boxShadow: "0 8px 24px rgba(74,90,133,0.08)",
     padding: "14px 16px",
     display: "flex",
@@ -1126,7 +1126,7 @@ const styles = {
   panel: {
     borderRadius: 20,
     border: "1px solid var(--card-border)",
-    background: "rgba(255,255,255,0.78)",
+    background: "var(--card-bg)",
     boxShadow: "0 10px 32px rgba(74,90,133,0.08)",
     backdropFilter: "blur(12px)",
     padding: 18,
@@ -1151,7 +1151,7 @@ const styles = {
     gap: 4,
     borderRadius: 13,
     padding: 4,
-    background: "#eef2ff",
+    background: "var(--accent-soft)",
     border: "1px solid var(--card-border)",
     overflow: "hidden",
   }),
@@ -1305,7 +1305,7 @@ const styles = {
     width: "100%",
     height: 140,
     borderRadius: 12,
-    background: "#eef2ff",
+    background: "var(--accent-soft)",
     display: "flex",
     alignItems: "flex-end",
     overflow: "hidden",
@@ -1457,7 +1457,7 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     color: achieved ? "#3e955d" : "var(--text-secondary)",
-    background: achieved ? "#dff3e7" : "#eef2ff",
+    background: achieved ? "#dff3e7" : "var(--accent-soft)",
   }),
   achievementTitle: {
     margin: 0,
@@ -1535,7 +1535,7 @@ const styles = {
   },
   tag: {
     borderRadius: 999,
-    background: "#eef2ff",
+    background: "var(--accent-soft)",
     color: "var(--text-secondary)",
     padding: "3px 7px",
     fontSize: 10,

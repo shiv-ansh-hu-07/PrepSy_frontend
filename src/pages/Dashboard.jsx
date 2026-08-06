@@ -275,7 +275,7 @@ export default function Dashboard() {
               )}
               <button onClick={() => navigate("/analytics")} style={{
                 marginTop: 14, width: "100%", padding: "8px 0",
-                background: "#f4f0ff", color: "#7c3aed",
+                background: "var(--accent-soft)", color: "#7c3aed",
                 border: "1px solid rgba(124,58,237,0.18)",
                 borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer",
                 textAlign: "center",
@@ -304,7 +304,7 @@ function StatCard({ icon, label, value, sub }) {
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
         <span style={{
           width: 24, height: 24, borderRadius: 7,
-          background: "#f4f0ff", display: "flex", alignItems: "center",
+          background: "var(--accent-soft)", display: "flex", alignItems: "center",
           justifyContent: "center", fontSize: 12, flexShrink: 0,
         }}>{icon}</span>
         <span style={{ fontSize: 11, color: "#7b88b8", fontWeight: 500, lineHeight: 1.2 }}>{label}</span>
@@ -323,7 +323,7 @@ function ScoreRing({ score }) {
   return (
     <div style={{ position: "relative", width: 60, height: 60, flexShrink: 0 }}>
       <svg width="60" height="60" style={{ transform: "rotate(-90deg)" }}>
-        <circle cx="30" cy="30" r={r} fill="none" stroke="#eef1fb" strokeWidth={stroke} />
+        <circle cx="30" cy="30" r={r} fill="none" stroke="var(--accent-soft)" strokeWidth={stroke} />
         <circle cx="30" cy="30" r={r} fill="none" stroke={color} strokeWidth={stroke}
           strokeDasharray={circ} strokeDashoffset={fill} strokeLinecap="round" />
       </svg>

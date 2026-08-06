@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 // ─── Theme tokens ─────────────────────────────────────────────────────────────
 const T = {
-  bg: "radial-gradient(ellipse at 60% 20%, #eef1fb 0%, #f4f6fd 55%, #f8f9fe 100%)",
+  bg: "radial-gradient(ellipse at 60% 20%, var(--accent-soft) 0%, #f4f6fd 55%, #f8f9fe 100%)",
   purple: "#7c3aed",
   purpleDark: "#6f3bd6",
   border: "var(--card-border)",
@@ -796,7 +796,7 @@ export default function Home() {
                 AI that watches your focus,<br />so you don't have to.
               </h2>
 
-              <p style={{ fontSize: "16px", color: "rgba(255,255,255,0.72)", lineHeight: 1.72, marginBottom: "28px" }}>
+              <p style={{ fontSize: "16px", color: "var(--card-bg)", lineHeight: 1.72, marginBottom: "28px" }}>
                 Camera-based AI powered by face-api.js + TensorFlow.js. Classifies your attention state every 5 seconds and scores every session — so you can actually see improvement over time.
               </p>
 
@@ -1023,7 +1023,7 @@ export default function Home() {
             Ready to prep smarter?
           </h2>
           <p style={{
-            fontSize: "16px", color: "rgba(255,255,255,0.72)",
+            fontSize: "16px", color: "var(--card-bg)",
             lineHeight: 1.72, maxWidth: "430px", margin: "0 auto 34px",
           }}>
             Better prep isn't more hours. It's better structure, better peers, and better momentum. Start today.

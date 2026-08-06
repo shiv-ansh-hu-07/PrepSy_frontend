@@ -204,7 +204,7 @@ export default function Login() {
               padding: "14px",
               marginTop: "12px",
               borderRadius: "999px",
-              background: "#eef2ff",
+              background: "var(--accent-soft)",
               color: "var(--text-secondary)",
               fontSize: "15px",
               fontWeight: 500,

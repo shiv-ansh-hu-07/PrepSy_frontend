@@ -501,7 +501,7 @@ const styles = {
     minWidth: 170,
     padding: "10px 14px",
     borderRadius: 999,
-    background: "#EEF2FF",
+    background: "var(--accent-soft)",
     color: "var(--text-secondary)",
     fontWeight: 700,
     fontSize: 14,

@@ -301,7 +301,7 @@ export default function CohortPage() {
                     <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700, background: diffStyle.bg, color: diffStyle.color }}>
                       {plan.difficulty}
                     </span>
-                    <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 600, background: "#eef2ff", color: "#4f5fa8" }}>
+                    <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 600, background: "var(--accent-soft)", color: "#4f5fa8" }}>
                       ⏱ ~{plan.estimatedHours}h
                     </span>
                   </div>
@@ -747,7 +747,7 @@ export default function CohortPage() {
                         ? { bg: "#e8f5e9", color: "#2e7d32", label: "Completed" }
                         : s.status === "POSTPONED"
                         ? { bg: "#fff3e0", color: "#e65100", label: "Postponed" }
-                        : { bg: "#eef2ff", color: "#4f5fa8", label: "Scheduled" };
+                        : { bg: "var(--accent-soft)", color: "#4f5fa8", label: "Scheduled" };
                     return (
                       <div key={s.id} style={{ padding: "14px 16px", borderRadius: 14, border: "1px solid var(--card-border)", display: "flex", gap: 14, alignItems: "flex-start" }}>
                         <div style={{ width: 46, textAlign: "center", flexShrink: 0 }}>

@@ -400,7 +400,7 @@ const styles = {
   page: {
     width: "100%",
     minHeight: "100%",
-    background: "linear-gradient(180deg, #F8FAFF 0%, #EEF2FF 100%)",
+    background: "linear-gradient(180deg, #F8FAFF 0%, var(--accent-soft) 100%)",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -540,12 +540,12 @@ const styles = {
   sidePanel: (m) => ({
     display: "flex", flexDirection: "column",
     maxWidth: m ? "100%" : 380, width: "100%", justifySelf: "end",
-    background: "var(--card-bg)", borderRadius: 22, border: "1px solid #EEF2FF",
+    background: "var(--card-bg)", borderRadius: 22, border: "1px solid var(--accent-soft)",
     boxShadow: "0 10px 22px rgba(0,0,0,0.06)", overflow: "hidden",
     minHeight: m ? 420 : "auto",
   }),
   tabBar: {
-    display: "flex", borderBottom: "1px solid #EEF2FF", flexShrink: 0,
+    display: "flex", borderBottom: "1px solid var(--accent-soft)", flexShrink: 0,
   },
   tabBtn: (active) => ({
     flex: 1, padding: "14px 10px", border: "none", background: "transparent",

@@ -1211,7 +1211,7 @@ function formatCollabStyle(pref) {
 const styles = {
   page: {
     minHeight: "calc(100vh - 76px)",
-    background: "radial-gradient(ellipse at top, #eef1fb 0%, #f4f6fd 46%, #f8f9fe 100%)",
+    background: "radial-gradient(ellipse at top, var(--accent-soft) 0%, #f4f6fd 46%, #f8f9fe 100%)",
     padding: "32px 24px 56px",
   },
   layout: (isNarrow) => ({
@@ -1268,7 +1268,7 @@ const styles = {
   },
   avatarFallback: {
     width: "100%", height: "100%", borderRadius: "50%",
-    background: "linear-gradient(135deg, var(--accent), #eef2ff)",
+    background: "linear-gradient(135deg, var(--accent), var(--accent-soft))",
     color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center",
     fontSize: 30, fontWeight: 600, border: "3px solid #ffffff",
     boxShadow: "0 10px 28px rgba(74,90,133,0.14)",
@@ -1291,7 +1291,7 @@ const styles = {
     background: "#f5f7ff", border: "1px solid rgba(190,200,235,0.42)", borderRadius: 13, padding: 10,
     minWidth: 0, boxSizing: "border-box",
   },
-  miniStatIcon: { width: 30, height: 30, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "#eef2ff", color: "#6f7fc0" },
+  miniStatIcon: { width: 30, height: 30, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--accent-soft)", color: "#6f7fc0" },
   miniStatText: { minWidth: 0, display: "grid", gap: 1 },
   miniStatValue: { color: "var(--text-primary)", fontSize: 14, lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 600 },
   miniStatLabel: { color: "#65749f", fontSize: 11, lineHeight: 1.25 },

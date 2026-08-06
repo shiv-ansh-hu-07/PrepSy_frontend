@@ -27,6 +27,7 @@ body,
   --accent: #8a9bd6;
   --input-bg: rgba(248, 249, 255, 0.9);
   --input-border: rgba(138, 155, 214, 0.4);
+  --accent-soft: rgba(138, 155, 214, 0.14);
 }
 
 :root[data-theme="dark"] {
@@ -42,6 +43,7 @@ body,
   --accent: #9dabe4;
   --input-bg: rgba(30, 35, 55, 0.9);
   --input-border: rgba(120, 135, 200, 0.35);
+  --accent-soft: rgba(157, 171, 228, 0.16);
 }
 
 /* -----------------------------
@@ -53,6 +55,42 @@ body {
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   line-height: 1.6;
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* -----------------------------
+   DARK MODE — Tailwind utility overrides
+   (recolors class-styled pages: myRooms, feature, ChatDrawer, etc.)
+------------------------------ */
+:root[data-theme="dark"] .bg-white,
+:root[data-theme="dark"] .bg-gray-50,
+:root[data-theme="dark"] .bg-gray-100,
+:root[data-theme="dark"] .bg-slate-50,
+:root[data-theme="dark"] .bg-slate-100 {
+  background-color: var(--card-bg) !important;
+}
+:root[data-theme="dark"] .text-gray-900,
+:root[data-theme="dark"] .text-gray-800,
+:root[data-theme="dark"] .text-slate-900,
+:root[data-theme="dark"] .text-slate-800,
+:root[data-theme="dark"] .text-black {
+  color: var(--text-primary) !important;
+}
+:root[data-theme="dark"] .text-gray-700,
+:root[data-theme="dark"] .text-gray-600,
+:root[data-theme="dark"] .text-gray-500,
+:root[data-theme="dark"] .text-slate-600,
+:root[data-theme="dark"] .text-slate-500 {
+  color: var(--text-secondary) !important;
+}
+:root[data-theme="dark"] .text-gray-400,
+:root[data-theme="dark"] .text-slate-400 {
+  color: var(--text-muted) !important;
+}
+:root[data-theme="dark"] .border-gray-100,
+:root[data-theme="dark"] .border-gray-200,
+:root[data-theme="dark"] .border-slate-100,
+:root[data-theme="dark"] .border-slate-200 {
+  border-color: var(--card-border) !important;
 }
 
 /* -----------------------------

@@ -6,11 +6,11 @@ import { useAuth } from "../context/AuthContext";
 const pageBg = {
   minHeight: "calc(100vh - 76px)",
   background:
-    "radial-gradient(ellipse at top, #eef1fb 0%, #f3f5fc 45%, #f8f9fe 75%)",
+    "radial-gradient(ellipse at top, var(--accent-soft) 0%, #f3f5fc 45%, #f8f9fe 75%)",
 };
 
 const card = {
-  background: "rgba(255,255,255,0.76)",
+  background: "var(--card-bg)",
   border: "1px solid rgba(255,255,255,0.5)",
   borderRadius: "24px",
   boxShadow: "0 12px 40px rgba(0,0,0,0.06)",
@@ -46,7 +46,7 @@ const secondaryBtn = {
   border: "1px solid rgba(190,200,235,0.8)",
   borderRadius: "999px",
   padding: "10px 14px",
-  background: "#eef2ff",
+  background: "var(--accent-soft)",
   color: "var(--text-secondary)",
   fontSize: "13px",
   cursor: "pointer",
@@ -414,7 +414,7 @@ export default function Community() {
                       style={{
                         ...secondaryBtn,
                         padding: "7px 12px",
-                        background: activeTag === tag ? "var(--accent)" : "#eef2ff",
+                        background: activeTag === tag ? "var(--accent)" : "var(--accent-soft)",
                         color: activeTag === tag ? "#fff" : "var(--text-secondary)",
                         border: "none",
                       }}
@@ -494,7 +494,7 @@ export default function Community() {
                           width: "100%",
                           textAlign: "left",
                           border: `1px solid ${selected ? "rgba(138,155,214,0.36)" : "var(--card-border)"}`,
-                          background: selected ? "rgba(138,155,214,0.14)" : "rgba(255,255,255,0.76)",
+                          background: selected ? "rgba(138,155,214,0.14)" : "var(--card-bg)",
                           borderRadius: "18px",
                           padding: "16px",
                           cursor: "pointer",
@@ -510,7 +510,7 @@ export default function Community() {
                               {post.author?.name} | {formatDate(post.createdAt)}
                             </p>
                           </div>
-                          <span style={{ minWidth: "28px", height: "28px", borderRadius: "999px", background: "#eef2ff", color: "var(--text-secondary)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, flexShrink: 0 }}>
+                          <span style={{ minWidth: "28px", height: "28px", borderRadius: "999px", background: "var(--accent-soft)", color: "var(--text-secondary)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, flexShrink: 0 }}>
                             {post.replyCount}
                           </span>
                         </div>
@@ -519,7 +519,7 @@ export default function Community() {
                           {(post.tags || [])
                             .filter((tag) => !looksLikeUrl(tag))
                             .map((tag) => (
-                              <span key={`${post.id}-${tag}`} style={{ background: "#eef2ff", color: "var(--text-secondary)", borderRadius: "999px", padding: "5px 10px", fontSize: "12px" }}>
+                              <span key={`${post.id}-${tag}`} style={{ background: "var(--accent-soft)", color: "var(--text-secondary)", borderRadius: "999px", padding: "5px 10px", fontSize: "12px" }}>
                                 #{tag}
                               </span>
                             ))}

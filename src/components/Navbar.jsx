@@ -108,7 +108,7 @@ export default function Navbar() {
                 height: "36px",
                 width: "36px",
                 borderRadius: "12px",
-                background: "#e8edfb",
+                background: "var(--accent-soft)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -408,7 +408,7 @@ function streakPillStyle(isCompact) {
 const logoutButtonStyle = {
   padding: "8px 14px",
   borderRadius: "999px",
-  backgroundColor: "#eef2ff",
+  backgroundColor: "var(--accent-soft)",
   color: "var(--text-secondary)",
   fontSize: "13px",
   border: "none",
@@ -507,7 +507,7 @@ const mobileToggleStyle = {
   height: "42px",
   borderRadius: "14px",
   border: "1px solid rgba(190,200,235,0.65)",
-  background: "rgba(255,255,255,0.78)",
+  background: "var(--card-bg)",
   cursor: "pointer",
   padding: 0,
 };
@@ -543,7 +543,7 @@ const mobilePanelStyle = {
   marginTop: "14px",
   padding: "16px",
   borderRadius: "22px",
-  background: "rgba(255,255,255,0.88)",
+  background: "var(--card-bg)",
   border: "1px solid var(--card-border)",
   boxShadow: "0 18px 36px rgba(95,111,163,0.12)",
 };

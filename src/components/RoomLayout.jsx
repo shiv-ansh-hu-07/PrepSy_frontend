@@ -594,7 +594,7 @@ const styles = {
   page: {
     width: "100%",
     minHeight: "100%",
-    background: "linear-gradient(180deg, #F8FAFF 0%, #EEF2FF 100%)",
+    background: "linear-gradient(180deg, #F8FAFF 0%, var(--accent-soft) 100%)",
     display: "flex",
     flexDirection: "column",
     justifyContent: "flex-start",
@@ -631,7 +631,7 @@ const styles = {
   },
   sessionBadge: {
     fontSize: 12, color: "#6B7280", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 7,
-    background: "rgba(255,255,255,0.88)", padding: "8px 12px", borderRadius: 16,
+    background: "var(--card-bg)", padding: "8px 12px", borderRadius: 16,
     boxShadow: "0 4px 14px rgba(0,0,0,0.06)", backdropFilter: "blur(6px)",
   },
   sessionBadgeDesktop: {
@@ -665,7 +665,7 @@ const styles = {
   }),
   card: {
     background: "radial-gradient(circle at center, rgba(138,155,214,0.14), transparent 65%), #FFFFFF",
-    borderRadius: 22, padding: 18, border: "1px solid #EEF2FF",
+    borderRadius: 22, padding: 18, border: "1px solid var(--accent-soft)",
     boxShadow: "0 10px 22px rgba(0,0,0,0.06)", display: "flex", flexDirection: "column",
   },
   cardTitle: { marginBottom: 10, fontSize: 15, fontWeight: 600, fontFamily: "Georgia, serif", color: "var(--text-secondary)" },
