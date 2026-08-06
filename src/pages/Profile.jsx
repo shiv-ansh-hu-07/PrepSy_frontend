@@ -1278,7 +1278,7 @@ const styles = {
     background: "#7c3aed", color: "#ffffff", display: "flex", alignItems: "center",
     justifyContent: "center", border: "2px solid #ffffff", fontSize: 12,
   },
-  profileName: { margin: "4px 0 0", color: "#1f2937", fontSize: 20, lineHeight: 1.2, textAlign: "center", overflowWrap: "anywhere", fontWeight: 500 },
+  profileName: { margin: "4px 0 0", color: "var(--text-primary)", fontSize: 20, lineHeight: 1.2, textAlign: "center", overflowWrap: "anywhere", fontWeight: 500 },
   profileHandle: { margin: 0, color: "#65749f", fontSize: 12, textAlign: "center", overflowWrap: "anywhere" },
   profileBio: { margin: "6px 0 2px", color: "var(--text-secondary)", fontSize: 12, lineHeight: 1.5, textAlign: "center" },
   completionBlock: { width: "100%", borderTop: "1px solid rgba(190,200,235,0.42)", paddingTop: 12, marginTop: 2 },
@@ -1316,7 +1316,7 @@ const styles = {
   label: { color: "var(--text-secondary)", fontSize: 12, fontWeight: 500 },
   input: {
     width: "100%", minHeight: 40, borderRadius: 11, border: "1px solid rgba(190,200,235,0.7)",
-    background: "var(--card-bg)", color: "#1f2937", padding: "9px 12px", fontSize: 13,
+    background: "var(--card-bg)", color: "var(--text-primary)", padding: "9px 12px", fontSize: 13,
     outline: "none", boxSizing: "border-box",
   },
   inputReadOnly: {
@@ -1326,7 +1326,7 @@ const styles = {
   },
   textarea: {
     width: "100%", borderRadius: 12, border: "1px solid rgba(190,200,235,0.7)",
-    background: "var(--card-bg)", color: "#1f2937", padding: "10px 12px", fontSize: 13,
+    background: "var(--card-bg)", color: "var(--text-primary)", padding: "10px 12px", fontSize: 13,
     lineHeight: 1.6, outline: "none", resize: "vertical", boxSizing: "border-box",
   },
   helperText: { margin: "3px 0 0", color: "var(--text-secondary)", fontSize: 11 },
@@ -1390,7 +1390,7 @@ const styles = {
     columnGap: 24, rowGap: 16,
   },
   viewLabel: { margin: 0, color: "#8a9cc8", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" },
-  viewValue: { margin: "4px 0 0", color: "#1f2937", fontSize: 14, lineHeight: 1.45 },
+  viewValue: { margin: "4px 0 0", color: "var(--text-primary)", fontSize: 14, lineHeight: 1.45 },
   viewTag: {
     display: "inline-block", borderRadius: 999, padding: "4px 10px",
     fontSize: 12, fontWeight: 500, lineHeight: 1.3,
@@ -1415,7 +1415,7 @@ const styles = {
   // toast
   toast: {
     position: "fixed", bottom: 24, right: 24, zIndex: 200,
-    background: "#1f2937", color: "#ffffff", borderRadius: 12,
+    background: "var(--text-primary)", color: "#ffffff", borderRadius: 12,
     padding: "12px 18px", display: "flex", alignItems: "center",
     gap: 10, fontSize: 13, fontWeight: 500,
     boxShadow: "0 12px 32px rgba(15,23,42,0.22)", pointerEvents: "none",

@@ -381,7 +381,7 @@ function Control({ icon, danger, active, onClick, title }) {
         width: 48,
         height: 48,
         borderRadius: 14,
-        border: "1px solid #E5E7EB",
+        border: "1px solid var(--card-border)",
         background: danger ? "#F87171" : active ? "var(--accent)" : "#FFFFFF",
         display: "flex",
         alignItems: "center",
@@ -400,7 +400,7 @@ const styles = {
   page: {
     width: "100%",
     minHeight: "100%",
-    background: "linear-gradient(180deg, #F8FAFF 0%, var(--accent-soft) 100%)",
+    background: "linear-gradient(180deg, var(--card-bg) 0%, var(--accent-soft) 100%)",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -422,7 +422,7 @@ const styles = {
   stageWrap: { position: "relative", minHeight: 360, display: "flex", flexDirection: "column", gap: 10 },
   roomHeaderBar: {
     minHeight: 42, padding: "8px 14px", borderRadius: 16,
-    border: "1px solid #E6EAF8", background: "var(--card-bg)",
+    border: "1px solid var(--card-border)", background: "var(--card-bg)",
     boxShadow: "0 8px 20px rgba(74,90,133,0.08)",
     display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
   },
@@ -433,13 +433,13 @@ const styles = {
   },
   roomHeaderButton: {
     height: 30, padding: "0 11px", borderRadius: 999,
-    border: "1px solid #D7DDF2", background: "#F8FAFF", color: "#1F2937",
+    border: "1px solid var(--card-border)", background: "var(--card-bg)", color: "var(--text-primary)",
     fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
     cursor: "pointer", flexShrink: 0, fontSize: 14,
   },
   sessionBadgeDesktop: {
     position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 20,
-    fontSize: 12, color: "#6B7280", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 7,
+    fontSize: 12, color: "var(--text-secondary)", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 7,
     background: "var(--card-bg)", padding: "8px 14px", borderRadius: 999,
     boxShadow: "0 8px 18px rgba(0,0,0,0.14)", backdropFilter: "blur(8px)",
   },
@@ -550,7 +550,7 @@ const styles = {
   tabBtn: (active) => ({
     flex: 1, padding: "14px 10px", border: "none", background: "transparent",
     fontSize: 13, fontWeight: 600, cursor: "pointer",
-    color: active ? "#6f3bd6" : "#6b7280",
+    color: active ? "#6f3bd6" : "var(--text-secondary)",
     borderBottom: active ? "2px solid #6f3bd6" : "2px solid transparent",
   }),
   tabCount: {
@@ -560,7 +560,7 @@ const styles = {
   peopleList: { padding: 12, display: "flex", flexDirection: "column", gap: 8, overflowY: "auto" },
   personRow: {
     display: "flex", alignItems: "center", gap: 10, padding: "8px 10px",
-    borderRadius: 12, background: "#F8FAFF",
+    borderRadius: 12, background: "var(--card-bg)",
   },
   personAvatar: {
     width: 32, height: 32, borderRadius: "50%", background: "var(--accent)",
@@ -583,13 +583,13 @@ const modalStyles = {
   },
   closeBtn: {
     position: "absolute", top: 12, right: 14, border: "none", background: "transparent",
-    fontSize: 18, cursor: "pointer", color: "#6b7280", lineHeight: 1,
+    fontSize: 18, cursor: "pointer", color: "var(--text-secondary)", lineHeight: 1,
   },
   tag: { fontSize: 11, color: "var(--accent)", marginBottom: 6, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 },
   title: { fontSize: 22, fontWeight: 700, color: "var(--text-primary)", margin: "0 0 8px", fontFamily: "Georgia, serif" },
-  text: { fontSize: 14, color: "#6b7280", marginBottom: 18 },
+  text: { fontSize: 14, color: "var(--text-secondary)", marginBottom: 18 },
   stats: { display: "flex", gap: 10, justifyContent: "space-between" },
-  stat: { flex: 1, background: "var(--card-bg)", borderRadius: 12, padding: 12, border: "1px solid #e6e9f8" },
-  label: { fontSize: 11, color: "#6b7280", margin: "0 0 4px" },
-  value: { fontSize: 15, fontWeight: 700, color: "#1F2937", margin: 0 },
+  stat: { flex: 1, background: "var(--card-bg)", borderRadius: 12, padding: 12, border: "1px solid var(--card-border)" },
+  label: { fontSize: 11, color: "var(--text-secondary)", margin: "0 0 4px" },
+  value: { fontSize: 15, fontWeight: 700, color: "var(--text-primary)", margin: 0 },
 };

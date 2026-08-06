@@ -105,7 +105,7 @@ export default function Login() {
               style={{
                 display: "block",
                 fontSize: "14px",
-                color: "#6b7280",
+                color: "var(--text-secondary)",
                 marginBottom: "6px",
               }}
             >
@@ -124,7 +124,7 @@ export default function Login() {
                 borderRadius: "18px",
                 border: "1px solid #e3e6ff",
                 fontSize: "14px",
-                color: "#1f2937",
+                color: "var(--text-primary)",
                 outline: "none",
               }}
               onFocus={(e) => {
@@ -141,7 +141,7 @@ export default function Login() {
               style={{
                 display: "block",
                 fontSize: "14px",
-                color: "#6b7280",
+                color: "var(--text-secondary)",
                 marginBottom: "6px",
               }}
             >
@@ -160,7 +160,7 @@ export default function Login() {
                 borderRadius: "18px",
                 border: "1px solid #e3e6ff",
                 fontSize: "14px",
-                color: "#1f2937",
+                color: "var(--text-primary)",
                 outline: "none",
               }}
               onFocus={(e) => {
@@ -223,7 +223,7 @@ export default function Login() {
                 marginTop: "12px",
                 textAlign: "center",
                 fontSize: "13px",
-                color: "#6b7280",
+                color: "var(--text-secondary)",
               }}
             >
               Finishing Google sign-in...
@@ -272,7 +272,7 @@ export default function Login() {
             style={{
               marginTop: "20px",
               fontSize: "14px",
-              color: "#6b7280",
+              color: "var(--text-secondary)",
               textAlign: "center",
             }}
           >

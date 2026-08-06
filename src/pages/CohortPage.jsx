@@ -338,7 +338,7 @@ export default function CohortPage() {
                   <button
                     onClick={handleLeave}
                     disabled={leaving}
-                    style={{ ...btnPrimary(leaving), background: leaving ? "#e5e7eb" : "#fee2e2", color: "#c62828" }}
+                    style={{ ...btnPrimary(leaving), background: leaving ? "var(--card-border)" : "#fee2e2", color: "#c62828" }}
                   >
                     {leaving ? "Leaving…" : "Leave"}
                   </button>
@@ -347,7 +347,7 @@ export default function CohortPage() {
                   <button
                     onClick={handleDelete}
                     disabled={deleting}
-                    style={{ ...btnPrimary(deleting), background: deleting ? "#e5e7eb" : "#fee2e2", color: "#c62828" }}
+                    style={{ ...btnPrimary(deleting), background: deleting ? "var(--card-border)" : "#fee2e2", color: "#c62828" }}
                   >
                     {deleting ? "Deleting…" : "Delete"}
                   </button>

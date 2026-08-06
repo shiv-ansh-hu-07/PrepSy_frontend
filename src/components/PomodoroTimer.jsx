@@ -270,7 +270,7 @@ export default function PomodoroTimer({ onLeaveRoom, roomDurationMinutes = 90 })
           <path
             d="M 20 90 A 70 70 0 0 1 160 90"
             fill="none"
-            stroke="#E5E7EB"
+            stroke="var(--card-border)"
             strokeWidth={STROKE}
           />
           <path
@@ -409,7 +409,7 @@ const styles = {
   sessions: {
     marginTop: 4,
     fontSize: 12,
-    color: "#6B7280",
+    color: "var(--text-secondary)",
     textAlign: "center",
     display: "flex",
     flexDirection: "column",
@@ -428,7 +428,7 @@ const styles = {
   },
   runningButton: {
     background: "#E5EAFB",
-    color: "#6B7280",
+    color: "var(--text-secondary)",
     cursor: "default",
     boxShadow: "none",
   },
@@ -466,7 +466,7 @@ const styles = {
     maxWidth: 290,
     background:
       "radial-gradient(circle at top, rgba(138,155,214,0.18), transparent 70%), #FFFFFF",
-    border: "1px solid #E6EAF8",
+    border: "1px solid var(--card-border)",
     borderRadius: 22,
     padding: "18px 18px 16px",
     boxShadow: "0 16px 34px rgba(74, 90, 133, 0.16)",
@@ -482,7 +482,7 @@ const styles = {
     margin: "10px 0 16px",
     fontSize: 13,
     lineHeight: 1.5,
-    color: "#6B7280",
+    color: "var(--text-secondary)",
   },
   promptActions: {
     display: "flex",
@@ -510,7 +510,7 @@ const styles = {
 
 const buttonStyle = {
   background: "var(--card-bg)",
-  border: "1px solid #E5E7EB",
+  border: "1px solid var(--card-border)",
   color: "var(--text-secondary)",
   padding: "6px 12px",
   minWidth: 96,

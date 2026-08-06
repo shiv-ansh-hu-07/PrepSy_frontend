@@ -64,7 +64,7 @@ export default function Register() {
         <p
           style={{
             fontSize: "15px",
-            color: "#6b7280",
+            color: "var(--text-secondary)",
             marginBottom: "28px",
             textAlign: "center",
           }}
@@ -95,7 +95,7 @@ export default function Register() {
               style={{
                 display: "block",
                 fontSize: "14px",
-                color: "#6b7280",
+                color: "var(--text-secondary)",
                 marginBottom: "6px",
               }}
             >
@@ -112,7 +112,7 @@ export default function Register() {
                 borderRadius: "18px",
                 border: "1px solid #e3e6ff",
                 fontSize: "14px",
-                color: "#1f2937",
+                color: "var(--text-primary)",
                 outline: "none",
               }}
               onFocus={(e) =>
@@ -131,7 +131,7 @@ export default function Register() {
               style={{
                 display: "block",
                 fontSize: "14px",
-                color: "#6b7280",
+                color: "var(--text-secondary)",
                 marginBottom: "6px",
               }}
             >
@@ -149,7 +149,7 @@ export default function Register() {
                 borderRadius: "18px",
                 border: "1px solid #e3e6ff",
                 fontSize: "14px",
-                color: "#1f2937",
+                color: "var(--text-primary)",
                 outline: "none",
               }}
               onFocus={(e) =>
@@ -168,7 +168,7 @@ export default function Register() {
               style={{
                 display: "block",
                 fontSize: "14px",
-                color: "#6b7280",
+                color: "var(--text-secondary)",
                 marginBottom: "6px",
               }}
             >
@@ -186,7 +186,7 @@ export default function Register() {
                 borderRadius: "18px",
                 border: "1px solid #e3e6ff",
                 fontSize: "14px",
-                color: "#1f2937",
+                color: "var(--text-primary)",
                 outline: "none",
               }}
               onFocus={(e) =>
@@ -242,7 +242,7 @@ export default function Register() {
             style={{
               marginTop: "22px",
               fontSize: "14px",
-              color: "#6b7280",
+              color: "var(--text-secondary)",
               textAlign: "center",
             }}
           >

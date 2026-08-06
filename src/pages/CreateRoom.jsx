@@ -502,7 +502,7 @@ export default function CreateRoom() {
             <Toggle value={scheduleEnabled} onChange={setScheduleEnabled} />
           </div>
           {scheduleEnabled && (
-            <div style={{ background: "var(--card-bg)", border: "1px solid #e6e9f8", borderRadius: 16, padding: 18, marginBottom: 20 }}>
+            <div style={{ background: "var(--card-bg)", border: "1px solid var(--card-border)", borderRadius: 16, padding: 18, marginBottom: 20 }}>
               <FieldLabel>Start Time</FieldLabel>
               <input type="time" style={inputBase} value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} />
               <FieldLabel>Timezone</FieldLabel>

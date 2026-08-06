@@ -97,7 +97,7 @@ export default function RoomPage() {
       <div
         style={{
           minHeight: "100vh",
-          background: "linear-gradient(180deg, #F8FAFF 0%, var(--accent-soft) 100%)",
+          background: "linear-gradient(180deg, var(--card-bg) 0%, var(--accent-soft) 100%)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -109,7 +109,7 @@ export default function RoomPage() {
             width: "100%",
             maxWidth: "520px",
             background: "var(--card-bg)",
-            border: "1px solid #E6EAF8",
+            border: "1px solid var(--card-border)",
             borderRadius: "24px",
             padding: "28px",
             boxShadow: "0 18px 40px rgba(74, 90, 133, 0.12)",
@@ -153,7 +153,7 @@ export default function RoomPage() {
       <div
         style={{
           minHeight: "100vh",
-          background: "linear-gradient(180deg, #F8FAFF 0%, var(--accent-soft) 100%)",
+          background: "linear-gradient(180deg, var(--card-bg) 0%, var(--accent-soft) 100%)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -172,7 +172,7 @@ export default function RoomPage() {
         minHeight: "100vh",
         overflowY: "auto",
         overflowX: "hidden",
-        background: "linear-gradient(180deg, #F8FAFF 0%, var(--accent-soft) 100%)",
+        background: "linear-gradient(180deg, var(--card-bg) 0%, var(--accent-soft) 100%)",
         fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont",
       }}
     >
