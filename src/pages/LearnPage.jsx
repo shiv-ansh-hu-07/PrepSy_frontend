@@ -5,7 +5,7 @@ import api, { fetchMyProfile } from "../services/api";
 import AppSideNav from "../components/AppSideNav";
 import { Search, ChevronDown, ChevronUp, Users } from "lucide-react";
 
-const PAGE_BG = "radial-gradient(ellipse at top, #eef1fb 0%, #f3f5fc 48%, #f8f9fe 100%)";
+const PAGE_BG = "var(--page-bg)";
 
 const DIFF = {
   beginner: { bg: "#e8f5e9", color: "#2e7d32", label: "Beginner" },
@@ -199,12 +199,12 @@ export default function LearnPage() {
                 margin: 0,
                 fontSize: isMobile ? 22 : 28,
                 fontFamily: "Georgia, serif",
-                color: "#2f3b63",
+                color: "var(--text-primary)",
               }}
             >
               AI-Powered Learning
             </h1>
-            <p style={{ margin: "6px 0 0", fontSize: 14, color: "#6b78a0" }}>
+            <p style={{ margin: "6px 0 0", fontSize: 14, color: "var(--text-secondary)" }}>
               Paste a YouTube playlist — get an AI-generated curriculum, roadmap, and study cohort.
             </p>
           </div>
@@ -224,7 +224,7 @@ export default function LearnPage() {
                 />
                 <Search
                   size={18}
-                  style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", color: "#8a9bd6", pointerEvents: "none" }}
+                  style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", color: "var(--accent)", pointerEvents: "none" }}
                 />
               </div>
               <button type="submit" disabled={loading || !url.trim()} style={btnPrimary(loading || !url.trim())}>
@@ -240,7 +240,7 @@ export default function LearnPage() {
               <p style={{ margin: 0, fontWeight: 800, color: "#3f4f7a", fontSize: 17 }}>
                 Running AI analysis
               </p>
-              <p style={{ margin: "10px 0 0", color: "#6b78a0", fontSize: 14 }}>{stepMsg}</p>
+              <p style={{ margin: "10px 0 0", color: "var(--text-secondary)", fontSize: 14 }}>{stepMsg}</p>
               <p style={{ margin: "6px 0 0", color: "#9aa3c0", fontSize: 12 }}>
                 This usually takes 30–60 seconds
               </p>
@@ -274,10 +274,10 @@ export default function LearnPage() {
                   />
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#2f3b63" }}>
+                  <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "var(--text-primary)" }}>
                     {result.title}
                   </h2>
-                  <p style={{ margin: "4px 0 0", fontSize: 13, color: "#6b78a0" }}>
+                  <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--text-secondary)" }}>
                     {result.channelTitle} · {result.videoCount} videos
                   </p>
                   <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
@@ -333,7 +333,7 @@ export default function LearnPage() {
                             width: 26,
                             height: 26,
                             borderRadius: "50%",
-                            background: "#8a9bd6",
+                            background: "var(--accent)",
                             color: "#fff",
                             fontSize: 12,
                             fontWeight: 700,
@@ -345,16 +345,16 @@ export default function LearnPage() {
                         >
                           {i + 1}
                         </span>
-                        <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: "#2f3b63" }}>
+                        <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
                           {topic.title}
                         </span>
-                        <span style={{ fontSize: 12, color: "#8a9bd6", flexShrink: 0 }}>
+                        <span style={{ fontSize: 12, color: "var(--accent)", flexShrink: 0 }}>
                           {(topic.videoPositions || []).length} videos
                         </span>
                         {expandedTopic === i ? (
-                          <ChevronUp size={16} color="#8a9bd6" />
+                          <ChevronUp size={16} color="var(--accent)" />
                         ) : (
-                          <ChevronDown size={16} color="#8a9bd6" />
+                          <ChevronDown size={16} color="var(--accent)" />
                         )}
                       </button>
                       {expandedTopic === i && (
@@ -419,14 +419,14 @@ export default function LearnPage() {
                         )}
                       </div>
                       <div style={{ flex: 1, paddingTop: 4 }}>
-                        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#2f3b63" }}>
+                        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
                           {week.theme}
                         </p>
                         <p
                           style={{
                             margin: "4px 0 8px",
                             fontSize: 12,
-                            color: "#6b78a0",
+                            color: "var(--text-secondary)",
                             lineHeight: 1.55,
                           }}
                         >
@@ -451,7 +451,7 @@ export default function LearnPage() {
               {/* Personalized Study Schedule */}
               <div style={card}>
                 <h3 style={sectionTitle}>📆 Your Study Schedule</h3>
-                <p style={{ margin: "0 0 16px", fontSize: 13, color: "#6b78a0" }}>
+                <p style={{ margin: "0 0 16px", fontSize: 13, color: "var(--text-secondary)" }}>
                   Tell us your pace and deadline — we'll fit this playlist into a day-by-day plan, and be honest if it doesn't fit.
                 </p>
 
@@ -545,12 +545,12 @@ export default function LearnPage() {
 
                     {schedule.dropped?.length > 0 && (
                       <div style={{ marginTop: 14 }}>
-                        <p style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 700, color: "#2f3b63" }}>
+                        <p style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
                           Skipped · {schedule.dropped.length} optional
                         </p>
                         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                           {schedule.dropped.map((v, i) => (
-                            <div key={i} style={{ fontSize: 12.5, color: "#6b78a0" }}>
+                            <div key={i} style={{ fontSize: 12.5, color: "var(--text-secondary)" }}>
                               • {v.title}{" "}
                               <span style={{ color: "#9aa3c0" }}>
                                 ({v.durationMin}m — {v.reason || "optional"})
@@ -562,7 +562,7 @@ export default function LearnPage() {
                     )}
 
                     <div style={{ marginTop: 16 }}>
-                      <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 700, color: "#2f3b63" }}>
+                      <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
                         Day-by-day plan
                         {schedule.requiredDays > schedule.requestedDays
                           ? ` · needs ${schedule.requiredDays} days (${schedule.requiredDays - schedule.requestedDays} over your ${schedule.requestedDays})`
@@ -603,10 +603,10 @@ export default function LearnPage() {
                     "linear-gradient(135deg, rgba(138,155,214,0.14), rgba(111,127,192,0.07))",
                 }}
               >
-                <h3 style={{ margin: "0 0 6px", fontSize: 16, fontWeight: 800, color: "#2f3b63", display: "flex", alignItems: "center", gap: 8 }}>
-                  <Users size={16} color="#8a9bd6" /> Create a Study Cohort
+                <h3 style={{ margin: "0 0 6px", fontSize: 16, fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 8 }}>
+                  <Users size={16} color="var(--accent)" /> Create a Study Cohort
                 </h3>
-                <p style={{ margin: "0 0 18px", fontSize: 13, color: "#6b78a0" }}>
+                <p style={{ margin: "0 0 18px", fontSize: 13, color: "var(--text-secondary)" }}>
                   Invite friends to study this playlist together — synced study rooms, group discussions, and quizzes.
                 </p>
                 <div
@@ -621,7 +621,7 @@ export default function LearnPage() {
                   <select
                     value={cohortMaxSize}
                     onChange={(e) => setCohortMaxSize(Number(e.target.value))}
-                    style={{ height: 46, borderRadius: 12, border: "1.5px solid rgba(138,155,214,0.4)", background: "#fff", padding: "0 14px", fontSize: 14, color: "#2f3b63", outline: "none" }}
+                    style={{ height: 46, borderRadius: 12, border: "1.5px solid rgba(138,155,214,0.4)", background: "#fff", padding: "0 14px", fontSize: 14, color: "var(--text-primary)", outline: "none" }}
                   >
                     {[5, 10, 15, 20, 30].map((n) => (
                       <option key={n} value={n}>
@@ -649,9 +649,9 @@ export default function LearnPage() {
                       onClick={() => setStartMode(mode)}
                       style={{
                         padding: "7px 14px", borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: "pointer",
-                        border: `1.5px solid ${startMode === mode ? "#8a9bd6" : "rgba(138,155,214,0.4)"}`,
+                        border: `1.5px solid ${startMode === mode ? "var(--accent)" : "rgba(138,155,214,0.4)"}`,
                         background: startMode === mode ? "rgba(138,155,214,0.16)" : "#fff",
-                        color: startMode === mode ? "#3f4f7a" : "#6b78a0",
+                        color: startMode === mode ? "#3f4f7a" : "var(--text-secondary)",
                       }}
                     >
                       {mode === "NOW" ? "Start now" : "Schedule for later"}
@@ -662,11 +662,11 @@ export default function LearnPage() {
                       type="datetime-local"
                       value={cohortStart}
                       onChange={(e) => setCohortStart(e.target.value)}
-                      style={{ height: 42, borderRadius: 10, border: "1.5px solid rgba(138,155,214,0.4)", background: "#fff", padding: "0 12px", fontSize: 13, color: "#2f3b63", outline: "none" }}
+                      style={{ height: 42, borderRadius: 10, border: "1.5px solid rgba(138,155,214,0.4)", background: "#fff", padding: "0 12px", fontSize: 13, color: "var(--text-primary)", outline: "none" }}
                     />
                   )}
                 </div>
-                <p style={{ margin: "8px 0 0", fontSize: 12, color: schedule?.days?.length ? "#6b78a0" : "#9aa3c0" }}>
+                <p style={{ margin: "8px 0 0", fontSize: 12, color: schedule?.days?.length ? "var(--text-secondary)" : "#9aa3c0" }}>
                   {schedule?.days?.length
                     ? `${schedule.days.length} daily sessions will be created from your schedule; members join the same room each day.`
                     : "Tip: generate a schedule above to auto-create daily sessions for this cohort."}
@@ -707,9 +707,9 @@ function Chip({ bg, color, children }) {
 
 const card = {
   borderRadius: 20,
-  border: "1px solid rgba(190,200,235,0.52)",
-  background: "rgba(255,255,255,0.82)",
-  boxShadow: "0 8px 28px rgba(74,90,133,0.07)",
+  border: "1px solid var(--card-border)",
+  background: "var(--card-bg)",
+  boxShadow: "var(--card-shadow)",
   backdropFilter: "blur(10px)",
   padding: "22px 22px",
   marginBottom: 20,
@@ -719,7 +719,7 @@ const sectionTitle = {
   margin: "0 0 16px",
   fontSize: 16,
   fontWeight: 800,
-  color: "#2f3b63",
+  color: "var(--text-primary)",
 };
 
 const inputStyle = {
@@ -727,10 +727,10 @@ const inputStyle = {
   width: "100%",
   borderRadius: 12,
   border: "1.5px solid rgba(138,155,214,0.4)",
-  background: "rgba(248,249,255,0.9)",
+  background: "var(--input-bg)",
   padding: "0 44px 0 14px",
   fontSize: 14,
-  color: "#2f3b63",
+  color: "var(--text-primary)",
   outline: "none",
   boxSizing: "border-box",
 };
@@ -740,7 +740,7 @@ const btnPrimary = (disabled) => ({
   padding: "0 24px",
   borderRadius: 12,
   border: "none",
-  background: disabled ? "#c5cde8" : "#8a9bd6",
+  background: disabled ? "#c5cde8" : "var(--accent)",
   color: "#fff",
   fontWeight: 700,
   fontSize: 14,

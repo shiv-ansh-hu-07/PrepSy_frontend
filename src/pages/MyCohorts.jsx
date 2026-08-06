@@ -4,7 +4,7 @@ import api from "../services/api";
 import AppSideNav from "../components/AppSideNav";
 import { Users } from "lucide-react";
 
-const PAGE_BG = "radial-gradient(ellipse at top, #eef1fb 0%, #f3f5fc 48%, #f8f9fe 100%)";
+const PAGE_BG = "var(--page-bg)";
 
 function useWindowWidth() {
   const [w, setW] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1200));
@@ -69,10 +69,10 @@ export default function MyCohorts() {
         <main style={{ minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 24 }}>
             <div style={{ minWidth: 0 }}>
-              <h1 style={{ margin: 0, fontSize: isMobile ? 22 : 28, fontFamily: "Georgia, serif", color: "#2f3b63" }}>
+              <h1 style={{ margin: 0, fontSize: isMobile ? 22 : 28, fontFamily: "Georgia, serif", color: "var(--text-primary)" }}>
                 YouTube Cohorts
               </h1>
-              <p style={{ margin: "6px 0 0", fontSize: 14, color: "#6b78a0" }}>
+              <p style={{ margin: "6px 0 0", fontSize: 14, color: "var(--text-secondary)" }}>
                 Study groups built from YouTube playlists. Open one for its roadmap, sessions, discussions, and quizzes.
               </p>
             </div>
@@ -82,14 +82,14 @@ export default function MyCohorts() {
           </div>
 
           {loading ? (
-            <div style={{ ...card, textAlign: "center", color: "#6b78a0" }}>Loading your cohorts…</div>
+            <div style={{ ...card, textAlign: "center", color: "var(--text-secondary)" }}>Loading your cohorts…</div>
           ) : error ? (
             <div style={{ ...card, background: "#fff5f5", border: "1px solid #fecaca", color: "#c62828" }}>{error}</div>
           ) : cohorts.length === 0 ? (
             <div style={{ ...card, textAlign: "center", padding: "40px 24px" }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>👥</div>
-              <p style={{ margin: 0, fontWeight: 800, color: "#3f4f7a", fontSize: 16 }}>No cohorts yet</p>
-              <p style={{ margin: "8px 0 18px", color: "#6b78a0", fontSize: 14 }}>
+              <p style={{ margin: 0, fontWeight: 800, color: "var(--text-primary)", fontSize: 16 }}>No cohorts yet</p>
+              <p style={{ margin: "8px 0 18px", color: "var(--text-secondary)", fontSize: 14 }}>
                 Analyze a YouTube playlist and create a study cohort to learn together.
               </p>
               <button onClick={() => navigate("/learn")} style={btnPrimary(false)}>
@@ -126,12 +126,12 @@ export default function MyCohorts() {
                     />
                   )}
                   <div>
-                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#2f3b63" }}>{c.name}</h3>
+                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "var(--text-primary)" }}>{c.name}</h3>
                     {c.playlist?.title && (
-                      <p style={{ margin: "4px 0 0", fontSize: 13, color: "#6b78a0" }}>{c.playlist.title}</p>
+                      <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--text-secondary)" }}>{c.playlist.title}</p>
                     )}
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#8a9bd6", fontSize: 12, fontWeight: 600 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--accent)", fontSize: 12, fontWeight: 600 }}>
                     <Users size={14} />
                     {c._count?.members ?? 0} member{(c._count?.members ?? 0) === 1 ? "" : "s"}
                   </div>
@@ -147,9 +147,9 @@ export default function MyCohorts() {
 
 const card = {
   borderRadius: 20,
-  border: "1px solid rgba(190,200,235,0.52)",
-  background: "rgba(255,255,255,0.82)",
-  boxShadow: "0 8px 28px rgba(74,90,133,0.07)",
+  border: "1px solid var(--card-border)",
+  background: "var(--card-bg)",
+  boxShadow: "var(--card-shadow)",
   backdropFilter: "blur(10px)",
   padding: "22px 22px",
   marginBottom: 20,
@@ -160,7 +160,7 @@ const btnPrimary = (disabled) => ({
   padding: "0 24px",
   borderRadius: 12,
   border: "none",
-  background: disabled ? "#c5cde8" : "#8a9bd6",
+  background: disabled ? "#c5cde8" : "var(--accent)",
   color: "#fff",
   fontWeight: 700,
   fontSize: 14,

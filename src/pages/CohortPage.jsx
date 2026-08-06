@@ -5,7 +5,7 @@ import api from "../services/api";
 import AppSideNav from "../components/AppSideNav";
 import { Users, BookOpen, MessageSquare, Brain, Calendar, ChevronDown, ChevronUp, Link2 } from "lucide-react";
 
-const PAGE_BG = "radial-gradient(ellipse at top, #eef1fb 0%, #f3f5fc 48%, #f8f9fe 100%)";
+const PAGE_BG = "var(--page-bg)";
 
 const DIFF = {
   beginner: { bg: "#e8f5e9", color: "#2e7d32" },
@@ -290,10 +290,10 @@ export default function CohortPage() {
           <div style={{ ...card, marginBottom: 16 }}>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
               <div style={{ minWidth: 0 }}>
-                <h1 style={{ margin: 0, fontSize: isMobile ? 20 : 24, fontFamily: "Georgia, serif", color: "#2f3b63" }}>
+                <h1 style={{ margin: 0, fontSize: isMobile ? 20 : 24, fontFamily: "Georgia, serif", color: "var(--text-primary)" }}>
                   {cohort.name}
                 </h1>
-                <p style={{ margin: "5px 0 0", fontSize: 13, color: "#6b78a0" }}>
+                <p style={{ margin: "5px 0 0", fontSize: 13, color: "var(--text-secondary)" }}>
                   {cohort.playlist?.title} · {cohort._count?.members} member{cohort._count?.members !== 1 ? "s" : ""}
                 </p>
                 {plan && (
@@ -365,14 +365,14 @@ export default function CohortPage() {
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   placeholder="Cohort name"
-                  style={{ flex: 1, height: 42, borderRadius: 10, border: "1.5px solid rgba(138,155,214,0.4)", background: "#fff", padding: "0 12px", fontSize: 14, color: "#2f3b63", outline: "none" }}
+                  style={{ flex: 1, height: 42, borderRadius: 10, border: "1.5px solid rgba(138,155,214,0.4)", background: "#fff", padding: "0 12px", fontSize: 14, color: "var(--text-primary)", outline: "none" }}
                 />
                 <input
                   type="time"
                   value={editTime}
                   onChange={(e) => setEditTime(e.target.value)}
                   title="Daily session time"
-                  style={{ height: 42, borderRadius: 10, border: "1.5px solid rgba(138,155,214,0.4)", background: "#fff", padding: "0 12px", fontSize: 14, color: "#2f3b63", outline: "none" }}
+                  style={{ height: 42, borderRadius: 10, border: "1.5px solid rgba(138,155,214,0.4)", background: "#fff", padding: "0 12px", fontSize: 14, color: "var(--text-primary)", outline: "none" }}
                 />
                 <button onClick={handleSaveEdit} disabled={savingEdit || !editName.trim()} style={{ ...btnPrimary(savingEdit || !editName.trim()), height: 42 }}>
                   {savingEdit ? "Saving…" : "Save"}
@@ -401,7 +401,7 @@ export default function CohortPage() {
                     borderRadius: 12,
                     border: active ? "1px solid rgba(138,155,214,0.4)" : "1px solid transparent",
                     background: active ? "rgba(138,155,214,0.16)" : "rgba(255,255,255,0.5)",
-                    color: active ? "#3f4f7a" : "#6b78a0",
+                    color: active ? "#3f4f7a" : "var(--text-secondary)",
                     fontWeight: active ? 700 : 600,
                     fontSize: 13,
                     cursor: "pointer",
@@ -425,10 +425,10 @@ export default function CohortPage() {
                   const dt = new Date(s.scheduledAt);
                   return (
                     <div key={s.id} style={{ display: "flex", gap: 12, alignItems: "center", padding: "8px 12px", borderRadius: 10, border: "1px solid rgba(190,200,235,0.4)", background: "rgba(248,249,255,0.6)" }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: "#8a9bd6", flexShrink: 0, width: 58 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", flexShrink: 0, width: 58 }}>
                         {dt.toLocaleDateString([], { month: "short", day: "numeric" })}
                       </span>
-                      <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: "#2f3b63", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: "var(--text-primary)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {s.topic}
                       </span>
                       {s.studyHours ? (
@@ -440,7 +440,7 @@ export default function CohortPage() {
               </div>
               <button
                 onClick={() => setActiveTab("sessions")}
-                style={{ marginTop: 12, background: "none", border: "none", color: "#8a9bd6", fontSize: 13, fontWeight: 600, cursor: "pointer", padding: 0 }}
+                style={{ marginTop: 12, background: "none", border: "none", color: "var(--accent)", fontSize: 13, fontWeight: 600, cursor: "pointer", padding: 0 }}
               >
                 View all {sessions.length} day{sessions.length === 1 ? "" : "s"} in Sessions →
               </button>
@@ -451,7 +451,7 @@ export default function CohortPage() {
           {activeTab === "roadmap" && (
             <div style={card}>
               {!plan ? (
-                <p style={{ color: "#6b78a0", fontSize: 14 }}>No AI plan available for this cohort yet.</p>
+                <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>No AI plan available for this cohort yet.</p>
               ) : (
                 <>
                   <h3 style={sectionTitle}>🗓 Study Roadmap</h3>
@@ -464,8 +464,8 @@ export default function CohortPage() {
                         {i < roadmap.length - 1 && <div style={{ flex: 1, width: 2, background: "rgba(138,155,214,0.2)", marginTop: 4, minHeight: 20 }} />}
                       </div>
                       <div style={{ flex: 1, paddingTop: 4 }}>
-                        <p style={{ margin: 0, fontWeight: 700, color: "#2f3b63", fontSize: 14 }}>{week.theme}</p>
-                        <p style={{ margin: "4px 0 8px", fontSize: 12, color: "#6b78a0", lineHeight: 1.5 }}>{week.goal}</p>
+                        <p style={{ margin: 0, fontWeight: 700, color: "var(--text-primary)", fontSize: 14 }}>{week.theme}</p>
+                        <p style={{ margin: "4px 0 8px", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>{week.goal}</p>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                           {(week.topics || []).map((t, j) => (
                             <span key={j} style={{ padding: "2px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: "rgba(138,155,214,0.12)", color: "#4f5fa8" }}>{t}</span>
@@ -485,9 +485,9 @@ export default function CohortPage() {
                           onClick={() => setExpandedTopics((p) => ({ ...p, [i]: !p[i] }))}
                           style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", background: expandedTopics[i] ? "rgba(138,155,214,0.08)" : "rgba(248,249,255,0.7)", border: "none", cursor: "pointer", textAlign: "left" }}
                         >
-                          <span style={{ width: 24, height: 24, borderRadius: "50%", background: "#8a9bd6", color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i + 1}</span>
-                          <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: "#2f3b63" }}>{topic.title}</span>
-                          {expandedTopics[i] ? <ChevronUp size={14} color="#8a9bd6" /> : <ChevronDown size={14} color="#8a9bd6" />}
+                          <span style={{ width: 24, height: 24, borderRadius: "50%", background: "var(--accent)", color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i + 1}</span>
+                          <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{topic.title}</span>
+                          {expandedTopics[i] ? <ChevronUp size={14} color="var(--accent)" /> : <ChevronDown size={14} color="var(--accent)" />}
                         </button>
                         {expandedTopics[i] && (
                           <p style={{ margin: 0, padding: "10px 14px 12px 48px", fontSize: 13, color: "#5e6c92", lineHeight: 1.6, background: "rgba(248,249,255,0.5)", borderTop: "1px solid rgba(190,200,235,0.3)" }}>
@@ -513,7 +513,7 @@ export default function CohortPage() {
                     onChange={(e) => setNewPost(e.target.value)}
                     placeholder="Share a thought, question, or resource…"
                     rows={3}
-                    style={{ flex: 1, borderRadius: 12, border: "1.5px solid rgba(138,155,214,0.4)", background: "rgba(248,249,255,0.9)", padding: "10px 14px", fontSize: 14, color: "#2f3b63", outline: "none", resize: "vertical" }}
+                    style={{ flex: 1, borderRadius: 12, border: "1.5px solid rgba(138,155,214,0.4)", background: "var(--input-bg)", padding: "10px 14px", fontSize: 14, color: "var(--text-primary)", outline: "none", resize: "vertical" }}
                   />
                   <button
                     onClick={() => handlePostDiscussion(null)}
@@ -524,22 +524,22 @@ export default function CohortPage() {
                   </button>
                 </div>
               ) : (
-                <p style={{ color: "#6b78a0", fontSize: 13, marginBottom: 16 }}>Join the cohort to participate in discussions.</p>
+                <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 16 }}>Join the cohort to participate in discussions.</p>
               )}
 
               {discussions.length === 0 ? (
-                <p style={{ color: "#9aa3c0", fontSize: 14 }}>No posts yet. Be the first to start a discussion!</p>
+                <p style={{ color: "var(--text-muted)", fontSize: 14 }}>No posts yet. Be the first to start a discussion!</p>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   {discussions.map((post) => (
                     <div key={post.id} style={{ borderRadius: 14, border: "1px solid rgba(190,200,235,0.45)", overflow: "hidden" }}>
                       <div style={{ padding: "14px 16px", background: "rgba(248,249,255,0.7)" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                          <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#8a9bd6", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 }}>
+                          <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--accent)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 }}>
                             {(post.author?.name || "?")[0]?.toUpperCase()}
                           </div>
-                          <span style={{ fontWeight: 700, fontSize: 13, color: "#2f3b63" }}>{post.author?.name || "Unknown"}</span>
-                          <span style={{ fontSize: 11, color: "#9aa3c0", marginLeft: "auto" }}>
+                          <span style={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>{post.author?.name || "Unknown"}</span>
+                          <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: "auto" }}>
                             {new Date(post.createdAt).toLocaleDateString()}
                           </span>
                         </div>
@@ -548,7 +548,7 @@ export default function CohortPage() {
                         {cohort.isMember && (
                           <button
                             onClick={() => setReplyOpen((p) => ({ ...p, [post.id]: !p[post.id] }))}
-                            style={{ marginTop: 10, background: "none", border: "none", color: "#8a9bd6", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                            style={{ marginTop: 10, background: "none", border: "none", color: "var(--accent)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                           >
                             {replyOpen[post.id] ? "Cancel" : `↩ Reply`}
                           </button>
@@ -581,7 +581,7 @@ export default function CohortPage() {
                                 <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#c7d0ed", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700 }}>
                                   {(reply.author?.name || "?")[0]?.toUpperCase()}
                                 </div>
-                                <span style={{ fontWeight: 700, fontSize: 12, color: "#2f3b63" }}>{reply.author?.name}</span>
+                                <span style={{ fontWeight: 700, fontSize: 12, color: "var(--text-primary)" }}>{reply.author?.name}</span>
                               </div>
                               <p style={{ margin: 0, fontSize: 13, color: "#5e6c92", lineHeight: 1.5 }}>{reply.content}</p>
                             </div>
@@ -600,7 +600,7 @@ export default function CohortPage() {
             <div style={card}>
               <h3 style={sectionTitle}>🧠 Quiz</h3>
               {!cohort.isMember ? (
-                <p style={{ color: "#6b78a0", fontSize: 14 }}>Join the cohort to access quizzes.</p>
+                <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>Join the cohort to access quizzes.</p>
               ) : !quiz && !quizLoading ? (
                 <>
                   <p style={{ margin: "0 0 18px", fontSize: 14, color: "#5e6c92" }}>
@@ -626,17 +626,17 @@ export default function CohortPage() {
               ) : quizLoading ? (
                 <div style={{ textAlign: "center", padding: "32px 0" }}>
                   <p style={{ fontSize: 36, margin: "0 0 12px" }}>🤖</p>
-                  <p style={{ color: "#6b78a0", fontSize: 14 }}>Generating quiz questions…</p>
+                  <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>Generating quiz questions…</p>
                 </div>
               ) : (
                 <div>
                   {quizSubmitted && quizScore ? (
                     <div style={{ textAlign: "center", padding: "24px 0 8px", marginBottom: 24 }}>
                       <p style={{ fontSize: 40, margin: "0 0 8px" }}>{quizScore.score / quizScore.total >= 0.8 ? "🎉" : quizScore.score / quizScore.total >= 0.5 ? "👍" : "📖"}</p>
-                      <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#2f3b63" }}>
+                      <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "var(--text-primary)" }}>
                         {quizScore.score} / {quizScore.total}
                       </p>
-                      <p style={{ margin: "6px 0 0", color: "#6b78a0", fontSize: 14 }}>
+                      <p style={{ margin: "6px 0 0", color: "var(--text-secondary)", fontSize: 14 }}>
                         {quizScore.score / quizScore.total >= 0.8 ? "Excellent work!" : quizScore.score / quizScore.total >= 0.5 ? "Good effort — keep going!" : "Review the material and try again."}
                       </p>
                       <button onClick={handleGenerateQuiz} style={{ ...btnPrimary(false), marginTop: 16 }}>
@@ -644,7 +644,7 @@ export default function CohortPage() {
                       </button>
                     </div>
                   ) : (
-                    <button onClick={() => { setQuiz(null); setSelectedAnswers({}); }} style={{ marginBottom: 16, background: "none", border: "none", color: "#8a9bd6", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                    <button onClick={() => { setQuiz(null); setSelectedAnswers({}); }} style={{ marginBottom: 16, background: "none", border: "none", color: "var(--accent)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                       ← Back
                     </button>
                   )}
@@ -653,7 +653,7 @@ export default function CohortPage() {
                     const correct = quizSubmitted ? q.answer : null;
                     return (
                       <div key={i} style={{ borderRadius: 14, border: "1px solid rgba(190,200,235,0.45)", padding: "16px", marginBottom: 14 }}>
-                        <p style={{ margin: "0 0 12px", fontWeight: 700, fontSize: 14, color: "#2f3b63" }}>
+                        <p style={{ margin: "0 0 12px", fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>
                           {i + 1}. {q.question}
                         </p>
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -669,9 +669,9 @@ export default function CohortPage() {
                                   textAlign: "left",
                                   padding: "10px 14px",
                                   borderRadius: 10,
-                                  border: `1.5px solid ${isCorrect ? "#22c55e" : isWrong ? "#ef4444" : selected ? "#8a9bd6" : "rgba(190,200,235,0.45)"}`,
+                                  border: `1.5px solid ${isCorrect ? "#22c55e" : isWrong ? "#ef4444" : selected ? "var(--accent)" : "rgba(190,200,235,0.45)"}`,
                                   background: isCorrect ? "#f0fdf4" : isWrong ? "#fef2f2" : selected ? "rgba(138,155,214,0.12)" : "rgba(248,249,255,0.7)",
-                                  color: "#2f3b63",
+                                  color: "var(--text-primary)",
                                   fontSize: 13,
                                   cursor: quizSubmitted ? "default" : "pointer",
                                   fontWeight: selected ? 600 : 400,
@@ -737,7 +737,7 @@ export default function CohortPage() {
               )}
 
               {sessions.length === 0 ? (
-                <p style={{ color: "#9aa3c0", fontSize: 14 }}>No sessions scheduled yet.</p>
+                <p style={{ color: "var(--text-muted)", fontSize: 14 }}>No sessions scheduled yet.</p>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {sessions.map((s) => {
@@ -751,18 +751,18 @@ export default function CohortPage() {
                     return (
                       <div key={s.id} style={{ padding: "14px 16px", borderRadius: 14, border: "1px solid rgba(190,200,235,0.45)", display: "flex", gap: 14, alignItems: "flex-start" }}>
                         <div style={{ width: 46, textAlign: "center", flexShrink: 0 }}>
-                          <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#8a9bd6", textTransform: "uppercase" }}>{dt.toLocaleString("default", { month: "short" })}</p>
-                          <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#2f3b63" }}>{dt.getDate()}</p>
+                          <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "var(--accent)", textTransform: "uppercase" }}>{dt.toLocaleString("default", { month: "short" })}</p>
+                          <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "var(--text-primary)" }}>{dt.getDate()}</p>
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#2f3b63" }}>{s.topic}</p>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{s.topic}</p>
                             <span style={{ padding: "2px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: st.bg, color: st.color }}>{st.label}</span>
                             {s.studyHours ? (
                               <span style={{ padding: "2px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: "rgba(34,197,94,0.12)", color: "#166534" }}>⏱ ~{s.studyHours}h</span>
                             ) : null}
                           </div>
-                          <p style={{ margin: "3px 0 0", fontSize: 12, color: "#8a9bd6" }}>
+                          <p style={{ margin: "3px 0 0", fontSize: 12, color: "var(--accent)" }}>
                             {dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                           </p>
                           {s.description ? (
@@ -791,12 +791,12 @@ export default function CohortPage() {
                       {(m.user?.name || "?")[0]?.toUpperCase()}
                     </div>
                     <div>
-                      <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#2f3b63" }}>{m.user?.name || "Unknown"}</p>
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{m.user?.name || "Unknown"}</p>
                       {cohort.createdById === m.userId && (
-                        <p style={{ margin: 0, fontSize: 11, color: "#8a9bd6", fontWeight: 600 }}>Creator</p>
+                        <p style={{ margin: 0, fontSize: 11, color: "var(--accent)", fontWeight: 600 }}>Creator</p>
                       )}
                     </div>
-                    <p style={{ margin: "0 0 0 auto", fontSize: 12, color: "#9aa3c0" }}>
+                    <p style={{ margin: "0 0 0 auto", fontSize: 12, color: "var(--text-muted)" }}>
                       Joined {new Date(m.joinedAt).toLocaleDateString()}
                     </p>
                   </div>
@@ -812,9 +812,9 @@ export default function CohortPage() {
 
 const card = {
   borderRadius: 20,
-  border: "1px solid rgba(190,200,235,0.52)",
-  background: "rgba(255,255,255,0.82)",
-  boxShadow: "0 8px 28px rgba(74,90,133,0.07)",
+  border: "1px solid var(--card-border)",
+  background: "var(--card-bg)",
+  boxShadow: "var(--card-shadow)",
   backdropFilter: "blur(10px)",
   padding: "22px 22px",
   marginBottom: 20,
@@ -824,7 +824,7 @@ const sectionTitle = {
   margin: "0 0 16px",
   fontSize: 16,
   fontWeight: 800,
-  color: "#2f3b63",
+  color: "var(--text-primary)",
 };
 
 const btnPrimary = (disabled) => ({
@@ -832,7 +832,7 @@ const btnPrimary = (disabled) => ({
   padding: "0 22px",
   borderRadius: 12,
   border: "none",
-  background: disabled ? "#c5cde8" : "#8a9bd6",
+  background: disabled ? "#c5cde8" : "var(--accent)",
   color: "#fff",
   fontWeight: 700,
   fontSize: 14,

@@ -9,9 +9,12 @@ import {
   MessageCircle,
   PlusCircle,
   UserRound,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 
 const navItems = [
   { label: "Home", path: "/dashboard", icon: Home },
@@ -26,6 +29,7 @@ const navItems = [
 
 export default function AppSideNav() {
   const { user, guestSessionActive } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const isGuestViewer = !user && guestSessionActive;
@@ -65,6 +69,13 @@ export default function AppSideNav() {
           );
         })}
       </nav>
+
+      <button type="button" onClick={toggleTheme} style={styles.themeToggle} title="Toggle light / dark theme">
+        {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+        <span style={{ flex: 1, textAlign: "left", fontSize: 14 }}>
+          {theme === "dark" ? "Light mode" : "Dark mode"}
+        </span>
+      </button>
 
       <div style={styles.streakCard}>
         <p style={styles.streakTitle}>Keep the streak alive</p>
@@ -116,10 +127,9 @@ const styles = {
   shell: {
     width: "100%",
     borderRadius: 24,
-    border: "1px solid rgba(190,200,235,0.52)",
-    background:
-      "linear-gradient(180deg, rgba(255,255,255,0.86), rgba(242,245,255,0.76))",
-    boxShadow: "0 18px 46px rgba(74,90,133,0.12)",
+    border: "1px solid var(--card-border)",
+    background: "var(--nav-bg)",
+    boxShadow: "var(--card-shadow)",
     backdropFilter: "blur(12px)",
     padding: 18,
     display: "grid",
@@ -131,7 +141,7 @@ const styles = {
     alignItems: "center",
     gap: 12,
     padding: "4px 4px 12px",
-    borderBottom: "1px solid rgba(190,200,235,0.44)",
+    borderBottom: "1px solid var(--card-border)",
   },
   logoMark: {
     width: 42,
@@ -151,11 +161,11 @@ const styles = {
     fontFamily: "Georgia, serif",
     fontSize: 22,
     lineHeight: 1,
-    color: "#3f4f7a",
+    color: "var(--text-primary)",
   },
   brandSub: {
     margin: "5px 0 0",
-    color: "#7a89b8",
+    color: "var(--text-secondary)",
     fontSize: 12,
   },
   navList: {
@@ -168,7 +178,7 @@ const styles = {
     borderRadius: 14,
     border: active ? "1px solid rgba(138,155,214,0.38)" : "1px solid transparent",
     background: active ? "rgba(138,155,214,0.16)" : "transparent",
-    color: disabled ? "#a8b1cc" : active ? "#3f4f7a" : "#5e6c92",
+    color: disabled ? "var(--text-muted)" : active ? "var(--text-primary)" : "var(--text-secondary)",
     display: "flex",
     alignItems: "center",
     gap: 11,
@@ -187,21 +197,36 @@ const styles = {
   lockIcon: {
     flexShrink: 0,
   },
+  themeToggle: {
+    minHeight: 44,
+    width: "100%",
+    borderRadius: 14,
+    border: "1px solid var(--card-border)",
+    background: "transparent",
+    color: "var(--text-secondary)",
+    display: "flex",
+    alignItems: "center",
+    gap: 11,
+    padding: "0 12px",
+    cursor: "pointer",
+    fontWeight: 600,
+    boxSizing: "border-box",
+  },
   streakCard: {
     borderRadius: 18,
-    border: "1px solid rgba(190,200,235,0.48)",
-    background: "rgba(255,255,255,0.68)",
+    border: "1px solid var(--card-border)",
+    background: "var(--card-bg)",
     padding: 16,
   },
   streakTitle: {
     margin: 0,
-    color: "#3f4f7a",
+    color: "var(--text-primary)",
     fontWeight: 800,
     fontSize: 14,
   },
   streakCopy: {
     margin: "8px 0 14px",
-    color: "#6b78a0",
+    color: "var(--text-secondary)",
     fontSize: 13,
     lineHeight: 1.5,
   },
@@ -210,7 +235,7 @@ const styles = {
     width: "100%",
     borderRadius: 12,
     border: "none",
-    background: "#8a9bd6",
+    background: "var(--accent)",
     color: "#ffffff",
     display: "flex",
     alignItems: "center",
@@ -225,20 +250,20 @@ const styles = {
     gap: 11,
     padding: 12,
     borderRadius: 18,
-    background: "rgba(238,242,255,0.72)",
+    background: "var(--card-bg)",
   },
   avatar: {
     width: 38,
     height: 38,
     borderRadius: "50%",
     background: "#ffffff",
-    color: "#5f6fa3",
+    color: "var(--text-secondary)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     fontWeight: 800,
     flexShrink: 0,
-    border: "1px solid rgba(190,200,235,0.7)",
+    border: "1px solid var(--card-border)",
   },
   avatarImage: {
     width: 38,
@@ -246,12 +271,12 @@ const styles = {
     borderRadius: "50%",
     objectFit: "cover",
     flexShrink: 0,
-    border: "1px solid rgba(190,200,235,0.7)",
+    border: "1px solid var(--card-border)",
     background: "#ffffff",
   },
   profileName: {
     margin: 0,
-    color: "#3f4f7a",
+    color: "var(--text-primary)",
     fontWeight: 800,
     fontSize: 14,
     overflow: "hidden",
@@ -260,7 +285,7 @@ const styles = {
   },
   profileMeta: {
     margin: "2px 0 0",
-    color: "#7a89b8",
+    color: "var(--text-secondary)",
     fontSize: 12,
     overflow: "hidden",
     textOverflow: "ellipsis",
