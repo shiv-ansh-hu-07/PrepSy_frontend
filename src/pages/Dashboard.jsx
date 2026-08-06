@@ -33,7 +33,7 @@ function roomIconBg(room) {
   const tags = (room.tags || []).map((t) => t.toLowerCase());
   if (tags.some((t) => t.includes("dsa") || t.includes("algorithm") || t.includes("leetcode"))) return "#e8f5e9";
   if (tags.some((t) => t.includes("system") || t.includes("design"))) return "#e3f2fd";
-  if (tags.some((t) => t.includes("react") || t.includes("frontend"))) return "#e8eaf6";
+  if (tags.some((t) => t.includes("react") || t.includes("frontend"))) return "var(--accent-soft)";
   if (tags.some((t) => t.includes("ml") || t.includes("ai"))) return "#fce4ec";
   return "#f3e8ff";
 }
@@ -46,6 +46,7 @@ export default function Dashboard() {
   const isTablet = windowWidth < 960;
 
   const [publicRooms, setPublicRooms] = useState([]);
+  const [roomsLoaded, setRoomsLoaded] = useState(false);
   const [myAnalytics, setMyAnalytics] = useState(null);
   const [focusSummary, setFocusSummary] = useState(null);
 
@@ -88,6 +89,8 @@ export default function Dashboard() {
         if (!cancelled) setPublicRooms(merged);
       } catch (err) {
         console.error("Dashboard rooms load error:", err);
+      } finally {
+        if (!cancelled) setRoomsLoaded(true);
       }
     }
     loadMyAnalytics();
@@ -184,21 +187,26 @@ export default function Dashboard() {
               <button onClick={() => navigate("/join-room")} style={viewAllBtn}>View all →</button>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {sessionRooms.map((room) => (
-                <SessionRow key={room.roomId} room={room} isMobile={isMobile} onJoin={() => navigate(`/room/${room.roomId}`)} />
-              ))}
-              {sessionRooms.length === 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 2, minHeight: 132 }}>
+              {!roomsLoaded ? (
+                <div style={{ minHeight: 120, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: 13 }}>
+                  Loading sessions…
+                </div>
+              ) : sessionRooms.length === 0 ? (
                 <div style={{
                   textAlign: "center", padding: isMobile ? "24px 16px" : "36px 20px",
-                  background: "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)",
-                  borderRadius: 16, border: "1px dashed rgba(124,58,237,0.2)",
+                  background: "var(--accent-soft)",
+                  borderRadius: 16, border: "1px dashed rgba(124,58,237,0.28)",
                 }}>
                   <p style={{ fontSize: 28, margin: "0 0 8px" }}>📚</p>
                   <p style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: 14, margin: "0 0 4px" }}>No live rooms right now</p>
-                  <p style={{ fontSize: 12, color: "#7b88b8", margin: "0 0 16px", lineHeight: 1.5 }}>Be the first to start a session.</p>
+                  <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "0 0 16px", lineHeight: 1.5 }}>Be the first to start a session.</p>
                   <button onClick={() => navigate("/create-room")} style={createRoomBtn}>Create a Room →</button>
                 </div>
+              ) : (
+                sessionRooms.map((room) => (
+                  <SessionRow key={room.roomId} room={room} isMobile={isMobile} onJoin={() => navigate(`/room/${room.roomId}`)} />
+                ))
               )}
             </div>
           </div>
@@ -307,7 +315,7 @@ function StatCard({ icon, label, value, sub }) {
           background: "var(--accent-soft)", display: "flex", alignItems: "center",
           justifyContent: "center", fontSize: 12, flexShrink: 0,
         }}>{icon}</span>
-        <span style={{ fontSize: 11, color: "#7b88b8", fontWeight: 500, lineHeight: 1.2 }}>{label}</span>
+        <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 500, lineHeight: 1.2 }}>{label}</span>
       </div>
       <p style={{ margin: "0 0 2px", fontSize: 20, fontWeight: 800, color: "var(--text-primary)", lineHeight: 1 }}>{value}</p>
       <p style={{ margin: 0, fontSize: 10, color: "var(--text-muted)" }}>{sub}</p>
@@ -357,7 +365,7 @@ function SessionRow({ room, isMobile, onJoin }) {
       display: "flex", alignItems: "center", gap: isMobile ? 10 : 14,
       padding: isMobile ? "11px 12px" : "13px 14px", borderRadius: 14,
       border: active ? "1px solid rgba(34,197,94,0.2)" : "1px solid var(--card-border)",
-      background: active ? "rgba(34,197,94,0.03)" : "rgba(255,255,255,0.5)",
+      background: active ? "rgba(34,197,94,0.03)" : "var(--card-bg)",
       marginBottom: 8,
     }}>
       <div style={{
@@ -390,7 +398,7 @@ function SessionRow({ room, isMobile, onJoin }) {
 
       <button onClick={active ? onJoin : undefined} disabled={!active} style={{
         padding: isMobile ? "6px 12px" : "7px 16px", borderRadius: 10, border: "none",
-        background: active ? "#7c3aed" : "#e8eaf6",
+        background: active ? "#7c3aed" : "var(--accent-soft)",
         color: active ? "#fff" : "var(--text-muted)",
         fontWeight: 600, fontSize: 12, cursor: active ? "pointer" : "default",
         flexShrink: 0, whiteSpace: "nowrap",
