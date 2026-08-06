@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
-const BG = "radial-gradient(ellipse at 60% 20%, var(--accent-soft) 0%, #f4f6fd 55%, #f8f9fe 100%)";
+const BG = "radial-gradient(ellipse at 60% 20%, var(--accent-soft) 0%, #f4f6fd 55%, var(--card-bg) 100%)";
 
 const FILTER_TABS = [
   { label: "All", tag: "" },
@@ -158,7 +158,7 @@ export default function JoinRoom() {
                 value={roomId} onChange={(e) => setRoomId(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleJoin()}
                 placeholder="Paste Room ID..."
-                style={{ flex: 1, height: 42, borderRadius: 11, border: "1px solid #d6d9e8", padding: "0 13px", fontSize: 14, outline: "none", color: "var(--text-primary)", background: "#fafbff" }}
+                style={{ flex: 1, height: 42, borderRadius: 11, border: "1px solid #d6d9e8", padding: "0 13px", fontSize: 14, outline: "none", color: "var(--text-primary)", background: "var(--card-bg)" }}
               />
               <button onClick={handleJoin} style={{ ...joinBtnStyle, padding: "0 16px", height: 42, fontSize: 13 }}>Join →</button>
             </div>
@@ -190,7 +190,7 @@ export default function JoinRoom() {
                 value={tagQuery} onChange={(e) => setTagQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleTagSearch()}
                 placeholder="e.g. dsa, react, system design..."
-                style={{ flex: 1, height: 42, borderRadius: 11, border: "1px solid #d6d9e8", padding: "0 13px", fontSize: 14, outline: "none", color: "var(--text-primary)", background: "#fafbff" }}
+                style={{ flex: 1, height: 42, borderRadius: 11, border: "1px solid #d6d9e8", padding: "0 13px", fontSize: 14, outline: "none", color: "var(--text-primary)", background: "var(--card-bg)" }}
               />
               <button onClick={handleTagSearch} disabled={searching}
                 style={{ ...joinBtnStyle, background: "var(--accent-soft)", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.2)", boxShadow: "none", padding: "0 14px", height: 42, fontSize: 13 }}>
@@ -320,7 +320,7 @@ function RoomCard({ room, now, isMobile, onJoin }) {
             Join Now
           </button>
         ) : (
-          <button style={{ padding: "7px 12px", borderRadius: 10, border: "1px solid rgba(190,200,235,0.7)", background: "#fafbff", color: "#7b88b8", fontWeight: 500, fontSize: 11, cursor: "default" }}>
+          <button style={{ padding: "7px 12px", borderRadius: 10, border: "1px solid rgba(190,200,235,0.7)", background: "var(--card-bg)", color: "#7b88b8", fontWeight: 500, fontSize: 11, cursor: "default" }}>
             Notify me
           </button>
         )}

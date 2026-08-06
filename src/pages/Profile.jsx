@@ -508,7 +508,7 @@ export default function Profile() {
                   </Field>
                   <div style={{
                     borderRadius: 14,
-                    background: profile.aiMonitorConsent ? "linear-gradient(135deg,#f3f0ff 0%,#ede9fe 100%)" : "#f6f8ff",
+                    background: profile.aiMonitorConsent ? "linear-gradient(135deg,#f3f0ff 0%,#ede9fe 100%)" : "var(--card-bg)",
                     border: `1.5px solid ${profile.aiMonitorConsent ? "#c4b5fd" : "var(--card-border)"}`,
                     padding: "16px 18px",
                     display: "flex",
@@ -1211,7 +1211,7 @@ function formatCollabStyle(pref) {
 const styles = {
   page: {
     minHeight: "calc(100vh - 76px)",
-    background: "radial-gradient(ellipse at top, var(--accent-soft) 0%, #f4f6fd 46%, #f8f9fe 100%)",
+    background: "radial-gradient(ellipse at top, var(--accent-soft) 0%, #f4f6fd 46%, var(--card-bg) 100%)",
     padding: "32px 24px 56px",
   },
   layout: (isNarrow) => ({
@@ -1303,7 +1303,7 @@ const styles = {
   // form panel
   formPanel: {
     borderRadius: 22, border: "1px solid var(--card-border)",
-    background: "rgba(255,255,255,0.84)", boxShadow: "0 14px 38px rgba(74,90,133,0.08)",
+    background: "var(--card-bg)", boxShadow: "0 14px 38px rgba(74,90,133,0.08)",
     padding: 22, display: "grid", gap: 22, minWidth: 0, boxSizing: "border-box",
   },
   section: { display: "grid", gap: 14, paddingBottom: 18, borderBottom: "1px solid var(--card-border)" },
@@ -1321,7 +1321,7 @@ const styles = {
   },
   inputReadOnly: {
     width: "100%", minHeight: 40, borderRadius: 11, border: "1px solid var(--card-border)",
-    background: "#f6f8ff", color: "#65749f", padding: "9px 12px", fontSize: 13,
+    background: "var(--card-bg)", color: "#65749f", padding: "9px 12px", fontSize: 13,
     outline: "none", boxSizing: "border-box",
   },
   textarea: {
@@ -1348,7 +1348,7 @@ const styles = {
   segmentDescription: { color: "#65749f", fontSize: 11, lineHeight: 1.3 },
   toggleRow: {
     display: "flex", alignItems: "flex-start", gap: 10, color: "var(--text-secondary)", fontSize: 13,
-    lineHeight: 1.5, padding: 12, borderRadius: 12, background: "#f6f8ff",
+    lineHeight: 1.5, padding: 12, borderRadius: 12, background: "var(--card-bg)",
     border: "1px solid var(--card-border)",
   },
   multiTrigger: {
@@ -1377,7 +1377,7 @@ const styles = {
   // view panel
   viewPanel: {
     borderRadius: 22, border: "1px solid var(--card-border)",
-    background: "rgba(255,255,255,0.84)", boxShadow: "0 14px 38px rgba(74,90,133,0.08)",
+    background: "var(--card-bg)", boxShadow: "0 14px 38px rgba(74,90,133,0.08)",
     padding: 22, display: "grid", gap: 0, minWidth: 0, boxSizing: "border-box",
   },
   viewSection: {

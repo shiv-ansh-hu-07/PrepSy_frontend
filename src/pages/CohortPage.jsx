@@ -424,7 +424,7 @@ export default function CohortPage() {
                 {sessions.slice(0, 5).map((s) => {
                   const dt = new Date(s.scheduledAt);
                   return (
-                    <div key={s.id} style={{ display: "flex", gap: 12, alignItems: "center", padding: "8px 12px", borderRadius: 10, border: "1px solid var(--card-border)", background: "rgba(248,249,255,0.6)" }}>
+                    <div key={s.id} style={{ display: "flex", gap: 12, alignItems: "center", padding: "8px 12px", borderRadius: 10, border: "1px solid var(--card-border)", background: "var(--accent-soft)" }}>
                       <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", flexShrink: 0, width: 58 }}>
                         {dt.toLocaleDateString([], { month: "short", day: "numeric" })}
                       </span>
@@ -483,14 +483,14 @@ export default function CohortPage() {
                         <button
                           type="button"
                           onClick={() => setExpandedTopics((p) => ({ ...p, [i]: !p[i] }))}
-                          style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", background: expandedTopics[i] ? "rgba(138,155,214,0.08)" : "rgba(248,249,255,0.7)", border: "none", cursor: "pointer", textAlign: "left" }}
+                          style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", background: expandedTopics[i] ? "rgba(138,155,214,0.08)" : "var(--accent-soft)", border: "none", cursor: "pointer", textAlign: "left" }}
                         >
                           <span style={{ width: 24, height: 24, borderRadius: "50%", background: "var(--accent)", color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i + 1}</span>
                           <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{topic.title}</span>
                           {expandedTopics[i] ? <ChevronUp size={14} color="var(--accent)" /> : <ChevronDown size={14} color="var(--accent)" />}
                         </button>
                         {expandedTopics[i] && (
-                          <p style={{ margin: 0, padding: "10px 14px 12px 48px", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, background: "rgba(248,249,255,0.5)", borderTop: "1px solid rgba(190,200,235,0.3)" }}>
+                          <p style={{ margin: 0, padding: "10px 14px 12px 48px", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, background: "var(--accent-soft)", borderTop: "1px solid rgba(190,200,235,0.3)" }}>
                             {topic.description}
                           </p>
                         )}
@@ -533,7 +533,7 @@ export default function CohortPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   {discussions.map((post) => (
                     <div key={post.id} style={{ borderRadius: 14, border: "1px solid var(--card-border)", overflow: "hidden" }}>
-                      <div style={{ padding: "14px 16px", background: "rgba(248,249,255,0.7)" }}>
+                      <div style={{ padding: "14px 16px", background: "var(--accent-soft)" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                           <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--accent)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 }}>
                             {(post.author?.name || "?")[0]?.toUpperCase()}
@@ -574,7 +574,7 @@ export default function CohortPage() {
 
                       {/* Nested replies */}
                       {(post.replies || []).length > 0 && (
-                        <div style={{ borderTop: "1px solid rgba(190,200,235,0.35)", background: "rgba(242,245,255,0.5)" }}>
+                        <div style={{ borderTop: "1px solid rgba(190,200,235,0.35)", background: "var(--accent-soft)" }}>
                           {post.replies.map((reply) => (
                             <div key={reply.id} style={{ padding: "10px 16px 10px 40px", borderBottom: "1px solid rgba(190,200,235,0.2)" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 5 }}>
@@ -670,7 +670,7 @@ export default function CohortPage() {
                                   padding: "10px 14px",
                                   borderRadius: 10,
                                   border: `1.5px solid ${isCorrect ? "#22c55e" : isWrong ? "#ef4444" : selected ? "var(--accent)" : "var(--card-border)"}`,
-                                  background: isCorrect ? "#f0fdf4" : isWrong ? "#fef2f2" : selected ? "rgba(138,155,214,0.12)" : "rgba(248,249,255,0.7)",
+                                  background: isCorrect ? "#f0fdf4" : isWrong ? "#fef2f2" : selected ? "rgba(138,155,214,0.12)" : "var(--accent-soft)",
                                   color: "var(--text-primary)",
                                   fontSize: 13,
                                   cursor: quizSubmitted ? "default" : "pointer",
@@ -786,7 +786,7 @@ export default function CohortPage() {
               </h3>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {(cohort.members || []).map((m) => (
-                  <div key={m.userId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 12, border: "1px solid var(--card-border)", background: "rgba(248,249,255,0.7)" }}>
+                  <div key={m.userId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 12, border: "1px solid var(--card-border)", background: "var(--accent-soft)" }}>
                     <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, var(--accent), #6f7fc0)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
                       {(m.user?.name || "?")[0]?.toUpperCase()}
                     </div>

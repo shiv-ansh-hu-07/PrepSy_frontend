@@ -75,8 +75,7 @@ export default function Navbar() {
         top: 0,
         zIndex: 50,
         backdropFilter: "blur(10px)",
-        background:
-          "linear-gradient(to bottom, rgba(246,248,254,0.92), rgba(246,248,254,0.82))",
+        background: "var(--nav-bg)",
         borderBottom: "1px solid var(--card-border)",
       }}
     >
@@ -167,7 +166,7 @@ export default function Navbar() {
                   to={item.path}
                   style={{
                     fontSize: isCompact ? "13px" : "14px",
-                    color: item.active ? "var(--text-primary)" : "#6b7bb0",
+                    color: item.active ? "var(--text-primary)" : "var(--text-secondary)",
                     fontWeight: item.active ? 500 : 400,
                     textDecoration: "none",
                     position: "relative",
@@ -487,7 +486,7 @@ const mobileAccountLinkStyle = {
 const mobileAccountCaptionStyle = {
   display: "block",
   margin: 0,
-  color: "#8a97c4",
+  color: "var(--text-secondary)",
   fontSize: "12px",
 };
 

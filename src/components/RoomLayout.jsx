@@ -366,7 +366,7 @@ function FocusMonitorCard({ monitor, camEnabled, aiMonitorEnabled, onToggleAiMon
 
 function FocusMiniBar({ sampleCount }) {
   return (
-    <div style={{ marginTop: 12, padding: "8px 10px", background: "#f8f9ff", borderRadius: 10 }}>
+    <div style={{ marginTop: 12, padding: "8px 10px", background: "var(--card-bg)", borderRadius: 10 }}>
       <p style={{ margin: "0 0 4px", fontSize: 10, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.5 }}>
         This session
       </p>
@@ -535,7 +535,7 @@ const focusStyles = {
   section: {
     marginTop: 18,
     padding: "14px 16px",
-    background: "#f8f9ff",
+    background: "var(--card-bg)",
     borderRadius: 14,
     border: "1px solid #e6e9f8",
   },
@@ -585,7 +585,7 @@ const modalStyles = {
   title: { fontSize: 22, fontWeight: 700, color: "var(--text-primary)", margin: "0 0 8px", fontFamily: "Georgia, serif" },
   text: { fontSize: 14, color: "#6b7280", marginBottom: 18 },
   stats: { display: "flex", gap: 10, justifyContent: "space-between" },
-  stat: { flex: 1, background: "#f8f9ff", borderRadius: 12, padding: 12, border: "1px solid #e6e9f8" },
+  stat: { flex: 1, background: "var(--card-bg)", borderRadius: 12, padding: 12, border: "1px solid #e6e9f8" },
   label: { fontSize: 11, color: "#6b7280", margin: "0 0 4px" },
   value: { fontSize: 15, fontWeight: 700, color: "#1F2937", margin: 0 },
 };
@@ -617,7 +617,7 @@ const styles = {
   stageWrap: { position: "relative", minHeight: 360, display: "flex", flexDirection: "column", gap: 10 },
   roomHeaderBar: {
     minHeight: 42, padding: "8px 14px", borderRadius: 16,
-    border: "1px solid #E6EAF8", background: "rgba(255,255,255,0.92)",
+    border: "1px solid #E6EAF8", background: "var(--card-bg)",
     boxShadow: "0 8px 20px rgba(74,90,133,0.08)",
     display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
   },

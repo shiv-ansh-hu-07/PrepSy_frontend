@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
 const pageBg = {
   minHeight: "calc(100vh - 76px)",
   background:
-    "radial-gradient(ellipse at top, var(--accent-soft) 0%, #f3f5fc 45%, #f8f9fe 75%)",
+    "radial-gradient(ellipse at top, var(--accent-soft) 0%, var(--card-bg) 45%, var(--card-bg) 75%)",
 };
 
 const card = {
@@ -598,7 +598,7 @@ export default function Community() {
                     {selectedPost.replies?.length ? (
                       <div style={{ display: "grid", gap: "12px", marginBottom: "18px" }}>
                         {selectedPost.replies.map((reply) => (
-                          <article key={reply.id} style={{ borderRadius: "18px", background: "rgba(244,247,255,0.85)", border: "1px solid rgba(190,200,235,0.55)", padding: "14px 16px" }}>
+                          <article key={reply.id} style={{ borderRadius: "18px", background: "var(--card-bg)", border: "1px solid rgba(190,200,235,0.55)", padding: "14px 16px" }}>
                             <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", flexWrap: "wrap", marginBottom: "8px" }}>
                               <strong style={{ color: "var(--text-secondary)" }}>{reply.author?.name}</strong>
                               <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>{formatDate(reply.createdAt)}</span>

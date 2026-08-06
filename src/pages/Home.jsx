@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 // ─── Theme tokens ─────────────────────────────────────────────────────────────
 const T = {
-  bg: "radial-gradient(ellipse at 60% 20%, var(--accent-soft) 0%, #f4f6fd 55%, #f8f9fe 100%)",
+  bg: "radial-gradient(ellipse at 60% 20%, var(--accent-soft) 0%, #f4f6fd 55%, var(--card-bg) 100%)",
   purple: "#7c3aed",
   purpleDark: "#6f3bd6",
   border: "var(--card-border)",
@@ -534,7 +534,7 @@ function AIVisual() {
             border: "1px solid rgba(255,255,255,0.18)", borderRadius: "10px",
             padding: "5px 10px", minWidth: "72px",
           }}>
-            <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.58)", marginBottom: "2px" }}>{m.label}</div>
+            <div style={{ fontSize: "10px", color: "var(--card-bg)", marginBottom: "2px" }}>{m.label}</div>
             <div style={{ fontSize: "13px", fontWeight: 700, color: m.color }}>{m.value}</div>
           </div>
         ))}
@@ -692,7 +692,7 @@ export default function Home() {
       <div style={{
         overflow: "hidden",
         borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}`,
-        background: "rgba(255,255,255,0.62)", backdropFilter: "blur(10px)",
+        background: "var(--card-bg)", backdropFilter: "blur(10px)",
         padding: "15px 0", marginBottom: "88px",
       }}>
         <div style={{ display: "flex", animation: "marquee 28s linear infinite", width: "max-content" }}>

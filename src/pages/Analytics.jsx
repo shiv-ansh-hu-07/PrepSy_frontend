@@ -734,7 +734,7 @@ function PeakFocusHoursChart({ sessions }) {
 
 function MiniMetric({ label, value, unit, color }) {
   return (
-    <div style={{ padding: "10px 12px", background: "#f8f9ff", borderRadius: 12, border: "1px solid var(--accent-soft)" }}>
+    <div style={{ padding: "10px 12px", background: "var(--card-bg)", borderRadius: 12, border: "1px solid var(--accent-soft)" }}>
       <p style={{ margin: "0 0 3px", fontSize: 10, color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.4 }}>
         {label}
       </p>
@@ -891,7 +891,7 @@ function FocusOverviewPanel({ focusData }) {
             </div>
           </div>
 
-          <div style={{ marginTop: 14, padding: "12px 14px", background: "#f8f9ff", borderRadius: 12 }}>
+          <div style={{ marginTop: 14, padding: "12px 14px", background: "var(--card-bg)", borderRadius: 12 }}>
             <p style={{ margin: "0 0 4px", fontSize: 11, fontWeight: 600, color: "#6f3bd6", textTransform: "uppercase", letterSpacing: 0.5 }}>
               How it works
             </p>
@@ -916,7 +916,7 @@ function FocusSessionList({ sessions }) {
       ) : (
         <div style={{ display: "grid", gap: 8, maxHeight: 480, overflowY: "auto", paddingRight: 4 }}>
           {sessions.map((s) => (
-            <article key={s.id} style={{ borderRadius: 13, border: "1px solid rgba(190,200,235,0.44)", background: "rgba(248,250,255,0.78)", padding: "11px 13px" }}>
+            <article key={s.id} style={{ borderRadius: 13, border: "1px solid rgba(190,200,235,0.44)", background: "var(--card-bg)", padding: "11px 13px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <p style={{ margin: "0 0 2px", fontSize: 13, fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -1136,7 +1136,7 @@ const styles = {
   analyticsTabsShell: {
     borderRadius: 20,
     border: "1px solid var(--card-border)",
-    background: "rgba(255,255,255,0.58)",
+    background: "var(--card-bg)",
     boxShadow: "0 10px 32px rgba(74,90,133,0.06)",
     padding: 16,
     display: "grid",
@@ -1506,7 +1506,7 @@ const styles = {
   classRow: {
     borderRadius: 13,
     border: "1px solid rgba(190,200,235,0.44)",
-    background: "rgba(248,250,255,0.78)",
+    background: "var(--card-bg)",
     padding: "11px 13px",
     display: "flex",
     alignItems: "flex-start",

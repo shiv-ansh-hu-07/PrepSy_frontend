@@ -115,7 +115,7 @@ function MultiSelect({ options, selected, onChange, placeholder }) {
         }}>
           <div style={{ padding: "10px 12px 6px" }}>
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search..."
-              autoFocus style={{ width: "100%", height: 36, borderRadius: 8, border: "1px solid #e2e6f3", padding: "0 12px", fontSize: 13, outline: "none", background: "#f8f9ff", color: "var(--text-primary)", boxSizing: "border-box" }} />
+              autoFocus style={{ width: "100%", height: 36, borderRadius: 8, border: "1px solid #e2e6f3", padding: "0 12px", fontSize: 13, outline: "none", background: "var(--card-bg)", color: "var(--text-primary)", boxSizing: "border-box" }} />
           </div>
           <div style={{ maxHeight: 220, overflowY: "auto", padding: "4px 6px 8px" }}>
             {filtered.length === 0 && <p style={{ textAlign: "center", fontSize: 13, color: "var(--text-muted)", padding: "12px 0", margin: 0 }}>No matches</p>}
@@ -201,7 +201,7 @@ function TagInput({ tags, onChange }) {
   };
 
   return (
-    <div style={{ background: "#fafbff", border: "1px solid #d6d9e8", borderRadius: 12, padding: "8px 12px", display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center", minHeight: 44, cursor: "text" }}>
+    <div style={{ background: "var(--card-bg)", border: "1px solid #d6d9e8", borderRadius: 12, padding: "8px 12px", display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center", minHeight: 44, cursor: "text" }}>
       {tags.map((t) => (
         <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#ede9fb", color: "#6f3bd6", fontSize: 12, padding: "4px 10px 4px 12px", borderRadius: 999, fontWeight: 500 }}>
           {t}
@@ -287,7 +287,7 @@ export default function CreateRoom() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "radial-gradient(ellipse at 60% 20%, var(--accent-soft) 0%, #f4f6fd 55%, #f8f9fe 100%)",
+      background: "radial-gradient(ellipse at 60% 20%, var(--accent-soft) 0%, #f4f6fd 55%, var(--card-bg) 100%)",
       display: "flex", justifyContent: "center",
       padding: isMobile ? "20px 14px 48px" : isTablet ? "28px 20px 56px" : "36px 24px 64px",
       fontFamily: "'Inter', system-ui, sans-serif",
@@ -344,7 +344,7 @@ export default function CreateRoom() {
                   border: `2px solid ${active ? "#7c3aed" : "#e2e6f3"}`,
                   borderRadius: 14, padding: "12px 10px",
                   cursor: "pointer", textAlign: "center",
-                  background: active ? "#f3eeff" : "#fafbff",
+                  background: active ? "#f3eeff" : "var(--card-bg)",
                   transition: "border-color 0.15s, background 0.15s",
                 }}>
                   <div style={{ fontSize: 18, marginBottom: 5 }}>{opt.icon}</div>
@@ -365,7 +365,7 @@ export default function CreateRoom() {
                   style={{
                     border: `2px solid ${active ? "#7c3aed" : "#e2e6f3"}`,
                     borderRadius: 14, padding: "14px 16px",
-                    cursor: "pointer", background: active ? "#f3eeff" : "#fafbff",
+                    cursor: "pointer", background: active ? "#f3eeff" : "var(--card-bg)",
                     display: "flex", alignItems: "center", gap: 14,
                     transition: "border-color 0.15s, background 0.15s",
                   }}
@@ -382,7 +382,7 @@ export default function CreateRoom() {
                 </div>
 
                 {active && (
-                  <div style={{ marginTop: 10, padding: "14px 16px", background: "#fafbff", border: "1px solid #e2e6f3", borderRadius: 14 }}>
+                  <div style={{ marginTop: 10, padding: "14px 16px", background: "var(--card-bg)", border: "1px solid #e2e6f3", borderRadius: 14 }}>
                     <p style={{ margin: "0 0 8px", fontSize: 12, color: "var(--text-secondary)", fontWeight: 500 }}>
                       Paste a YouTube video or playlist URL
                     </p>
@@ -426,7 +426,7 @@ export default function CreateRoom() {
                   border: `2px solid ${active ? "#7c3aed" : "#e2e6f3"}`,
                   borderRadius: 14, padding: "12px 14px",
                   cursor: "pointer", textAlign: "center",
-                  background: active ? "#f3eeff" : "#fafbff",
+                  background: active ? "#f3eeff" : "var(--card-bg)",
                   transition: "border-color 0.15s, background 0.15s",
                 }}>
                   <div style={{ fontSize: 18, marginBottom: 5 }}>{opt.icon}</div>
@@ -441,7 +441,7 @@ export default function CreateRoom() {
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "12px 16px",
-            background: femaleOnly ? "#fdf4ff" : "#fafbff",
+            background: femaleOnly ? "#fdf4ff" : "var(--card-bg)",
             border: `1px solid ${femaleOnly ? "rgba(217,70,239,0.2)" : "#eceef8"}`,
             borderRadius: 14, marginBottom: 4,
             transition: "background 0.2s, border-color 0.2s",
@@ -475,7 +475,7 @@ export default function CreateRoom() {
                 <div key={opt.value} onClick={() => setCollaborationStyle(opt.value)} style={{
                   border: `1.5px solid ${active ? "#7c3aed" : "#d6d9e8"}`,
                   borderRadius: 14, padding: "12px 14px",
-                  cursor: "pointer", background: active ? "#f3eeff" : "#fafbff",
+                  cursor: "pointer", background: active ? "#f3eeff" : "var(--card-bg)",
                   transition: "border-color 0.15s, background 0.15s",
                 }}>
                   <p style={{ margin: "0 0 2px", fontSize: 13, fontWeight: 600, color: active ? "#6f3bd6" : "var(--text-primary)" }}>{opt.label}</p>
@@ -502,7 +502,7 @@ export default function CreateRoom() {
             <Toggle value={scheduleEnabled} onChange={setScheduleEnabled} />
           </div>
           {scheduleEnabled && (
-            <div style={{ background: "#f8f9ff", border: "1px solid #e6e9f8", borderRadius: 16, padding: 18, marginBottom: 20 }}>
+            <div style={{ background: "var(--card-bg)", border: "1px solid #e6e9f8", borderRadius: 16, padding: 18, marginBottom: 20 }}>
               <FieldLabel>Start Time</FieldLabel>
               <input type="time" style={inputBase} value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} />
               <FieldLabel>Timezone</FieldLabel>
@@ -578,7 +578,7 @@ export default function CreateRoom() {
                 </div>
               )}
               {durationMinutes && (
-                <div style={{ marginTop: 12, padding: "8px 10px", background: "#f8f9ff", borderRadius: 10, fontSize: 12, color: "var(--text-secondary)" }}>
+                <div style={{ marginTop: 12, padding: "8px 10px", background: "var(--card-bg)", borderRadius: 10, fontSize: 12, color: "var(--text-secondary)" }}>
                   {durationMinutes} min session
                   {scheduleEnabled && scheduleTime ? ` · Daily at ${scheduleTime}` : ""}
                   {collaborationStyle && ` · ${COLLAB_STYLE_OPTIONS.find((o) => o.value === collaborationStyle)?.label || ""}`}

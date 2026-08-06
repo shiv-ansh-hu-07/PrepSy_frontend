@@ -362,7 +362,7 @@ export default function LearnPage() {
                           style={{
                             padding: "12px 16px 14px 54px",
                             borderTop: "1px solid var(--card-border)",
-                            background: "rgba(248,249,255,0.5)",
+                            background: "var(--accent-soft)",
                           }}
                         >
                           <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
@@ -575,7 +575,7 @@ export default function LearnPage() {
                             style={{
                               borderRadius: 12,
                               border: "1px solid var(--card-border)",
-                              background: "rgba(248,249,255,0.7)",
+                              background: "var(--accent-soft)",
                               padding: "10px 14px",
                             }}
                           >
