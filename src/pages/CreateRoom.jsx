@@ -287,7 +287,7 @@ export default function CreateRoom() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "radial-gradient(ellipse at 60% 20%, var(--accent-soft) 0%, #f4f6fd 55%, var(--card-bg) 100%)",
+      background: "var(--page-bg)",
       display: "flex", justifyContent: "center",
       padding: isMobile ? "20px 14px 48px" : isTablet ? "28px 20px 56px" : "36px 24px 64px",
       fontFamily: "'Inter', system-ui, sans-serif",

@@ -5,8 +5,7 @@ import { useAuth } from "../context/AuthContext";
 
 const pageBg = {
   minHeight: "calc(100vh - 76px)",
-  background:
-    "radial-gradient(ellipse at top, var(--accent-soft) 0%, var(--card-bg) 45%, var(--card-bg) 75%)",
+  background: "var(--page-bg)",
 };
 
 const card = {

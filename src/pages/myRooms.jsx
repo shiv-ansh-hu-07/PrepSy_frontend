@@ -62,7 +62,7 @@ function MyRooms() {
   };
 
   return (
-    <div className="flex-1 px-10 py-8">
+    <div className="flex-1 px-10 py-8" style={{ minHeight: "calc(100vh - 76px)", background: "var(--page-bg)" }}>
       {/* Heading */}
       <div className="mb-8 text-center">
         <h1

@@ -301,7 +301,7 @@ export default function CohortPage() {
                     <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700, background: diffStyle.bg, color: diffStyle.color }}>
                       {plan.difficulty}
                     </span>
-                    <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 600, background: "var(--accent-soft)", color: "#4f5fa8" }}>
+                    <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 600, background: "var(--accent-soft)", color: "var(--accent)" }}>
                       ⏱ ~{plan.estimatedHours}h
                     </span>
                   </div>
@@ -310,7 +310,7 @@ export default function CohortPage() {
               <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                 <button
                   onClick={handleCopyInvite}
-                  style={{ ...btnPrimary(false), background: "rgba(138,155,214,0.16)", color: "#4f5fa8" }}
+                  style={{ ...btnPrimary(false), background: "var(--accent-soft)", color: "var(--accent)", border: "1px solid var(--accent)" }}
                   title="Copy invite link to share this cohort"
                 >
                   <Link2 size={15} style={{ verticalAlign: "middle", marginRight: 6 }} />
@@ -329,7 +329,7 @@ export default function CohortPage() {
                 {cohort.createdById === user?.id && (
                   <button
                     onClick={openEdit}
-                    style={{ ...btnPrimary(false), background: "rgba(138,155,214,0.16)", color: "#4f5fa8" }}
+                    style={{ ...btnPrimary(false), background: "var(--accent-soft)", color: "var(--accent)", border: "1px solid var(--accent)" }}
                   >
                     Edit
                   </button>
@@ -338,7 +338,7 @@ export default function CohortPage() {
                   <button
                     onClick={handleLeave}
                     disabled={leaving}
-                    style={{ ...btnPrimary(leaving), background: leaving ? "var(--card-border)" : "#fee2e2", color: "#c62828" }}
+                    style={{ ...btnPrimary(leaving), background: leaving ? "var(--card-border)" : "rgba(239,68,68,0.16)", color: "#f87171", border: "1px solid rgba(239,68,68,0.4)" }}
                   >
                     {leaving ? "Leaving…" : "Leave"}
                   </button>
@@ -347,7 +347,7 @@ export default function CohortPage() {
                   <button
                     onClick={handleDelete}
                     disabled={deleting}
-                    style={{ ...btnPrimary(deleting), background: deleting ? "var(--card-border)" : "#fee2e2", color: "#c62828" }}
+                    style={{ ...btnPrimary(deleting), background: deleting ? "var(--card-border)" : "rgba(239,68,68,0.16)", color: "#f87171", border: "1px solid rgba(239,68,68,0.4)" }}
                   >
                     {deleting ? "Deleting…" : "Delete"}
                   </button>
@@ -377,7 +377,7 @@ export default function CohortPage() {
                 <button onClick={handleSaveEdit} disabled={savingEdit || !editName.trim()} style={{ ...btnPrimary(savingEdit || !editName.trim()), height: 42 }}>
                   {savingEdit ? "Saving…" : "Save"}
                 </button>
-                <button onClick={() => setEditing(false)} style={{ ...btnPrimary(false), height: 42, background: "rgba(138,155,214,0.16)", color: "#4f5fa8" }}>
+                <button onClick={() => setEditing(false)} style={{ ...btnPrimary(false), height: 42, background: "var(--accent-soft)", color: "var(--accent)", border: "1px solid var(--accent)" }}>
                   Cancel
                 </button>
               </div>
@@ -468,7 +468,7 @@ export default function CohortPage() {
                         <p style={{ margin: "4px 0 8px", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>{week.goal}</p>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                           {(week.topics || []).map((t, j) => (
-                            <span key={j} style={{ padding: "2px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: "rgba(138,155,214,0.12)", color: "#4f5fa8" }}>{t}</span>
+                            <span key={j} style={{ padding: "2px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: "rgba(138,155,214,0.12)", color: "var(--accent)" }}>{t}</span>
                           ))}
                           <span style={{ padding: "2px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: "rgba(34,197,94,0.12)", color: "#166534" }}>⏱ {week.studyHours}h</span>
                         </div>
@@ -747,7 +747,7 @@ export default function CohortPage() {
                         ? { bg: "#e8f5e9", color: "#2e7d32", label: "Completed" }
                         : s.status === "POSTPONED"
                         ? { bg: "#fff3e0", color: "#e65100", label: "Postponed" }
-                        : { bg: "var(--accent-soft)", color: "#4f5fa8", label: "Scheduled" };
+                        : { bg: "var(--accent-soft)", color: "var(--accent)", label: "Scheduled" };
                     return (
                       <div key={s.id} style={{ padding: "14px 16px", borderRadius: 14, border: "1px solid var(--card-border)", display: "flex", gap: 14, alignItems: "flex-start" }}>
                         <div style={{ width: 46, textAlign: "center", flexShrink: 0 }}>

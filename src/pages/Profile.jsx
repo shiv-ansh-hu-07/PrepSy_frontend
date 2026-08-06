@@ -1211,7 +1211,7 @@ function formatCollabStyle(pref) {
 const styles = {
   page: {
     minHeight: "calc(100vh - 76px)",
-    background: "radial-gradient(ellipse at top, var(--accent-soft) 0%, #f4f6fd 46%, var(--card-bg) 100%)",
+    background: "var(--page-bg)",
     padding: "32px 24px 56px",
   },
   layout: (isNarrow) => ({
