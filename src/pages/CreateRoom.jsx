@@ -98,7 +98,7 @@ function MultiSelect({ options, selected, onChange, placeholder }) {
     <div ref={ref} style={{ position: "relative", marginBottom: 6 }}>
       <button type="button" onClick={() => setOpen((p) => !p)} style={{
         width: "100%", height: 44, borderRadius: 12,
-        border: "1px solid #d6d9e8", background: "var(--card-bg)",
+        border: "1px solid var(--card-border)", background: "var(--card-bg)",
         padding: "0 14px", fontSize: 14,
         color: selected.length > 0 ? "var(--text-primary)" : "var(--text-muted)",
         cursor: "pointer", display: "flex", alignItems: "center",
@@ -110,12 +110,12 @@ function MultiSelect({ options, selected, onChange, placeholder }) {
       {open && (
         <div style={{
           position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, zIndex: 50,
-          background: "var(--card-bg)", border: "1px solid #d6d9e8", borderRadius: 14,
+          background: "var(--card-bg)", border: "1px solid var(--card-border)", borderRadius: 14,
           boxShadow: "0 12px 36px rgba(79,97,160,0.14)", overflow: "hidden",
         }}>
           <div style={{ padding: "10px 12px 6px" }}>
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search..."
-              autoFocus style={{ width: "100%", height: 36, borderRadius: 8, border: "1px solid #e2e6f3", padding: "0 12px", fontSize: 13, outline: "none", background: "var(--card-bg)", color: "var(--text-primary)", boxSizing: "border-box" }} />
+              autoFocus style={{ width: "100%", height: 36, borderRadius: 8, border: "1px solid var(--card-border)", padding: "0 12px", fontSize: 13, outline: "none", background: "var(--card-bg)", color: "var(--text-primary)", boxSizing: "border-box" }} />
           </div>
           <div style={{ maxHeight: 220, overflowY: "auto", padding: "4px 6px 8px" }}>
             {filtered.length === 0 && <p style={{ textAlign: "center", fontSize: 13, color: "var(--text-muted)", padding: "12px 0", margin: 0 }}>No matches</p>}
@@ -124,7 +124,7 @@ function MultiSelect({ options, selected, onChange, placeholder }) {
                 display: "flex", alignItems: "center", gap: 10, padding: "7px 10px",
                 borderRadius: 8, cursor: "pointer", fontSize: 13,
                 color: selected.includes(option) ? "#6f3bd6" : "var(--text-secondary)",
-                background: selected.includes(option) ? "#f3eeff" : "transparent",
+                background: selected.includes(option) ? "var(--accent-soft)" : "transparent",
                 userSelect: "none", transition: "background 0.12s",
               }}>
                 <input type="checkbox" checked={selected.includes(option)} onChange={() => toggle(option)} style={{ accentColor: "#7c3aed", cursor: "pointer" }} />
@@ -137,7 +137,7 @@ function MultiSelect({ options, selected, onChange, placeholder }) {
       {selected.length > 0 && (
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
           {selected.map((item) => (
-            <span key={item} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#ede9fb", color: "#6f3bd6", fontSize: 12, padding: "4px 10px 4px 12px", borderRadius: 999, fontWeight: 500 }}>
+            <span key={item} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "var(--accent-soft)", color: "#6f3bd6", fontSize: 12, padding: "4px 10px 4px 12px", borderRadius: 999, fontWeight: 500 }}>
               {item}
               <span role="button" tabIndex={0} style={{ cursor: "pointer", lineHeight: 1, fontSize: 15, color: "#9b77e0", marginLeft: 1 }}
                 onClick={() => toggle(item)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") toggle(item); }} aria-label={`Remove ${item}`}>
@@ -156,7 +156,7 @@ function Toggle({ value, onChange }) {
   return (
     <button type="button" onClick={() => onChange(!value)} aria-pressed={value} style={{
       width: 50, height: 28, borderRadius: 999, border: "none",
-      background: value ? "#7c3aed" : "#d5dbef",
+      background: value ? "#7c3aed" : "var(--card-border)",
       position: "relative", cursor: "pointer", transition: "background 0.2s", flexShrink: 0,
     }}>
       <span style={{ position: "absolute", top: 3, left: value ? 23 : 3, width: 22, height: 22, borderRadius: "50%", background: "var(--card-bg)", transition: "left 0.2s" }} />
@@ -180,7 +180,7 @@ function FieldLabel({ children }) {
 }
 
 const inputBase = {
-  width: "100%", height: 44, borderRadius: 12, border: "1px solid #d6d9e8",
+  width: "100%", height: 44, borderRadius: 12, border: "1px solid var(--card-border)",
   padding: "0 14px", fontSize: 14, marginBottom: 14, outline: "none",
   color: "#32446f", background: "var(--card-bg)", boxSizing: "border-box", display: "block",
 };
@@ -201,9 +201,9 @@ function TagInput({ tags, onChange }) {
   };
 
   return (
-    <div style={{ background: "var(--card-bg)", border: "1px solid #d6d9e8", borderRadius: 12, padding: "8px 12px", display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center", minHeight: 44, cursor: "text" }}>
+    <div style={{ background: "var(--card-bg)", border: "1px solid var(--card-border)", borderRadius: 12, padding: "8px 12px", display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center", minHeight: 44, cursor: "text" }}>
       {tags.map((t) => (
-        <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#ede9fb", color: "#6f3bd6", fontSize: 12, padding: "4px 10px 4px 12px", borderRadius: 999, fontWeight: 500 }}>
+        <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "var(--accent-soft)", color: "#6f3bd6", fontSize: 12, padding: "4px 10px 4px 12px", borderRadius: 999, fontWeight: 500 }}>
           {t}
           <span onClick={() => onChange(tags.filter((x) => x !== t))} style={{ cursor: "pointer", fontSize: 15, color: "#9b77e0", lineHeight: 1 }}>×</span>
         </span>
@@ -319,7 +319,7 @@ export default function CreateRoom() {
           <input style={inputBase} value={roomName} onChange={(e) => setRoomName(e.target.value)} placeholder="e.g. DSA Sprint — Arrays & Strings" />
 
           <FieldLabel>Room ID</FieldLabel>
-          <input style={{ ...inputBase, background: "#f3f5ff", color: "var(--text-secondary)" }} value={roomId} readOnly />
+          <input style={{ ...inputBase, background: "var(--accent-soft)", color: "var(--text-secondary)" }} value={roomId} readOnly />
 
           <FieldLabel>Description</FieldLabel>
           <textarea style={{ ...inputBase, height: 88, padding: "10px 14px", resize: "vertical" }}
@@ -341,10 +341,10 @@ export default function CreateRoom() {
               const active = expertise === opt.value;
               return (
                 <div key={opt.value} onClick={() => setExpertise(opt.value)} style={{
-                  border: `2px solid ${active ? "#7c3aed" : "#e2e6f3"}`,
+                  border: `2px solid ${active ? "#7c3aed" : "var(--card-border)"}`,
                   borderRadius: 14, padding: "12px 10px",
                   cursor: "pointer", textAlign: "center",
-                  background: active ? "#f3eeff" : "var(--card-bg)",
+                  background: active ? "var(--accent-soft)" : "var(--card-bg)",
                   transition: "border-color 0.15s, background 0.15s",
                 }}>
                   <div style={{ fontSize: 18, marginBottom: 5 }}>{opt.icon}</div>
@@ -363,9 +363,9 @@ export default function CreateRoom() {
                 <div
                   onClick={() => setExpertise(YT_ROOM_TYPE.value)}
                   style={{
-                    border: `2px solid ${active ? "#7c3aed" : "#e2e6f3"}`,
+                    border: `2px solid ${active ? "#7c3aed" : "var(--card-border)"}`,
                     borderRadius: 14, padding: "14px 16px",
-                    cursor: "pointer", background: active ? "#f3eeff" : "var(--card-bg)",
+                    cursor: "pointer", background: active ? "var(--accent-soft)" : "var(--card-bg)",
                     display: "flex", alignItems: "center", gap: 14,
                     transition: "border-color 0.15s, background 0.15s",
                   }}
@@ -382,7 +382,7 @@ export default function CreateRoom() {
                 </div>
 
                 {active && (
-                  <div style={{ marginTop: 10, padding: "14px 16px", background: "var(--card-bg)", border: "1px solid #e2e6f3", borderRadius: 14 }}>
+                  <div style={{ marginTop: 10, padding: "14px 16px", background: "var(--card-bg)", border: "1px solid var(--card-border)", borderRadius: 14 }}>
                     <p style={{ margin: "0 0 8px", fontSize: 12, color: "var(--text-secondary)", fontWeight: 500 }}>
                       Paste a YouTube video or playlist URL
                     </p>
@@ -423,10 +423,10 @@ export default function CreateRoom() {
               const active = visibilityMode === opt.value;
               return (
                 <div key={opt.value} onClick={() => setVisibilityMode(opt.value)} style={{
-                  border: `2px solid ${active ? "#7c3aed" : "#e2e6f3"}`,
+                  border: `2px solid ${active ? "#7c3aed" : "var(--card-border)"}`,
                   borderRadius: 14, padding: "12px 14px",
                   cursor: "pointer", textAlign: "center",
-                  background: active ? "#f3eeff" : "var(--card-bg)",
+                  background: active ? "var(--accent-soft)" : "var(--card-bg)",
                   transition: "border-color 0.15s, background 0.15s",
                 }}>
                   <div style={{ fontSize: 18, marginBottom: 5 }}>{opt.icon}</div>
@@ -473,9 +473,9 @@ export default function CreateRoom() {
               const active = collaborationStyle === opt.value;
               return (
                 <div key={opt.value} onClick={() => setCollaborationStyle(opt.value)} style={{
-                  border: `1.5px solid ${active ? "#7c3aed" : "#d6d9e8"}`,
+                  border: `1.5px solid ${active ? "#7c3aed" : "var(--card-border)"}`,
                   borderRadius: 14, padding: "12px 14px",
-                  cursor: "pointer", background: active ? "#f3eeff" : "var(--card-bg)",
+                  cursor: "pointer", background: active ? "var(--accent-soft)" : "var(--card-bg)",
                   transition: "border-color 0.15s, background 0.15s",
                 }}>
                   <p style={{ margin: "0 0 2px", fontSize: 13, fontWeight: 600, color: active ? "#6f3bd6" : "var(--text-primary)" }}>{opt.label}</p>
@@ -540,10 +540,10 @@ export default function CreateRoom() {
                 </p>
               )}
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
-                <BadgePill bg={expertise === "learning" ? "#dbeafe" : expertise === "practising" ? "#fef3c7" : "#ede9fb"} color={expertise === "learning" ? "#1d4ed8" : expertise === "practising" ? "#b45309" : "#6f3bd6"}>
+                <BadgePill bg={expertise === "learning" ? "#dbeafe" : expertise === "practising" ? "#fef3c7" : "var(--accent-soft)"} color={expertise === "learning" ? "#1d4ed8" : expertise === "practising" ? "#b45309" : "#6f3bd6"}>
                   {expertiseLabel}
                 </BadgePill>
-                <BadgePill bg={visibilityMode === "PUBLIC" ? "#dcfce7" : "#f3f4f6"} color={visibilityMode === "PUBLIC" ? "#15803d" : "#4b5563"}>
+                <BadgePill bg={visibilityMode === "PUBLIC" ? "#dcfce7" : "var(--input-bg)"} color={visibilityMode === "PUBLIC" ? "#15803d" : "#4b5563"}>
                   {visibilityMode === "PUBLIC" ? "Public" : "Private"}
                 </BadgePill>
                 {femaleOnly && (
@@ -555,7 +555,7 @@ export default function CreateRoom() {
                   <p style={{ margin: "0 0 6px", fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.6 }}>Tags</p>
                   <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                     {customTags.map((t) => (
-                      <span key={t} style={{ display: "inline-block", padding: "3px 9px", background: "#ede9fb", color: "#6f3bd6", fontSize: 11, borderRadius: 999, fontWeight: 500 }}>{t}</span>
+                      <span key={t} style={{ display: "inline-block", padding: "3px 9px", background: "var(--accent-soft)", color: "#6f3bd6", fontSize: 11, borderRadius: 999, fontWeight: 500 }}>{t}</span>
                     ))}
                   </div>
                 </div>
@@ -565,9 +565,9 @@ export default function CreateRoom() {
                   <p style={{ margin: "0 0 6px", fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.6 }}>Goals</p>
                   <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                     {goals.slice(0, 4).map((g) => (
-                      <span key={g} style={{ display: "inline-block", padding: "3px 9px", background: "#ede9fb", color: "#6f3bd6", fontSize: 11, borderRadius: 999, fontWeight: 500 }}>{g}</span>
+                      <span key={g} style={{ display: "inline-block", padding: "3px 9px", background: "var(--accent-soft)", color: "#6f3bd6", fontSize: 11, borderRadius: 999, fontWeight: 500 }}>{g}</span>
                     ))}
-                    {goals.length > 4 && <span style={{ display: "inline-block", padding: "3px 9px", background: "#f3f4f6", color: "var(--text-secondary)", fontSize: 11, borderRadius: 999 }}>+{goals.length - 4} more</span>}
+                    {goals.length > 4 && <span style={{ display: "inline-block", padding: "3px 9px", background: "var(--input-bg)", color: "var(--text-secondary)", fontSize: 11, borderRadius: 999 }}>+{goals.length - 4} more</span>}
                   </div>
                 </div>
               )}
@@ -597,7 +597,7 @@ export default function CreateRoom() {
                 "AI focus monitor during sessions",
               ].map((feat) => (
                 <div key={feat} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 9 }}>
-                  <span style={{ width: 18, height: 18, borderRadius: "50%", background: "#ede9fb", color: "#7c3aed", fontSize: 10, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontWeight: 700, marginTop: 1 }}>✓</span>
+                  <span style={{ width: 18, height: 18, borderRadius: "50%", background: "var(--accent-soft)", color: "#7c3aed", fontSize: 10, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontWeight: 700, marginTop: 1 }}>✓</span>
                   <span style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>{feat}</span>
                 </div>
               ))}

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 // ─── Theme tokens ─────────────────────────────────────────────────────────────
 const T = {
-  bg: "radial-gradient(ellipse at 60% 20%, var(--accent-soft) 0%, #f4f6fd 55%, var(--card-bg) 100%)",
+  bg: "radial-gradient(ellipse at 60% 20%, var(--accent-soft) 0%, var(--card-bg) 55%, var(--card-bg) 100%)",
   purple: "#7c3aed",
   purpleDark: "#6f3bd6",
   border: "var(--card-border)",

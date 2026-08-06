@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
-const BG = "radial-gradient(ellipse at 60% 20%, var(--accent-soft) 0%, #f4f6fd 55%, var(--card-bg) 100%)";
+const BG = "var(--page-bg)";
 
 const FILTER_TABS = [
   { label: "All", tag: "" },
@@ -158,7 +158,7 @@ export default function JoinRoom() {
                 value={roomId} onChange={(e) => setRoomId(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleJoin()}
                 placeholder="Paste Room ID..."
-                style={{ flex: 1, height: 42, borderRadius: 11, border: "1px solid #d6d9e8", padding: "0 13px", fontSize: 14, outline: "none", color: "var(--text-primary)", background: "var(--card-bg)" }}
+                style={{ flex: 1, height: 42, borderRadius: 11, border: "1px solid var(--card-border)", padding: "0 13px", fontSize: 14, outline: "none", color: "var(--text-primary)", background: "var(--card-bg)" }}
               />
               <button onClick={handleJoin} style={{ ...joinBtnStyle, padding: "0 16px", height: 42, fontSize: 13 }}>Join →</button>
             </div>
@@ -190,7 +190,7 @@ export default function JoinRoom() {
                 value={tagQuery} onChange={(e) => setTagQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleTagSearch()}
                 placeholder="e.g. dsa, react, system design..."
-                style={{ flex: 1, height: 42, borderRadius: 11, border: "1px solid #d6d9e8", padding: "0 13px", fontSize: 14, outline: "none", color: "var(--text-primary)", background: "var(--card-bg)" }}
+                style={{ flex: 1, height: 42, borderRadius: 11, border: "1px solid var(--card-border)", padding: "0 13px", fontSize: 14, outline: "none", color: "var(--text-primary)", background: "var(--card-bg)" }}
               />
               <button onClick={handleTagSearch} disabled={searching}
                 style={{ ...joinBtnStyle, background: "var(--accent-soft)", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.2)", boxShadow: "none", padding: "0 14px", height: 42, fontSize: 13 }}>
@@ -332,7 +332,7 @@ function RoomCard({ room, now, isMobile, onJoin }) {
 function EmptyRoomsState({ onClear }) {
   const navigate = useNavigate();
   return (
-    <div style={{ textAlign: "center", padding: "48px 20px", background: "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)", borderRadius: 22, border: "1px dashed rgba(124,58,237,0.2)" }}>
+    <div style={{ textAlign: "center", padding: "48px 20px", background: "linear-gradient(135deg, var(--accent-soft) 0%, var(--accent-soft) 100%)", borderRadius: 22, border: "1px dashed rgba(124,58,237,0.2)" }}>
       <p style={{ fontSize: 36, margin: "0 0 12px" }}>🏫</p>
       <p style={{ fontWeight: 700, color: "var(--text-secondary)", fontSize: 16, margin: "0 0 6px" }}>No rooms found</p>
       <p style={{ fontSize: 14, color: "#7b88b8", margin: "0 0 22px", lineHeight: 1.6 }}>

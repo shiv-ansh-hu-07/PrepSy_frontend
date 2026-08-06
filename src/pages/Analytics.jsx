@@ -444,7 +444,7 @@ function ConsistencyCard({ summary }) {
         <div
           style={{
             ...styles.donut,
-            background: `conic-gradient(#58a978 ${score * 3.6}deg, #e8edf9 0deg)`,
+            background: `conic-gradient(#58a978 ${score * 3.6}deg, var(--accent-soft) 0deg)`,
           }}
         >
           <div style={styles.donutInner}>
@@ -662,7 +662,7 @@ function PeakFocusHoursChart({ sessions }) {
         <>
           {peakHour && (
             <div style={{
-              padding: "10px 14px", background: "#f0ebff", borderRadius: 10,
+              padding: "10px 14px", background: "var(--accent-soft)", borderRadius: 10,
               border: "1px solid rgba(124,58,237,0.15)", marginBottom: 14,
             }}>
               <p style={{ margin: 0, fontSize: 13, color: "#6f3bd6", fontWeight: 600 }}>
@@ -882,7 +882,7 @@ function FocusOverviewPanel({ focusData }) {
               Avg engagement
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ flex: 1, height: 6, borderRadius: 999, background: "#e8edf9", overflow: "hidden" }}>
+              <div style={{ flex: 1, height: 6, borderRadius: 999, background: "var(--accent-soft)", overflow: "hidden" }}>
                 <div style={{ height: "100%", width: `${focusData.avgEngagementScore}%`, background: "linear-gradient(90deg, #7c3aed, #a78bfa)", borderRadius: 999 }} />
               </div>
               <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", flexShrink: 0 }}>
@@ -1358,7 +1358,7 @@ const styles = {
     width: "100%",
     height: 5,
     borderRadius: 999,
-    background: "#e8edf9",
+    background: "var(--accent-soft)",
     overflow: "hidden",
   },
   progressFill: {

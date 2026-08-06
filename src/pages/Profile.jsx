@@ -508,7 +508,7 @@ export default function Profile() {
                   </Field>
                   <div style={{
                     borderRadius: 14,
-                    background: profile.aiMonitorConsent ? "linear-gradient(135deg,#f3f0ff 0%,#ede9fe 100%)" : "var(--card-bg)",
+                    background: profile.aiMonitorConsent ? "linear-gradient(135deg,#f3f0ff 0%,var(--accent-soft) 100%)" : "var(--card-bg)",
                     border: `1.5px solid ${profile.aiMonitorConsent ? "#c4b5fd" : "var(--card-border)"}`,
                     padding: "16px 18px",
                     display: "flex",
@@ -532,7 +532,7 @@ export default function Profile() {
                         {profile.aiMonitorConsent && (
                           <span style={{
                             fontSize: 10, fontWeight: 600, color: "#5b21b6",
-                            background: "#ede9fe", border: "1px solid #c4b5fd",
+                            background: "var(--accent-soft)", border: "1px solid #c4b5fd",
                             borderRadius: 6, padding: "1px 6px",
                           }}>ENABLED</span>
                         )}
@@ -908,7 +908,7 @@ function ProfileViewPanel({ profile }) {
         <ViewSection icon={Users} title="Collaboration Matching">
           <div style={{ display: "grid", gap: 16 }}>
             {profile.goals.length > 0 && (
-              <ViewTagField label="Goals" items={profile.goals} color="#6f3bd6" bg="#ede9fe" />
+              <ViewTagField label="Goals" items={profile.goals} color="#6f3bd6" bg="var(--accent-soft)" />
             )}
             {profile.interests.length > 0 && (
               <ViewTagField label="Interests" items={profile.interests} color="#0369a1" bg="#e0f2fe" />
@@ -1283,12 +1283,12 @@ const styles = {
   profileBio: { margin: "6px 0 2px", color: "var(--text-secondary)", fontSize: 12, lineHeight: 1.5, textAlign: "center" },
   completionBlock: { width: "100%", borderTop: "1px solid rgba(190,200,235,0.42)", paddingTop: 12, marginTop: 2 },
   completionTopline: { display: "flex", justifyContent: "space-between", color: "var(--text-secondary)", fontSize: 12, marginBottom: 7, fontWeight: 500 },
-  progressTrack: { height: 6, borderRadius: 999, background: "#e8edf9", overflow: "hidden" },
+  progressTrack: { height: 6, borderRadius: 999, background: "var(--accent-soft)", overflow: "hidden" },
   progressFill: { height: "100%", borderRadius: 999, background: "linear-gradient(90deg, var(--accent), #6f7fc0)" },
   sideStats: { width: "100%", display: "grid", gap: 8, marginTop: 4 },
   miniStat: {
     display: "grid", gridTemplateColumns: "30px minmax(0, 1fr)", alignItems: "center", gap: 9,
-    background: "#f5f7ff", border: "1px solid rgba(190,200,235,0.42)", borderRadius: 13, padding: 10,
+    background: "var(--accent-soft)", border: "1px solid rgba(190,200,235,0.42)", borderRadius: 13, padding: 10,
     minWidth: 0, boxSizing: "border-box",
   },
   miniStatIcon: { width: 30, height: 30, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--accent-soft)", color: "#6f7fc0" },
@@ -1340,7 +1340,7 @@ const styles = {
   }),
   segmentIcon: (active) => ({
     width: 38, height: 38, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center",
-    color: active ? "#7c3aed" : "var(--text-secondary)", background: active ? "#ede9fe" : "#f1f4ff",
+    color: active ? "#7c3aed" : "var(--text-secondary)", background: active ? "var(--accent-soft)" : "var(--accent-soft)",
   }),
   segmentCheck: (active) => ({ color: active ? "#7c3aed" : "transparent", display: "flex", justifyContent: "flex-end" }),
   segmentText: { display: "grid", gap: 3, minWidth: 0, textAlign: "left" },
@@ -1360,7 +1360,7 @@ const styles = {
   multiPlaceholder: { color: "#9aa8c8", fontSize: 13 },
   multiTag: {
     display: "inline-flex", alignItems: "center", gap: 4, borderRadius: 999,
-    background: "#ede9fe", color: "#5b21b6", padding: "3px 8px", fontSize: 12, fontWeight: 500,
+    background: "var(--accent-soft)", color: "#5b21b6", padding: "3px 8px", fontSize: 12, fontWeight: 500,
   },
   multiTagRemove: { background: "none", border: "none", padding: 0, cursor: "pointer", color: "#7c3aed", display: "flex", alignItems: "center" },
   multiDropdown: {
@@ -1397,7 +1397,7 @@ const styles = {
   },
   typeBadge: {
     display: "inline-block", borderRadius: 999, padding: "5px 14px",
-    fontSize: 12, fontWeight: 600, background: "#ede9fe", color: "#6f3bd6",
+    fontSize: 12, fontWeight: 600, background: "var(--accent-soft)", color: "#6f3bd6",
   },
   // alerts
   alert: {
@@ -1409,7 +1409,7 @@ const styles = {
   alertTone: {
     warning: { color: "#8a5a12", background: "#fff8e7", borderColor: "rgba(227,180,77,0.38)" },
     success: { color: "#2f7d4d", background: "#eef9f2", borderColor: "rgba(88,169,120,0.38)" },
-    info:    { color: "var(--text-secondary)", background: "#f1f4ff", borderColor: "rgba(138,155,214,0.38)" },
+    info:    { color: "var(--text-secondary)", background: "var(--accent-soft)", borderColor: "rgba(138,155,214,0.38)" },
     danger:  { color: "#a33e3e", background: "#fff2f2", borderColor: "rgba(207,101,101,0.34)" },
   },
   // toast
