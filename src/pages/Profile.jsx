@@ -1334,7 +1334,7 @@ const styles = {
   segment: (active) => ({
     minHeight: 72, borderRadius: 14,
     border: active ? "1px solid #7c3aed" : "1px solid rgba(190,200,235,0.62)",
-    background: active ? "rgba(124,58,237,0.06)" : "#ffffff",
+    background: active ? "var(--accent-soft)" : "var(--card-bg)",
     color: "var(--text-primary)", display: "grid", gridTemplateColumns: "38px minmax(0, 1fr) 20px",
     alignItems: "center", gap: 10, padding: 12, cursor: "pointer", boxSizing: "border-box", minWidth: 0,
   }),

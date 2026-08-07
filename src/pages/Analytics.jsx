@@ -607,11 +607,11 @@ function EmptyState({ text }) {
 // ── Peak Focus Hours ─────────────────────────────────────────────────────────
 
 function scoreToHeatColor(score) {
-  if (score === null) return "#f0f3fc";
+  if (score === null) return "var(--card-bg)";
   if (score >= 80) return "#6f3bd6";
   if (score >= 65) return "var(--accent)";
-  if (score >= 50) return "#b3bfe8";
-  if (score >= 35) return "#d6dcf4";
+  if (score >= 50) return "rgba(157,171,228,0.6)";
+  if (score >= 35) return "rgba(157,171,228,0.3)";
   return "var(--accent-soft)";
 }
 
@@ -789,8 +789,8 @@ function DistractionBreakdown({ sessions }) {
         <>
           {insight && (
             <div style={{
-              padding: "10px 14px", background: "#fff7ed", borderRadius: 10,
-              border: "1px solid #fed7aa", marginBottom: 14,
+              padding: "10px 14px", background: "rgba(245,158,11,0.12)", borderRadius: 10,
+              border: "1px solid rgba(245,158,11,0.35)", marginBottom: 14,
             }}>
               <p style={{ margin: 0, fontSize: 13, color: "#c2410c", fontWeight: 600 }}>
                 {Number(stats.avgOffScreenMin) >= 1 || Number(stats.avgDistractions) > 2 ? "⚠ " : "✓ "}
@@ -1105,7 +1105,7 @@ const styles = {
   },
   statLabel: {
     margin: 0,
-    color: "#65749f",
+    color: "var(--text-muted)",
     fontSize: 11,
     fontWeight: 500,
   },
@@ -1264,7 +1264,7 @@ const styles = {
     alignItems: "center",
     gap: 6,
     marginTop: 14,
-    color: "#65749f",
+    color: "var(--text-muted)",
     fontSize: 11,
     fontWeight: 400,
     justifyContent: "flex-end",
@@ -1317,7 +1317,7 @@ const styles = {
     boxShadow: "0 4px 12px rgba(95,111,163,0.22)",
   },
   chartLabel: {
-    color: "#65749f",
+    color: "var(--text-muted)",
     fontSize: 10,
     fontWeight: 500,
   },
@@ -1427,7 +1427,7 @@ const styles = {
   },
   panelCopy: {
     margin: "6px 0 0",
-    color: "#65749f",
+    color: "var(--text-muted)",
     fontSize: 12,
     lineHeight: 1.55,
     fontWeight: 400,
@@ -1442,7 +1442,7 @@ const styles = {
     border: achieved
       ? "1px solid rgba(88,169,120,0.38)"
       : "1px solid rgba(190,200,235,0.54)",
-    background: achieved ? "rgba(239,249,243,0.78)" : "rgba(248,250,255,0.84)",
+    background: achieved ? "rgba(88,169,120,0.15)" : "var(--card-bg)",
     padding: 12,
     display: "grid",
     gridTemplateRows: "auto auto 1fr auto auto",
@@ -1456,8 +1456,8 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    color: achieved ? "#3e955d" : "var(--text-secondary)",
-    background: achieved ? "#dff3e7" : "var(--accent-soft)",
+    color: achieved ? "#6ec98f" : "var(--text-secondary)",
+    background: achieved ? "rgba(88,169,120,0.2)" : "var(--accent-soft)",
   }),
   achievementTitle: {
     margin: 0,
@@ -1469,7 +1469,7 @@ const styles = {
   },
   achievementCopy: {
     margin: 0,
-    color: "#65749f",
+    color: "var(--text-muted)",
     fontSize: 11,
     lineHeight: 1.45,
     fontWeight: 400,
@@ -1543,7 +1543,7 @@ const styles = {
   },
   stateText: {
     margin: 0,
-    color: "#65749f",
+    color: "var(--text-muted)",
     fontWeight: 400,
     fontSize: 14,
   },
