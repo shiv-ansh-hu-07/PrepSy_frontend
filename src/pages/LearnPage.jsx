@@ -7,6 +7,17 @@ import { Search, ChevronDown, ChevronUp, Users } from "lucide-react";
 
 const PAGE_BG = "var(--page-bg)";
 
+// Decimal hours -> standard "Xh Ym" (never a fractional hour like 1.7h).
+function fmtHrs(h) {
+  if (h == null || isNaN(h)) return "";
+  const totalMin = Math.round(Number(h) * 60);
+  const hh = Math.floor(totalMin / 60);
+  const mm = totalMin % 60;
+  if (hh === 0) return `${mm}m`;
+  if (mm === 0) return `${hh}h`;
+  return `${hh}h ${mm}m`;
+}
+
 const DIFF = {
   beginner: { bg: "#e8f5e9", color: "#2e7d32", label: "Beginner" },
   intermediate: { bg: "#fff3e0", color: "#e65100", label: "Intermediate" },
@@ -322,7 +333,7 @@ export default function LearnPage() {
                           background:
                             expandedTopic === i
                               ? "rgba(138,155,214,0.1)"
-                              : "rgba(248,249,255,0.8)",
+                              : "var(--accent-soft)",
                           border: "none",
                           cursor: "pointer",
                           textAlign: "left",
@@ -528,14 +539,14 @@ export default function LearnPage() {
                     >
                       <p style={{ margin: 0, fontWeight: 800, fontSize: 14, color: schedule.feasible ? "#2e7d32" : "#e65100" }}>
                         {schedule.feasible
-                          ? `✓ It fits — ${schedule.summary.requiredHours}h of study across ${schedule.requiredDays} day${schedule.requiredDays === 1 ? "" : "s"}.`
-                          : `⚠ Doesn't fit as-is — you're ${schedule.summary.gapHours}h over your ${schedule.summary.budgetHours}h budget.`}
+                          ? `✓ It fits — ${fmtHrs(schedule.summary.requiredHours)} of study across ${schedule.requiredDays} day${schedule.requiredDays === 1 ? "" : "s"}.`
+                          : `⚠ Doesn't fit as-is — you're ${fmtHrs(schedule.summary.gapHours)} over your ${fmtHrs(schedule.summary.budgetHours)} budget.`}
                       </p>
                       {!schedule.feasible && schedule.options && (
                         <ul style={{ margin: "10px 0 0", paddingLeft: 18, fontSize: 13, color: "#8a5a00", lineHeight: 1.7 }}>
                           <li>Study ~{schedule.options.neededHoursPerDay}h/day to finish in {schedule.requestedDays} days, or</li>
                           <li>Keep your pace but take {schedule.options.neededDays} days, or</li>
-                          <li>Watch at 1.5× → {schedule.options.requiredHoursAt1_5x}h (2× → {schedule.options.requiredHoursAt2x}h)</li>
+                          <li>Watch at 1.5× → {fmtHrs(schedule.options.requiredHoursAt1_5x)} (2× → {fmtHrs(schedule.options.requiredHoursAt2x)})</li>
                           {schedule.dropped?.length > 0 && (
                             <li>Skip the {schedule.dropped.length} optional video{schedule.dropped.length === 1 ? "" : "s"} below</li>
                           )}
@@ -580,7 +591,7 @@ export default function LearnPage() {
                             }}
                           >
                             <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 700, color: "#4f5fa8" }}>
-                              Day {d.day} · ~{d.studyHours}h
+                              Day {d.day} · ~{fmtHrs(d.studyHours)}
                             </p>
                             {d.videos.map((v, j) => (
                               <div key={j} style={{ fontSize: 12.5, color: "var(--text-secondary)", padding: "2px 0" }}>

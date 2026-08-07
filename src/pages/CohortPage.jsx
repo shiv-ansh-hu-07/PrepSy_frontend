@@ -7,6 +7,17 @@ import { Users, BookOpen, MessageSquare, Brain, Calendar, ChevronDown, ChevronUp
 
 const PAGE_BG = "var(--page-bg)";
 
+// Decimal hours -> standard "Xh Ym" (never a fractional hour like 1.7h).
+function fmtHrs(h) {
+  if (h == null || isNaN(h)) return "";
+  const totalMin = Math.round(Number(h) * 60);
+  const hh = Math.floor(totalMin / 60);
+  const mm = totalMin % 60;
+  if (hh === 0) return `${mm}m`;
+  if (mm === 0) return `${hh}h`;
+  return `${hh}h ${mm}m`;
+}
+
 const DIFF = {
   beginner: { bg: "#e8f5e9", color: "#2e7d32" },
   intermediate: { bg: "#fff3e0", color: "#e65100" },
@@ -432,7 +443,7 @@ export default function CohortPage() {
                         {s.topic}
                       </span>
                       {s.studyHours ? (
-                        <span style={{ fontSize: 11, fontWeight: 600, color: "#166534", flexShrink: 0 }}>~{s.studyHours}h</span>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "#166534", flexShrink: 0 }}>~{fmtHrs(s.studyHours)}</span>
                       ) : null}
                     </div>
                   );
@@ -759,7 +770,7 @@ export default function CohortPage() {
                             <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{s.topic}</p>
                             <span style={{ padding: "2px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: st.bg, color: st.color }}>{st.label}</span>
                             {s.studyHours ? (
-                              <span style={{ padding: "2px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: "rgba(34,197,94,0.12)", color: "#166534" }}>⏱ ~{s.studyHours}h</span>
+                              <span style={{ padding: "2px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: "rgba(34,197,94,0.12)", color: "#166534" }}>⏱ ~{fmtHrs(s.studyHours)}</span>
                             ) : null}
                           </div>
                           <p style={{ margin: "3px 0 0", fontSize: 12, color: "var(--accent)" }}>
