@@ -212,8 +212,8 @@ export default function JoinRoom() {
             return (
               <button key={tab.tag} onClick={() => handleTabFilter(tab.tag)} style={{
                 padding: "7px 16px", borderRadius: 999, flexShrink: 0,
-                border: active ? "1.5px solid #7c3aed" : "1px solid rgba(190,200,235,0.6)",
-                background: active ? "#7c3aed" : "#fff",
+                border: active ? "1.5px solid transparent" : "1px solid var(--card-border)",
+                background: active ? "var(--accent-gradient)" : "var(--card-bg)",
                 color: active ? "#fff" : "var(--text-secondary)",
                 fontWeight: active ? 700 : 500, fontSize: 13, cursor: "pointer",
                 boxShadow: active ? "0 4px 14px rgba(124,58,237,0.25)" : "none",
@@ -316,7 +316,7 @@ function RoomCard({ room, now, isMobile, onJoin }) {
         </div>
 
         {status.live ? (
-          <button onClick={onJoin} style={{ padding: "7px 15px", borderRadius: 10, border: "none", background: "#7c3aed", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", boxShadow: "0 4px 12px rgba(124,58,237,0.28)" }}>
+          <button onClick={onJoin} style={{ padding: "7px 15px", borderRadius: 10, border: "none", background: "var(--accent-gradient)", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", boxShadow: "0 4px 12px rgba(124,58,237,0.28)" }}>
             Join Now
           </button>
         ) : (
@@ -342,7 +342,7 @@ function EmptyRoomsState({ onClear }) {
         <button onClick={onClear} style={{ padding: "10px 20px", borderRadius: 12, border: "1px solid rgba(190,200,235,0.7)", background: "var(--card-bg)", color: "var(--text-secondary)", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
           Show all rooms
         </button>
-        <button onClick={() => navigate("/create-room")} style={{ padding: "10px 20px", borderRadius: 12, border: "none", background: "#7c3aed", color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 14px rgba(124,58,237,0.3)" }}>
+        <button onClick={() => navigate("/create-room")} style={{ padding: "10px 20px", borderRadius: 12, border: "none", background: "var(--accent-gradient)", color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 14px rgba(124,58,237,0.3)" }}>
           Create a room →
         </button>
       </div>
@@ -351,7 +351,7 @@ function EmptyRoomsState({ onClear }) {
 }
 
 const joinBtnStyle = {
-  borderRadius: 11, border: "none", background: "#7c3aed", color: "#fff",
+  borderRadius: 11, border: "none", background: "var(--accent-gradient)", color: "#fff",
   fontWeight: 600, cursor: "pointer", boxShadow: "0 4px 12px rgba(124,58,237,0.28)",
   whiteSpace: "nowrap", flexShrink: 0,
 };

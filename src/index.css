@@ -28,6 +28,8 @@ body,
   --input-bg: rgba(248, 249, 255, 0.9);
   --input-border: rgba(138, 155, 214, 0.4);
   --accent-soft: rgba(138, 155, 214, 0.14);
+  /* Consistent primary-button fill: purple -> lavender (uses --accent per theme). */
+  --accent-gradient: linear-gradient(135deg, #7c3aed 0%, var(--accent) 100%);
 }
 
 :root[data-theme="dark"] {

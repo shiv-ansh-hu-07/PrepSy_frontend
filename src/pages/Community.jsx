@@ -32,7 +32,7 @@ const primaryBtn = {
   border: "none",
   borderRadius: "999px",
   padding: "11px 18px",
-  background: "var(--accent)",
+  background: "var(--accent-gradient)",
   color: "#fff",
   fontSize: "14px",
   fontWeight: 600,
