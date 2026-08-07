@@ -62,6 +62,9 @@ export default function CohortPage() {
   const [editName, setEditName] = useState("");
   const [editTime, setEditTime] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
+  const [planHours, setPlanHours] = useState(2);
+  const [planDays, setPlanDays] = useState(30);
+  const [generatingPlan, setGeneratingPlan] = useState(false);
 
   const handleCopyInvite = async () => {
     try {
@@ -176,6 +179,30 @@ export default function CohortPage() {
       alert(err?.response?.data?.message || "Failed to save changes");
     } finally {
       setSavingEdit(false);
+    }
+  };
+
+  const handleGeneratePlan = async () => {
+    if (!cohort?.playlist?.id) return;
+    setGeneratingPlan(true);
+    try {
+      const { data: sched } = await api.post(`/playlists/${cohort.playlist.id}/schedule`, {
+        hoursPerDay: Number(planHours),
+        days: Number(planDays),
+      });
+      const genSessions = (sched?.days || []).map((d) => ({
+        topic: d.videos?.[0]?.title ? `Day ${d.day}: ${d.videos[0].title}` : `Day ${d.day}`,
+        description: (d.videos || []).map((v) => v.title).join(" • "),
+        studyHours: d.studyHours,
+      }));
+      await api.post(`/cohorts/${id}/plan`, { sessions: genSessions });
+      const { data } = await api.get(`/cohorts/${id}/sessions`);
+      setSessions(data);
+      await fetchCohort();
+    } catch (err) {
+      alert(err?.response?.data?.message || "Couldn't generate the plan. Please try again.");
+    } finally {
+      setGeneratingPlan(false);
     }
   };
 
@@ -720,6 +747,34 @@ export default function CohortPage() {
           {activeTab === "sessions" && (
             <div style={card}>
               <h3 style={sectionTitle}>📅 Study Sessions</h3>
+
+              {cohort.createdById === user?.id && (
+                <div style={{ marginBottom: 20, padding: 16, borderRadius: 14, border: "1px solid var(--accent)", background: "var(--accent-soft)" }}>
+                  <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
+                    Generate the shared day-by-day plan
+                  </p>
+                  <p style={{ margin: "0 0 12px", fontSize: 12, color: "var(--text-secondary)" }}>
+                    Fits the playlist into daily sessions the whole cohort follows. Regenerating replaces the current plan.
+                  </p>
+                  <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 10, alignItems: isMobile ? "stretch" : "flex-end" }}>
+                    <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 700, color: "var(--accent)", width: isMobile ? "100%" : 120 }}>
+                      Hours / day
+                      <input type="number" min="0.5" step="0.5" value={planHours} onChange={(e) => setPlanHours(e.target.value)}
+                        style={{ height: 40, borderRadius: 10, border: "1px solid var(--card-border)", background: "var(--card-bg)", color: "var(--text-primary)", padding: "0 12px", fontSize: 14, outline: "none" }} />
+                    </label>
+                    <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 700, color: "var(--accent)", width: isMobile ? "100%" : 120 }}>
+                      Days available
+                      <input type="number" min="1" step="1" value={planDays} onChange={(e) => setPlanDays(e.target.value)}
+                        style={{ height: 40, borderRadius: 10, border: "1px solid var(--card-border)", background: "var(--card-bg)", color: "var(--text-primary)", padding: "0 12px", fontSize: 14, outline: "none" }} />
+                    </label>
+                    <button onClick={handleGeneratePlan} disabled={generatingPlan || !planHours || !planDays}
+                      style={{ ...btnPrimary(generatingPlan || !planHours || !planDays), height: 40 }}>
+                      {generatingPlan ? "Generating…" : sessions.length > 0 ? "Regenerate plan" : "Generate plan"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {cohort.isMember && (
                 <div style={{ marginBottom: 24, padding: "16px", borderRadius: 14, border: "1px solid rgba(138,155,214,0.3)", background: "rgba(138,155,214,0.06)" }}>
                   <p style={{ margin: "0 0 12px", fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>Schedule a Session</p>
