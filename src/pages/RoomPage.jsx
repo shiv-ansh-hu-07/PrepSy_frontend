@@ -136,7 +136,7 @@ export default function RoomPage() {
               padding: "0 18px",
               borderRadius: "999px",
               border: "none",
-              background: "var(--accent)",
+              background: "var(--accent-gradient)",
               color: "#ffffff",
               cursor: "pointer",
             }}

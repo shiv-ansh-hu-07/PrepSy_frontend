@@ -182,7 +182,7 @@ export default function Navbar() {
                         right: 0,
                         bottom: "-6px",
                         height: "2px",
-                        backgroundColor: "var(--accent)",
+                        background: "var(--accent-gradient)",
                         borderRadius: "2px",
                       }}
                     />

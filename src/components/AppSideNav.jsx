@@ -235,7 +235,7 @@ const styles = {
     width: "100%",
     borderRadius: 12,
     border: "none",
-    background: "var(--accent)",
+    background: "var(--accent-gradient)",
     color: "#ffffff",
     display: "flex",
     alignItems: "center",

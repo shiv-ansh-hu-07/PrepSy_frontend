@@ -160,7 +160,7 @@ const btnPrimary = (disabled) => ({
   padding: "0 24px",
   borderRadius: 12,
   border: "none",
-  background: disabled ? "#c5cde8" : "var(--accent)",
+  background: disabled ? "var(--card-border)" : "var(--accent-gradient)",
   color: "#fff",
   fontWeight: 700,
   fontSize: 14,

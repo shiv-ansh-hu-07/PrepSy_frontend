@@ -523,7 +523,7 @@ export default function CohortPage() {
                           onClick={() => setExpandedTopics((p) => ({ ...p, [i]: !p[i] }))}
                           style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", background: expandedTopics[i] ? "rgba(138,155,214,0.08)" : "var(--accent-soft)", border: "none", cursor: "pointer", textAlign: "left" }}
                         >
-                          <span style={{ width: 24, height: 24, borderRadius: "50%", background: "var(--accent)", color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i + 1}</span>
+                          <span style={{ width: 24, height: 24, borderRadius: "50%", background: "var(--accent-gradient)", color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i + 1}</span>
                           <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{topic.title}</span>
                           {expandedTopics[i] ? <ChevronUp size={14} color="var(--accent)" /> : <ChevronDown size={14} color="var(--accent)" />}
                         </button>
@@ -573,7 +573,7 @@ export default function CohortPage() {
                     <div key={post.id} style={{ borderRadius: 14, border: "1px solid var(--card-border)", overflow: "hidden" }}>
                       <div style={{ padding: "14px 16px", background: "var(--accent-soft)" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                          <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--accent)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 }}>
+                          <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--accent-gradient)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 }}>
                             {(post.author?.name || "?")[0]?.toUpperCase()}
                           </div>
                           <span style={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>{post.author?.name || "Unknown"}</span>
@@ -898,7 +898,7 @@ const btnPrimary = (disabled) => ({
   padding: "0 22px",
   borderRadius: 12,
   border: "none",
-  background: disabled ? "#c5cde8" : "var(--accent)",
+  background: disabled ? "var(--card-border)" : "var(--accent-gradient)",
   color: "#fff",
   fontWeight: 700,
   fontSize: 14,

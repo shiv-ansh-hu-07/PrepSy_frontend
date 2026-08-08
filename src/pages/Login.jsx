@@ -179,7 +179,7 @@ export default function Login() {
               width: "90%",
               padding: "14px",
               borderRadius: "999px",
-              background: "var(--accent)",
+              background: "var(--accent-gradient)",
               color: "#ffffff",
               fontSize: "15px",
               fontWeight: 500,

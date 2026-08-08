@@ -677,7 +677,7 @@ const styles = {
   },
   saveBtn: {
     display: "flex", alignItems: "center", justifyContent: "center", marginTop: 10,
-    height: 44, borderRadius: 14, border: "none", background: "var(--accent)",
+    height: 44, borderRadius: 14, border: "none", background: "var(--accent-gradient)",
     color: "#FFFFFF", fontWeight: 600, cursor: "pointer",
     boxShadow: "0 8px 22px rgba(99,102,241,0.28)",
   },

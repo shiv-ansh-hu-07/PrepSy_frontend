@@ -563,7 +563,7 @@ const styles = {
     borderRadius: 12, background: "var(--card-bg)",
   },
   personAvatar: {
-    width: 32, height: 32, borderRadius: "50%", background: "var(--accent)",
+    width: 32, height: 32, borderRadius: "50%", background: "var(--accent-gradient)",
     color: "#fff", fontSize: 12, fontWeight: 700, display: "flex",
     alignItems: "center", justifyContent: "center", flexShrink: 0,
   },

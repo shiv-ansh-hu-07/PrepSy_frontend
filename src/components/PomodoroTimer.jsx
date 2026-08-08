@@ -490,7 +490,7 @@ const styles = {
     gap: 10,
   },
   primaryPromptButton: {
-    background: "var(--accent)",
+    background: "var(--accent-gradient)",
     borderColor: "var(--accent)",
     color: "#FFFFFF",
   },

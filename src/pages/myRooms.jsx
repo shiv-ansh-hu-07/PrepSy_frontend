@@ -156,7 +156,7 @@ function MyRooms() {
                 style={{
                   padding: "10px 18px",
                   borderRadius: "10px",
-                  backgroundColor: "var(--accent)",        // HomesWork-like lavender blue
+                  background: "var(--accent-gradient)",        // HomesWork-like lavender blue
                   color: "#ffffff",
                   fontSize: "14px",
                   fontWeight: 500,
@@ -187,7 +187,7 @@ function MyRooms() {
                   style={{
                     padding: "10px 18px",
                     borderRadius: "10px",
-                    backgroundColor: "var(--accent)",        // HomesWork-like lavender blue
+                    background: "var(--accent-gradient)",        // HomesWork-like lavender blue
                     color: "#ffffff",
                     fontSize: "14px",
                     fontWeight: 500,

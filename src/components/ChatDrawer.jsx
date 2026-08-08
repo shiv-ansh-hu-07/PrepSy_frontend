@@ -151,7 +151,7 @@ export default function ChatDrawer({ onClose, currentUser, embedded = false }) {
     >
       {/* Header */}
       {!embedded && (
-        <div style={{ background: "var(--accent)" }}
+        <div style={{ background: "var(--accent-gradient)" }}
         className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-linear-to-r color - var(--accent) text-white">
           <h2 className="font-semibold text-lg">Room Chat</h2>
           <button
@@ -237,7 +237,7 @@ const styles = {
     height: 23,
     borderRadius: 14,
     border: "none",
-    background: "var(--accent)",
+    background: "var(--accent-gradient)",
     color: "#FFFFFF",
     fontWeight: 500,
     cursor: "pointer",

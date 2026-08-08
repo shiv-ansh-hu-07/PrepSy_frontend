@@ -339,7 +339,7 @@ function WeeklyFocusChart({ entries, total, dailyGoalMinutes = 0 }) {
       {hasGoal && (
         <div style={{ display: "flex", gap: 12, marginBottom: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-            <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--accent)", display: "inline-block" }} />
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--accent-gradient)", display: "inline-block" }} />
             <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>Studied</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
