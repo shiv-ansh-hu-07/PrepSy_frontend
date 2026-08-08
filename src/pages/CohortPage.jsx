@@ -24,6 +24,37 @@ const DIFF = {
   advanced: { bg: "#fce4ec", color: "#c62828" },
 };
 
+// "Starts in Xh Ym" countdown from a millisecond gap.
+function fmtCountdown(ms) {
+  const totalMin = Math.max(0, Math.round(ms / 60000));
+  const hh = Math.floor(totalMin / 60);
+  const mm = totalMin % 60;
+  if (totalMin < 1) return "Starts in <1m";
+  if (hh === 0) return `Starts in ${mm}m`;
+  if (mm === 0) return `Starts in ${hh}h`;
+  return `Starts in ${hh}h ${mm}m`;
+}
+
+const REMIND_MS = 15 * 60000; // "Starting soon" window opens 15 min before
+
+// Per-user status of one day's session. Drives the schedule-tab chip.
+// "Joined" wins regardless of time (you were there); otherwise it's time-based.
+function sessionUserStatus(s, nowMs) {
+  const start = new Date(s.scheduledAt).getTime();
+  const durMs = (s.studyHours ? s.studyHours * 60 : 60) * 60000;
+  const end = start + durMs;
+  if (s.attendedByMe) {
+    return { kind: "joined", bg: "#e8f5e9", color: "#2e7d32", label: "✓ Joined" };
+  }
+  if (nowMs < start - REMIND_MS) {
+    return { kind: "upcoming", bg: "var(--accent-soft)", color: "var(--accent)", label: fmtCountdown(start - nowMs) };
+  }
+  if (nowMs < end) {
+    return { kind: "soon", bg: "rgba(239,68,68,0.12)", color: "#dc2626", label: "● Starting soon" };
+  }
+  return { kind: "missed", bg: "#fdecea", color: "#c62828", label: "Missed" };
+}
+
 function useWindowWidth() {
   const [w, setW] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1200));
   useEffect(() => {
@@ -86,6 +117,12 @@ export default function CohortPage() {
 
   // Sessions state
   const [sessions, setSessions] = useState([]);
+  // Ticking clock so countdowns / "Starting soon" stay live without a refetch.
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNowMs(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, []);
 
   // Quiz state
   const [quiz, setQuiz] = useState(null);
@@ -759,12 +796,8 @@ export default function CohortPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {sessions.map((s) => {
                     const dt = new Date(s.scheduledAt);
-                    const st =
-                      s.status === "COMPLETED"
-                        ? { bg: "#e8f5e9", color: "#2e7d32", label: "Completed" }
-                        : s.status === "POSTPONED"
-                        ? { bg: "#fff3e0", color: "#e65100", label: "Postponed" }
-                        : { bg: "var(--accent-soft)", color: "var(--accent)", label: "Scheduled" };
+                    const st = sessionUserStatus(s, nowMs);
+                    const roomId = s.roomId || cohort.roomId;
                     return (
                       <div key={s.id} style={{ padding: "14px 16px", borderRadius: 14, border: "1px solid var(--card-border)", display: "flex", gap: 14, alignItems: "flex-start" }}>
                         <div style={{ width: 46, textAlign: "center", flexShrink: 0 }}>
@@ -778,12 +811,25 @@ export default function CohortPage() {
                             {s.studyHours ? (
                               <span style={{ padding: "2px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: "rgba(34,197,94,0.12)", color: "#166534" }}>⏱ ~{fmtHrs(s.studyHours)}</span>
                             ) : null}
+                            {s.attendeeCount > 0 ? (
+                              <span style={{ padding: "2px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: "var(--accent-soft)", color: "var(--accent)" }}>
+                                {s.attendeeCount} joined
+                              </span>
+                            ) : null}
                           </div>
                           <p style={{ margin: "3px 0 0", fontSize: 12, color: "var(--accent)" }}>
                             {dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                           </p>
                           {s.description ? (
                             <p style={{ margin: "6px 0 0", fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.5 }}>{s.description}</p>
+                          ) : null}
+                          {st.kind === "soon" && roomId && cohort.isMember ? (
+                            <button
+                              onClick={() => navigate(`/room/${roomId}`)}
+                              style={{ ...btnPrimary(false), height: 34, marginTop: 10, padding: "0 16px", fontSize: 13 }}
+                            >
+                              Join now
+                            </button>
                           ) : null}
                         </div>
                       </div>
