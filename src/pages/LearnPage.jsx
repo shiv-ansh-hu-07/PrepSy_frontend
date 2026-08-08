@@ -296,7 +296,7 @@ export default function LearnPage() {
                       {diffStyle.label}
                     </Chip>
                     <Chip bg="var(--accent-soft)" color="#4f5fa8">
-                      ⏱ ~{plan.estimatedHours}h total
+                      ⏱ ~{fmtHrs(plan.estimatedHours)} total
                     </Chip>
                     <Chip bg="#f3e8ff" color="#6d28d9">
                       📚 {curriculum.length} topics

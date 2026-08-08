@@ -340,7 +340,7 @@ export default function CohortPage() {
                       {plan.difficulty}
                     </span>
                     <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 600, background: "var(--accent-soft)", color: "var(--accent)" }}>
-                      ⏱ ~{plan.estimatedHours}h
+                      ⏱ ~{fmtHrs(plan.estimatedHours)}
                     </span>
                   </div>
                 )}
