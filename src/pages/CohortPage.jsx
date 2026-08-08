@@ -748,13 +748,13 @@ export default function CohortPage() {
             <div style={card}>
               <h3 style={sectionTitle}>📅 Study Sessions</h3>
 
-              {cohort.createdById === user?.id && (
+              {cohort.createdById === user?.id && sessions.length === 0 && (
                 <div style={{ marginBottom: 20, padding: 16, borderRadius: 14, border: "1px solid var(--accent)", background: "var(--accent-soft)" }}>
                   <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
                     Generate the shared day-by-day plan
                   </p>
                   <p style={{ margin: "0 0 12px", fontSize: 12, color: "var(--text-secondary)" }}>
-                    Fits the playlist into daily sessions the whole cohort follows. Regenerating replaces the current plan.
+                    Fits the playlist into daily sessions the whole cohort follows. The plan is locked once created — it can't be regenerated later, since that would shift every session date, room booking, and reminder email.
                   </p>
                   <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 10, alignItems: isMobile ? "stretch" : "flex-end" }}>
                     <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 700, color: "var(--accent)", width: isMobile ? "100%" : 120 }}>
@@ -769,8 +769,22 @@ export default function CohortPage() {
                     </label>
                     <button onClick={handleGeneratePlan} disabled={generatingPlan || !planHours || !planDays}
                       style={{ ...btnPrimary(generatingPlan || !planHours || !planDays), height: 40 }}>
-                      {generatingPlan ? "Generating…" : sessions.length > 0 ? "Regenerate plan" : "Generate plan"}
+                      {generatingPlan ? "Generating…" : "Generate plan"}
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {cohort.createdById === user?.id && sessions.length > 0 && (
+                <div style={{ marginBottom: 20, padding: 16, borderRadius: 14, border: "1px solid var(--card-border)", background: "var(--card-bg)", display: "flex", gap: 10, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 16, lineHeight: "20px" }}>🔒</span>
+                  <div>
+                    <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
+                      Shared plan locked
+                    </p>
+                    <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)" }}>
+                      The day-by-day plan is set and can't be regenerated — the whole cohort's room schedule and reminder emails are tied to these dates. You can still add individual sessions below.
+                    </p>
                   </div>
                 </div>
               )}
