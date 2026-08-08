@@ -86,9 +86,6 @@ export default function CohortPage() {
 
   // Sessions state
   const [sessions, setSessions] = useState([]);
-  const [sessionTopic, setSessionTopic] = useState("");
-  const [sessionDate, setSessionDate] = useState("");
-  const [addingSession, setAddingSession] = useState(false);
 
   // Quiz state
   const [quiz, setQuiz] = useState(null);
@@ -253,25 +250,6 @@ export default function CohortPage() {
       api.get(`/cohorts/${id}/quiz/attempts`).then(({ data: a }) => setPastAttempts(a)).catch(() => {});
     } catch {
       /* ignore */
-    }
-  };
-
-  const handleAddSession = async () => {
-    if (!sessionTopic.trim() || !sessionDate) return;
-    setAddingSession(true);
-    try {
-      await api.post(`/cohorts/${id}/sessions`, {
-        topic: sessionTopic.trim(),
-        scheduledAt: new Date(sessionDate).toISOString(),
-      });
-      const { data } = await api.get(`/cohorts/${id}/sessions`);
-      setSessions(data);
-      setSessionTopic("");
-      setSessionDate("");
-    } catch {
-      /* ignore */
-    } finally {
-      setAddingSession(false);
     }
   };
 
@@ -770,47 +748,6 @@ export default function CohortPage() {
                     <button onClick={handleGeneratePlan} disabled={generatingPlan || !planHours || !planDays}
                       style={{ ...btnPrimary(generatingPlan || !planHours || !planDays), height: 40 }}>
                       {generatingPlan ? "Generating…" : "Generate plan"}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {cohort.createdById === user?.id && sessions.length > 0 && (
-                <div style={{ marginBottom: 20, padding: 16, borderRadius: 14, border: "1px solid var(--card-border)", background: "var(--card-bg)", display: "flex", gap: 10, alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 16, lineHeight: "20px" }}>🔒</span>
-                  <div>
-                    <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
-                      Shared plan locked
-                    </p>
-                    <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)" }}>
-                      The day-by-day plan is set and can't be regenerated — the whole cohort's room schedule and reminder emails are tied to these dates. You can still add individual sessions below.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {cohort.isMember && (
-                <div style={{ marginBottom: 24, padding: "16px", borderRadius: 14, border: "1px solid rgba(138,155,214,0.3)", background: "rgba(138,155,214,0.06)" }}>
-                  <p style={{ margin: "0 0 12px", fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>Schedule a Session</p>
-                  <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 10 }}>
-                    <input
-                      value={sessionTopic}
-                      onChange={(e) => setSessionTopic(e.target.value)}
-                      placeholder="Topic (e.g. Week 2 — React Hooks)"
-                      style={{ flex: 1, height: 42, borderRadius: 10, border: "1.5px solid rgba(138,155,214,0.4)", background: "var(--card-bg)", padding: "0 12px", fontSize: 13, outline: "none" }}
-                    />
-                    <input
-                      type="datetime-local"
-                      value={sessionDate}
-                      onChange={(e) => setSessionDate(e.target.value)}
-                      style={{ height: 42, borderRadius: 10, border: "1.5px solid rgba(138,155,214,0.4)", background: "var(--card-bg)", padding: "0 12px", fontSize: 13, outline: "none" }}
-                    />
-                    <button
-                      onClick={handleAddSession}
-                      disabled={addingSession || !sessionTopic.trim() || !sessionDate}
-                      style={{ ...btnPrimary(addingSession || !sessionTopic.trim() || !sessionDate), height: 42 }}
-                    >
-                      {addingSession ? "Saving…" : "Schedule"}
                     </button>
                   </div>
                 </div>
