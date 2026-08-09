@@ -131,6 +131,12 @@ function MyRooms() {
                 {room.name}
               </h3>
 
+              {room.isCohortRoom && (
+                <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600">
+                  ▶ Cohort
+                </span>
+              )}
+
               <div className="mt-1 flex flex-wrap gap-2">
                 {room.tags && room.tags.length > 0 ? (
                   room.tags.map((tag) => (

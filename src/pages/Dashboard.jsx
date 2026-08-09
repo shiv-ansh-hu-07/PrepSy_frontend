@@ -379,6 +379,15 @@ function SessionRow({ room, isMobile, onJoin }) {
           <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {room.name}
           </p>
+          {room.isCohortRoom && (
+            <span style={{
+              fontSize: 10, fontWeight: 700, flexShrink: 0,
+              color: "#dc2626", background: "rgba(239,68,68,0.1)",
+              padding: "2px 7px", borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 3,
+            }}>
+              ▶ Cohort
+            </span>
+          )}
           <span style={{
             fontSize: 10, fontWeight: 700, flexShrink: 0,
             color: active ? "#16a34a" : "#7c3aed",

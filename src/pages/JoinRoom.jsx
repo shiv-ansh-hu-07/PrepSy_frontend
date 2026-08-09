@@ -294,6 +294,16 @@ function RoomCard({ room, now, isMobile, onJoin }) {
         {room.name}
       </h3>
 
+      {room.isCohortRoom && (
+        <span style={{
+          display: "inline-flex", alignItems: "center", gap: 3, alignSelf: "flex-start",
+          fontSize: 10, fontWeight: 700, color: "#dc2626", background: "rgba(239,68,68,0.1)",
+          padding: "2px 8px", borderRadius: 999, marginBottom: 8,
+        }}>
+          ▶ Cohort
+        </span>
+      )}
+
       <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 12, flex: 1 }}>
         {tags.map((t) => (
           <span key={t} style={{ fontSize: 11, color: accent, background: bg, padding: "2px 7px", borderRadius: 999, fontWeight: 500 }}>#{t}</span>
