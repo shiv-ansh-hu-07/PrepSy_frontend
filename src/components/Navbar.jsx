@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ChevronDown, Flame } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useGuardedNavigate } from "../context/NavGuardContext";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const navigate = useGuardedNavigate();
   const location = useLocation();
 
   const [windowWidth, setWindowWidth] = useState(

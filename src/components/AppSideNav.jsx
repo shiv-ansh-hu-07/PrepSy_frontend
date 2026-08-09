@@ -12,9 +12,10 @@ import {
   Moon,
   Sun,
 } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import { useGuardedNavigate } from "../context/NavGuardContext";
 
 const navItems = [
   { label: "Home", path: "/dashboard", icon: Home },
@@ -31,7 +32,7 @@ export default function AppSideNav() {
   const { user, guestSessionActive } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
-  const navigate = useNavigate();
+  const navigate = useGuardedNavigate();
   const isGuestViewer = !user && guestSessionActive;
   const streakDays = user?.attendanceStreak ?? 0;
 

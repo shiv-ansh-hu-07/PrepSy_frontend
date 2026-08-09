@@ -7,6 +7,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider } from "./context/AuthContext";
 import { SocketProvider } from "./context/SocketContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { NavGuardProvider } from "./context/NavGuardContext";
 
 import "./index.css";
 
@@ -17,7 +18,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <ThemeProvider>
           <AuthProvider>
             <SocketProvider>
-              <App />
+              <NavGuardProvider>
+                <App />
+              </NavGuardProvider>
             </SocketProvider>
           </AuthProvider>
         </ThemeProvider>

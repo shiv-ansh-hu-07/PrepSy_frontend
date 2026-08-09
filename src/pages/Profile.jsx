@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useNavGuard } from "../context/NavGuardContext";
 import AppSideNav from "../components/AppSideNav";
 import {
   fetchMyAnalytics,
@@ -237,6 +238,31 @@ export default function Profile() {
     void loadProfile();
     return () => { cancelled = true; };
   }, [user?.avatarUrl, user?.email, user?.name]);
+
+  const { setGuard } = useNavGuard();
+
+  // Unsaved-changes guard: dirty only while editing and the form differs from
+  // the last saved snapshot.
+  const isDirty = useMemo(
+    () => editMode && JSON.stringify(profile) !== JSON.stringify(savedProfile),
+    [editMode, profile, savedProfile],
+  );
+
+  useEffect(() => {
+    setGuard(isDirty ? "You have unsaved profile changes. Leave without saving?" : null);
+    return () => setGuard(null);
+  }, [isDirty, setGuard]);
+
+  useEffect(() => {
+    if (!isDirty) return undefined;
+    const onBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = "";
+      return "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [isDirty]);
 
   const missingRequired = useMemo(() => getMissingRequired(profile), [profile]);
   const missingRecommendations = useMemo(() => getMissingRecommendations(profile), [profile]);
