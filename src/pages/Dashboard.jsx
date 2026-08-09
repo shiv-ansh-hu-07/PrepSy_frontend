@@ -345,6 +345,7 @@ function ScoreRing({ score }) {
 }
 
 function SessionRow({ room, isMobile, onJoin }) {
+  const navigate = useNavigate();
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -405,16 +406,28 @@ function SessionRow({ room, isMobile, onJoin }) {
         </div>
       </div>
 
-      <button onClick={active ? onJoin : undefined} disabled={!active} style={{
-        padding: isMobile ? "6px 12px" : "7px 16px", borderRadius: 10, border: "none",
-        background: active ? "#7c3aed" : "var(--accent-soft)",
-        color: active ? "#fff" : "var(--text-muted)",
-        fontWeight: 600, fontSize: 12, cursor: active ? "pointer" : "default",
-        flexShrink: 0, whiteSpace: "nowrap",
-        boxShadow: active ? "0 4px 12px rgba(124,58,237,0.25)" : "none",
-      }}>
-        {active ? "Join" : "Soon"}
-      </button>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+        {room.isCohortRoom && room.cohortId ? (
+          <button onClick={() => navigate(`/cohort/${room.cohortId}`)} style={{
+            padding: isMobile ? "6px 12px" : "7px 14px", borderRadius: 10,
+            border: "1px solid var(--card-border)", background: "transparent",
+            color: "var(--text-secondary)", fontWeight: 600, fontSize: 12,
+            cursor: "pointer", whiteSpace: "nowrap",
+          }}>
+            Details
+          </button>
+        ) : null}
+        <button onClick={active ? onJoin : undefined} disabled={!active} style={{
+          padding: isMobile ? "6px 12px" : "7px 16px", borderRadius: 10, border: "none",
+          background: active ? "#7c3aed" : "var(--accent-soft)",
+          color: active ? "#fff" : "var(--text-muted)",
+          fontWeight: 600, fontSize: 12, cursor: active ? "pointer" : "default",
+          whiteSpace: "nowrap",
+          boxShadow: active ? "0 4px 12px rgba(124,58,237,0.25)" : "none",
+        }}>
+          {active ? "Join" : "Soon"}
+        </button>
+      </div>
     </div>
   );
 }

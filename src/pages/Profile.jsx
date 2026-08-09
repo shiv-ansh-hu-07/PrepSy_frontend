@@ -264,6 +264,25 @@ export default function Profile() {
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [isDirty]);
 
+  // Guard the browser Back button. BrowserRouter has no useBlocker, so we trap
+  // the first Back press with a sentinel history entry and confirm before
+  // actually leaving.
+  useEffect(() => {
+    if (!isDirty) return undefined;
+    const message = "You have unsaved profile changes. Leave without saving?";
+    window.history.pushState(null, "", window.location.href);
+    const onPopState = () => {
+      if (window.confirm(message)) {
+        window.removeEventListener("popstate", onPopState);
+        window.history.back();
+      } else {
+        window.history.pushState(null, "", window.location.href);
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [isDirty]);
+
   const missingRequired = useMemo(() => getMissingRequired(profile), [profile]);
   const missingRecommendations = useMemo(() => getMissingRecommendations(profile), [profile]);
   const completionPercent = getLocalCompletionPercent(profile);
