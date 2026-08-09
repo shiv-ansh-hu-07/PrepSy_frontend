@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import YouTube from "react-youtube";
 import { useRoomContext, useLocalParticipant, useParticipants } from "@livekit/components-react";
 
@@ -25,6 +25,16 @@ export default function YouTubeRoom({ videoId, playlistId, locked = false }) {
   const playerRef = useRef(null);       // YT.Player instance
   const isSyncingRef = useRef(false);   // suppress re-broadcast while applying remote sync
   const heartbeatRef = useRef(null);
+
+  // Current video's title + channel, for creator attribution. Read live from
+  // the player so it stays correct as the playlist advances.
+  const [videoMeta, setVideoMeta] = useState(null);
+  const captureVideoMeta = useCallback((player) => {
+    const data = player?.getVideoData?.();
+    if (data?.video_id) {
+      setVideoMeta({ title: data.title, author: data.author, videoId: data.video_id });
+    }
+  }, []);
 
   // ── Broadcast helpers ─────────────────────────────────────────────────────
 
@@ -165,7 +175,8 @@ export default function YouTubeRoom({ videoId, playlistId, locked = false }) {
     if (lockedRef.current) {
       e.target.pauseVideo?.();
     }
-  }, [videoId, playlistId]);
+    captureVideoMeta(e.target);
+  }, [videoId, playlistId, captureVideoMeta]);
 
   const onStateChange = useCallback((e) => {
     const YT_PLAYING = 1;
@@ -179,11 +190,14 @@ export default function YouTubeRoom({ videoId, playlistId, locked = false }) {
       return;
     }
 
+    // Keep attribution in sync as the playlist advances to a new video.
+    if (e.data === YT_PLAYING) captureVideoMeta(e.target);
+
     if (isSyncingRef.current) return; // skip — this change was caused by applySync
     if (e.data === YT_PLAYING) broadcastState("PLAY");
     if (e.data === YT_PAUSED) broadcastState("PAUSE");
     if (e.data === YT_ENDED) broadcastState("PAUSE");
-  }, [broadcastState]);
+  }, [broadcastState, captureVideoMeta]);
 
   // Manual seek detection — YouTube API doesn't fire a "seeked" event,
   // but PAUSE immediately followed by PLAY with a time jump signals a seek.
@@ -229,6 +243,23 @@ export default function YouTubeRoom({ videoId, playlistId, locked = false }) {
           onStateChange={onStateChange}
         />
       </div>
+
+      {videoMeta ? (
+        <div style={styles.attribution}>
+          <span style={styles.attributionText}>
+            {videoMeta.title}
+            {videoMeta.author ? <> · <span style={styles.attributionAuthor}>{videoMeta.author}</span></> : null}
+          </span>
+          <a
+            href={`https://www.youtube.com/watch?v=${videoMeta.videoId}${playlistId ? `&list=${playlistId}` : ""}`}
+            target="_blank"
+            rel="noreferrer"
+            style={styles.attributionLink}
+          >
+            Watch on YouTube ↗
+          </a>
+        </div>
+      ) : null}
 
       <p style={styles.hint}>
         ▶ Anyone in this room can play, pause, or seek — everyone stays in sync.
@@ -291,5 +322,34 @@ const styles = {
     color: "rgba(148,163,184,0.7)",
     background: "rgba(255,255,255,0.03)",
     textAlign: "center",
+  },
+  attribution: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    padding: "8px 16px",
+    background: "rgba(255,255,255,0.03)",
+    borderTop: "1px solid rgba(255,255,255,0.06)",
+    flexWrap: "wrap",
+  },
+  attributionText: {
+    fontSize: 12,
+    color: "rgba(226,232,240,0.85)",
+    minWidth: 0,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  attributionAuthor: {
+    color: "rgba(148,163,184,0.9)",
+  },
+  attributionLink: {
+    flexShrink: 0,
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#a78bfa",
+    textDecoration: "none",
+    whiteSpace: "nowrap",
   },
 };
