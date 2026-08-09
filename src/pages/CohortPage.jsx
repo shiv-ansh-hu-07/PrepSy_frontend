@@ -52,7 +52,15 @@ function sessionUserStatus(s, nowMs) {
   if (nowMs < end) {
     return { kind: "soon", bg: "rgba(239,68,68,0.12)", color: "#dc2626", label: "● Starting soon" };
   }
+  if (s.caughtUpByMe) {
+    return { kind: "caughtup", bg: "rgba(20,184,166,0.14)", color: "#0f766e", label: "✓ Caught up" };
+  }
   return { kind: "missed", bg: "#fdecea", color: "#c62828", label: "Missed" };
+}
+
+// A session's day is "done" for a user if they joined live or caught up later.
+function isSessionDone(s) {
+  return Boolean(s.attendedByMe || s.caughtUpByMe);
 }
 
 function useWindowWidth() {
@@ -123,6 +131,8 @@ export default function CohortPage() {
     const t = setInterval(() => setNowMs(Date.now()), 30000);
     return () => clearInterval(t);
   }, []);
+  const [catchUpOpen, setCatchUpOpen] = useState({}); // sessionId -> expanded
+  const [catchingUp, setCatchingUp] = useState({}); // sessionId -> in-flight
 
   // Quiz state
   const [quiz, setQuiz] = useState(null);
@@ -240,6 +250,21 @@ export default function CohortPage() {
     }
   };
 
+  const handleCatchup = async (sessionId, done) => {
+    setCatchingUp((prev) => ({ ...prev, [sessionId]: true }));
+    // Optimistic: flip the flag locally so the chip updates immediately.
+    setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, caughtUpByMe: done } : s)));
+    try {
+      await api.post(`/cohorts/${id}/sessions/${sessionId}/catchup`, { done });
+    } catch (err) {
+      // Roll back on failure.
+      setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, caughtUpByMe: !done } : s)));
+      alert(err?.response?.data?.message || "Couldn't update catch-up status.");
+    } finally {
+      setCatchingUp((prev) => ({ ...prev, [sessionId]: false }));
+    }
+  };
+
   const handlePostDiscussion = async (parentId) => {
     const content = parentId ? replyContent[parentId] : newPost;
     if (!content?.trim()) return;
@@ -315,6 +340,14 @@ export default function CohortPage() {
   const curriculum = plan?.curriculum || [];
   const roadmap = plan?.roadmap || [];
   const diffStyle = DIFF[plan?.difficulty] || DIFF.intermediate;
+
+  // Personal progress across days whose window has already ended.
+  const pastSessions = sessions.filter((s) => {
+    const end = new Date(s.scheduledAt).getTime() + (s.studyHours ? s.studyHours * 60 : 60) * 60000;
+    return nowMs >= end;
+  });
+  const doneCount = pastSessions.filter(isSessionDone).length;
+  const progressPct = pastSessions.length ? Math.round((doneCount / pastSessions.length) * 100) : 0;
 
   return (
     <div
@@ -793,6 +826,20 @@ export default function CohortPage() {
               {sessions.length === 0 ? (
                 <p style={{ color: "var(--text-muted)", fontSize: 14 }}>No sessions scheduled yet.</p>
               ) : (
+                <>
+                  {cohort.isMember && pastSessions.length > 0 ? (
+                    <div style={{ marginBottom: 18, padding: "12px 16px", borderRadius: 14, border: "1px solid var(--card-border)", background: "var(--accent-soft)" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>Your progress</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>
+                          {progressPct}% · {doneCount}/{pastSessions.length} days
+                        </span>
+                      </div>
+                      <div style={{ height: 8, borderRadius: 999, background: "rgba(138,155,214,0.25)", overflow: "hidden" }}>
+                        <div style={{ width: `${progressPct}%`, height: "100%", borderRadius: 999, background: "linear-gradient(90deg, var(--accent), #b7a6e6)", transition: "width 300ms ease" }} />
+                      </div>
+                    </div>
+                  ) : null}
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {sessions.map((s) => {
                     const dt = new Date(s.scheduledAt);
@@ -831,11 +878,69 @@ export default function CohortPage() {
                               Join now
                             </button>
                           ) : null}
+
+                          {st.kind === "missed" && cohort.isMember ? (
+                            <div style={{ marginTop: 10 }}>
+                              <button
+                                onClick={() => setCatchUpOpen((p) => ({ ...p, [s.id]: !p[s.id] }))}
+                                style={{ height: 32, padding: "0 14px", fontSize: 12.5, fontWeight: 700, borderRadius: 9, border: "1px solid var(--accent)", background: "transparent", color: "var(--accent)", cursor: "pointer" }}
+                              >
+                                {catchUpOpen[s.id] ? "Hide catch-up" : "Catch up"}
+                              </button>
+                              {catchUpOpen[s.id] ? (
+                                <div style={{ marginTop: 10, padding: 12, borderRadius: 12, border: "1px solid var(--card-border)", background: "var(--card-bg)" }}>
+                                  <p style={{ margin: "0 0 8px", fontSize: 12, color: "var(--text-secondary)" }}>
+                                    Watch what you missed, then mark this day done — it won't change the cohort's schedule.
+                                  </p>
+                                  {s.videos && s.videos.length > 0 ? (
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
+                                      {s.videos.map((v) => (
+                                        <a
+                                          key={v.ytVideoId}
+                                          href={`https://www.youtube.com/watch?v=${v.ytVideoId}`}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          style={{ fontSize: 12.5, color: "var(--accent)", textDecoration: "none", fontWeight: 600 }}
+                                        >
+                                          ▶ {v.title}
+                                        </a>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p style={{ margin: "0 0 12px", fontSize: 12, color: "var(--text-muted)" }}>
+                                      Video links unavailable — review this day's topics from the Roadmap tab.
+                                    </p>
+                                  )}
+                                  <button
+                                    onClick={() => handleCatchup(s.id, true)}
+                                    disabled={catchingUp[s.id]}
+                                    style={{ ...btnPrimary(catchingUp[s.id]), height: 34, padding: "0 16px", fontSize: 13 }}
+                                  >
+                                    {catchingUp[s.id] ? "Saving…" : "Mark as caught up"}
+                                  </button>
+                                </div>
+                              ) : null}
+                            </div>
+                          ) : null}
+
+                          {st.kind === "caughtup" && cohort.isMember ? (
+                            <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--text-secondary)" }}>
+                              Caught up on your own ·{" "}
+                              <button
+                                onClick={() => handleCatchup(s.id, false)}
+                                disabled={catchingUp[s.id]}
+                                style={{ background: "none", border: "none", padding: 0, color: "var(--accent)", fontWeight: 700, cursor: "pointer", fontSize: 12 }}
+                              >
+                                Undo
+                              </button>
+                            </p>
+                          ) : null}
                         </div>
                       </div>
                     );
                   })}
                 </div>
+                </>
               )}
             </div>
           )}
