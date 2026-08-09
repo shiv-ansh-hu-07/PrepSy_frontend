@@ -550,6 +550,16 @@ export default function Home() {
   );
   const [visible, setVisible] = useState(new Set());
 
+  // Landing page is always light — ignore the saved/system theme while mounted,
+  // then restore the user's theme on unmount.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute("data-theme", "light");
+    return () => {
+      root.setAttribute("data-theme", localStorage.getItem("theme") === "dark" ? "dark" : "light");
+    };
+  }, []);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const onResize = () => setIsSmallScreen(window.innerWidth < 900);

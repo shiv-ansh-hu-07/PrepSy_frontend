@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { GoogleLogin } from "@react-oauth/google";
@@ -16,6 +16,16 @@ export default function Login() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+
+  // Sign-in page is always light — ignore the saved/system theme while mounted,
+  // then restore the user's theme on unmount.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute("data-theme", "light");
+    return () => {
+      root.setAttribute("data-theme", localStorage.getItem("theme") === "dark" ? "dark" : "light");
+    };
+  }, []);
 
   async function handleLogin(e) {
     e.preventDefault();
