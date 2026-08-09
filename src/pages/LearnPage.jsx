@@ -574,6 +574,24 @@ export default function LearnPage() {
                       )}
                     </div>
 
+                    {schedule.longVideos?.length > 0 && (
+                      <div style={{ marginTop: 12, borderRadius: 14, padding: "14px 16px", background: "#fff3e0", border: "1px solid #ffcc80" }}>
+                        <p style={{ margin: 0, fontWeight: 800, fontSize: 13.5, color: "#e65100" }}>
+                          ⚠ {schedule.longVideos.length} video{schedule.longVideos.length === 1 ? " is" : "s are"} longer than your {fmtHrs((schedule.dailyBudgetMin || 0) / 60)}/day budget
+                        </p>
+                        <p style={{ margin: "6px 0 0", fontSize: 12.5, color: "#8a5a00", lineHeight: 1.6 }}>
+                          A single day can only cover so much. These run over even with a 1-hour grace window — you can keep them as-is, raise your hours/day, or (coming soon) let us split them by chapters across multiple days.
+                        </p>
+                        <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 12.5, color: "#8a5a00", lineHeight: 1.7 }}>
+                          {schedule.longVideos.map((v) => (
+                            <li key={v.ytVideoId}>
+                              {v.title.length > 80 ? `${v.title.slice(0, 80)}…` : v.title} — <strong>{fmtHrs(v.durationMin / 60)}</strong>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
                     {schedule.dropped?.length > 0 && (
                       <div style={{ marginTop: 14 }}>
                         <p style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
