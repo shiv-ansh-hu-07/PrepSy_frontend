@@ -103,6 +103,7 @@ export default function CohortPage() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [planHours, setPlanHours] = useState(2);
   const [planDays, setPlanDays] = useState(30);
+  const [planStart, setPlanStart] = useState(""); // "" = from the beginning
   const [generatingPlan, setGeneratingPlan] = useState(false);
 
   const handleCopyInvite = async () => {
@@ -233,6 +234,7 @@ export default function CohortPage() {
       const { data: sched } = await api.post(`/playlists/${cohort.playlist.id}/schedule`, {
         hoursPerDay: Number(planHours),
         days: Number(planDays),
+        ...(planStart !== "" ? { startPosition: Number(planStart) } : {}),
       });
       const genSessions = (sched?.days || []).map((d) => ({
         topic: d.videos?.[0]?.title ? `Day ${d.day}: ${d.videos[0].title}` : `Day ${d.day}`,
@@ -804,6 +806,20 @@ export default function CohortPage() {
                   <p style={{ margin: "0 0 12px", fontSize: 12, color: "var(--text-secondary)" }}>
                     Fits the playlist into daily sessions the whole cohort follows. The plan is locked once created — it can't be regenerated later, since that would shift every session date, room booking, and reminder email.
                   </p>
+                  {Array.isArray(cohort.playlist?.videos) && cohort.playlist.videos.length > 0 ? (
+                    <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 700, color: "var(--accent)", marginBottom: 10 }}>
+                      Start from
+                      <select value={planStart} onChange={(e) => setPlanStart(e.target.value)}
+                        style={{ height: 40, borderRadius: 10, border: "1px solid var(--card-border)", background: "var(--card-bg)", color: "var(--text-primary)", padding: "0 10px", fontSize: 13, outline: "none", cursor: "pointer" }}>
+                        <option value="">Beginning of the playlist</option>
+                        {cohort.playlist.videos.map((v, i) => (
+                          <option key={v.ytVideoId || i} value={v.position}>
+                            {i + 1}. {v.title.length > 70 ? `${v.title.slice(0, 70)}…` : v.title}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
                   <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 10, alignItems: isMobile ? "stretch" : "flex-end" }}>
                     <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 700, color: "var(--accent)", width: isMobile ? "100%" : 120 }}>
                       Hours / day

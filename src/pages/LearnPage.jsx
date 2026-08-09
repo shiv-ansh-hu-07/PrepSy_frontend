@@ -66,6 +66,7 @@ export default function LearnPage() {
   // --- study schedule ---
   const [hoursPerDay, setHoursPerDay] = useState(2);
   const [days, setDays] = useState(30);
+  const [startPosition, setStartPosition] = useState(""); // "" = from the beginning
   const [hoursFromProfile, setHoursFromProfile] = useState(false);
   const [scheduling, setScheduling] = useState(false);
   const [scheduleError, setScheduleError] = useState(null);
@@ -163,6 +164,7 @@ export default function LearnPage() {
       const { data } = await api.post(`/playlists/${result.id}/schedule`, {
         hoursPerDay: Number(hoursPerDay),
         days: Number(days),
+        ...(startPosition !== "" ? { startPosition: Number(startPosition) } : {}),
       });
       setSchedule(data);
     } catch (err) {
@@ -465,6 +467,24 @@ export default function LearnPage() {
                 <p style={{ margin: "0 0 16px", fontSize: 13, color: "var(--text-secondary)" }}>
                   Tell us your pace and deadline — we'll fit this playlist into a day-by-day plan, and be honest if it doesn't fit.
                 </p>
+
+                {Array.isArray(result?.videos) && result.videos.length > 0 ? (
+                  <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, fontWeight: 700, color: "#4f5fa8", marginBottom: 12 }}>
+                    Start from
+                    <select
+                      value={startPosition}
+                      onChange={(e) => setStartPosition(e.target.value)}
+                      style={{ ...inputStyle, padding: "0 12px", cursor: "pointer" }}
+                    >
+                      <option value="">Beginning of the playlist</option>
+                      {result.videos.map((v, i) => (
+                        <option key={v.ytVideoId || i} value={v.position}>
+                          {i + 1}. {v.title.length > 70 ? `${v.title.slice(0, 70)}…` : v.title}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
 
                 <div
                   style={{

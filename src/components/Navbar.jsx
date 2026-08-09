@@ -341,6 +341,7 @@ function buildMobileLinks({ user, isHomePage, isFeaturePage }) {
 
   if (user) {
     links.push({ label: "Home", path: "/dashboard", active: false });
+    links.push({ label: "YouTube Cohort", path: "/cohorts", active: false });
     links.push({ label: "Community", path: "/community", active: false });
     links.push({ label: "My Rooms", path: "/myRooms", active: false });
     links.push({ label: "Join Room", path: "/join-room", active: false });
