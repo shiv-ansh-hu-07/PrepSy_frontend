@@ -97,7 +97,7 @@ export default function RoomPage() {
       <div
         style={{
           minHeight: "100vh",
-          background: "linear-gradient(180deg, var(--card-bg) 0%, var(--accent-soft) 100%)",
+          background: "var(--page-bg)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -153,7 +153,7 @@ export default function RoomPage() {
       <div
         style={{
           minHeight: "100vh",
-          background: "linear-gradient(180deg, var(--card-bg) 0%, var(--accent-soft) 100%)",
+          background: "var(--page-bg)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -172,7 +172,7 @@ export default function RoomPage() {
         minHeight: "100vh",
         overflowY: "auto",
         overflowX: "hidden",
-        background: "linear-gradient(180deg, var(--card-bg) 0%, var(--accent-soft) 100%)",
+        background: "var(--page-bg)",
         fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont",
       }}
     >

@@ -664,7 +664,7 @@ const styles = {
     maxWidth: m ? "100%" : 380, width: "100%", justifySelf: "end",
   }),
   card: {
-    background: "radial-gradient(circle at center, rgba(138,155,214,0.14), transparent 65%), #FFFFFF",
+    background: "radial-gradient(circle at center, rgba(138,155,214,0.14), transparent 65%), var(--card-bg)",
     borderRadius: 22, padding: 18, border: "1px solid var(--accent-soft)",
     boxShadow: "0 10px 22px rgba(0,0,0,0.06)", display: "flex", flexDirection: "column",
   },
