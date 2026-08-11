@@ -66,7 +66,7 @@ function FriendButton({ status, busy, onClick, full }) {
 }
 
 // Minimal, privacy-respecting card: name + bio only until you're friends.
-function MiniCard({ person, onOpen, onFriend, busy, showMatch }) {
+function MiniCard({ person, onOpen, onFriend, busy }) {
   return (
     <div style={{ border: "1px solid var(--card-border)", borderRadius: 18, background: "var(--card-bg)", padding: 18, display: "flex", flexDirection: "column", gap: 12 }}>
       <div onClick={() => onOpen(person.userId)} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
@@ -75,9 +75,6 @@ function MiniCard({ person, onOpen, onFriend, busy, showMatch }) {
           <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{person.name}</p>
           <p style={{ margin: "1px 0 0", fontSize: 11.5, color: "var(--accent)" }}>View profile</p>
         </div>
-        {showMatch && person.matchPercent > 0 ? (
-          <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 800, color: "#fff", background: "linear-gradient(135deg, var(--accent), #6f7fc0)", padding: "4px 10px", borderRadius: 999 }}>{person.matchPercent}%</span>
-        ) : null}
       </div>
       {person.bio ? (
         <p style={{ margin: 0, fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{person.bio}</p>
@@ -105,12 +102,18 @@ const LinkBtn = ({ children, onClick }) => (
 function ProfileModal({ userId, onClose, onFriend, busy, onMessage }) {
   const [p, setP] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
+  // 12s timeout so a slow/restarting backend can never freeze the modal.
   const load = useCallback(
-    () => api.get(`/profiles/${userId}`).then((res) => setP(res.data)).catch(() => setP(null)).finally(() => setLoading(false)),
+    () => api.get(`/profiles/${userId}`, { timeout: 12000 })
+      .then((res) => setP(res.data))
+      .catch(() => setFailed(true))
+      .finally(() => setLoading(false)),
     [userId],
   );
   useEffect(() => { load(); }, [load]);
+  const retry = () => { setLoading(true); setFailed(false); setP(null); load(); };
 
   const openLink = (url) => {
     const safe = /^https?:\/\//i.test(url) ? url : `https://${url}`;
@@ -124,8 +127,11 @@ function ProfileModal({ userId, onClose, onFriend, busy, onMessage }) {
         <button onClick={onClose} style={{ position: "absolute", top: 14, right: 14, background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}><X size={20} /></button>
         {loading ? (
           <p style={{ color: "var(--text-muted)", fontSize: 14 }}>Loading…</p>
-        ) : !p ? (
-          <p style={{ color: "#c62828", fontSize: 14 }}>Couldn't load this profile.</p>
+        ) : failed || !p ? (
+          <div style={{ textAlign: "center", padding: "16px 8px" }}>
+            <p style={{ color: "var(--text-secondary)", fontSize: 14, margin: "0 0 12px" }}>Couldn't load this profile.</p>
+            <button onClick={retry} style={{ height: 38, padding: "0 18px", borderRadius: 10, border: "none", background: "var(--accent-gradient, #7c3aed)", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Try again</button>
+          </div>
         ) : (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
@@ -280,7 +286,7 @@ export default function Discover({ embedded = false, onMessage }) {
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
             {searchList.map((p) => (
-              <MiniCard key={p.userId} person={p} onOpen={setOpenId} onFriend={handleFriend} busy={busyId === p.userId} showMatch={false} />
+              <MiniCard key={p.userId} person={p} onOpen={setOpenId} onFriend={handleFriend} busy={busyId === p.userId} />
             ))}
           </div>
         )
@@ -310,7 +316,7 @@ export default function Discover({ embedded = false, onMessage }) {
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
               {data.peers.map((p) => (
-                <MiniCard key={p.userId} person={p} onOpen={setOpenId} onFriend={handleFriend} busy={busyId === p.userId} showMatch />
+                <MiniCard key={p.userId} person={p} onOpen={setOpenId} onFriend={handleFriend} busy={busyId === p.userId} />
               ))}
             </div>
           )}
