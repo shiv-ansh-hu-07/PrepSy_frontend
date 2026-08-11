@@ -104,6 +104,7 @@ export default function CohortPage() {
   const [planHours, setPlanHours] = useState(2);
   const [planDays, setPlanDays] = useState(30);
   const [planStart, setPlanStart] = useState(""); // "" = from the beginning
+  const [planSlice, setPlanSlice] = useState(false); // split over-long videos into daily parts
   const [generatingPlan, setGeneratingPlan] = useState(false);
 
   const handleCopyInvite = async () => {
@@ -235,6 +236,7 @@ export default function CohortPage() {
         hoursPerDay: Number(planHours),
         days: Number(planDays),
         ...(planStart !== "" ? { startPosition: Number(planStart) } : {}),
+        ...(planSlice ? { sliceLongVideos: true } : {}),
       });
       const genSessions = (sched?.days || []).map((d) => {
         const v0 = d.videos?.[0];
@@ -842,6 +844,10 @@ export default function CohortPage() {
                       {generatingPlan ? "Generating…" : "Generate plan"}
                     </button>
                   </div>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, fontSize: 12.5, color: "var(--text-secondary)", cursor: "pointer" }}>
+                    <input type="checkbox" checked={planSlice} onChange={(e) => setPlanSlice(e.target.checked)} style={{ cursor: "pointer" }} />
+                    Split videos longer than my daily budget into day-sized parts
+                  </label>
                 </div>
               )}
 
