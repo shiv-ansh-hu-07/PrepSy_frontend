@@ -21,6 +21,7 @@ const Analytics = lazy(() => import("./pages/Analytics"));
 const Profile = lazy(() => import("./pages/Profile"));
 const LearnPage = lazy(() => import("./pages/LearnPage"));
 const CohortPage = lazy(() => import("./pages/CohortPage"));
+const Discover = lazy(() => import("./pages/Discover"));
 const MyCohorts = lazy(() => import("./pages/MyCohorts"));
 
 export default function App() {
@@ -190,6 +191,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <CohortPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/discover"
+            element={
+              <ProtectedRoute>
+                <Discover />
               </ProtectedRoute>
             }
           />

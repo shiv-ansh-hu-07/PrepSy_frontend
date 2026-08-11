@@ -11,6 +11,7 @@ import {
   UserRound,
   Moon,
   Sun,
+  Sparkles,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -19,6 +20,7 @@ import { useGuardedNavigate } from "../context/NavGuardContext";
 
 const navItems = [
   { label: "Home", path: "/dashboard", icon: Home },
+  { label: "Find your people", path: "/discover", icon: Sparkles, requiresUser: true },
   { label: "YouTube Cohort", path: "/cohorts", icon: Youtube, requiresUser: true },
   { label: "Community", path: "/community", icon: MessageCircle },
   { label: "My Rooms", path: "/myRooms", icon: BookOpenCheck, requiresUser: true },
