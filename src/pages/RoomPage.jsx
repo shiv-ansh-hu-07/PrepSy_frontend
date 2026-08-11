@@ -25,6 +25,7 @@ export default function RoomPage() {
   const [youtubePlaylistId, setYoutubePlaylistId] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [roomTags, setRoomTags] = useState([]);
+  const [cohortPlayback, setCohortPlayback] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [joinError, setJoinError] = useState(null);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
@@ -68,6 +69,24 @@ export default function RoomPage() {
       cancelled = true;
     };
   }, [identity, name, roomId]);
+
+  // If this is a cohort room, load today's session so the player shows just
+  // that day's content (or its sliced segment). Silently ignored otherwise.
+  useEffect(() => {
+    if (!roomId) return undefined;
+    let cancelled = false;
+    api
+      .get(`/cohorts/by-room/${roomId}/current-session`)
+      .then((res) => {
+        if (!cancelled) setCohortPlayback(res.data || null);
+      })
+      .catch(() => {
+        if (!cancelled) setCohortPlayback(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [roomId]);
 
   useEffect(() => {
     if (!roomId || !user?.id || !token) return;
@@ -203,6 +222,17 @@ export default function RoomPage() {
             startTime={startTime}
             tags={roomTags}
             currentUser={user}
+            restrictVideoIds={cohortPlayback?.videoIds?.length ? cohortPlayback.videoIds : null}
+            segment={
+              cohortPlayback && cohortPlayback.startSec != null && cohortPlayback.endSec != null
+                ? {
+                    videoId: cohortPlayback.videoIds?.[0],
+                    startSec: cohortPlayback.startSec,
+                    endSec: cohortPlayback.endSec,
+                  }
+                : null
+            }
+            segmentPart={cohortPlayback?.part || null}
           />
         ) : (
           <>

@@ -12,7 +12,14 @@ const REQUEST_TYPE = "YT_REQUEST_SYNC";
 const DRIFT_TOLERANCE_S = 2; // only re-seek if drift > 2 seconds
 const HEARTBEAT_MS = 15000;  // periodic sync every 15s to prevent drift
 
-export default function YouTubeRoom({ videoId, playlistId, locked = false }) {
+export default function YouTubeRoom({
+  videoId,
+  playlistId,
+  locked = false,
+  restrictVideoIds = null,
+  segment = null,
+  segmentPart = null,
+}) {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
   const participants = useParticipants();
@@ -35,6 +42,35 @@ export default function YouTubeRoom({ videoId, playlistId, locked = false }) {
       setVideoMeta({ title: data.title, author: data.author, videoId: data.video_id });
     }
   }, []);
+
+  // Cohort rooms restrict playback to the day's content. The data can arrive
+  // after the player is ready, so keep the latest in a ref and apply it both on
+  // ready and whenever it changes.
+  const restrictRef = useRef({ restrictVideoIds, segment });
+  useEffect(() => {
+    restrictRef.current = { restrictVideoIds, segment };
+  }, [restrictVideoIds, segment]);
+  const applyRestriction = useCallback(
+    (player, r) => {
+      if (!player) return false;
+      if (r?.segment?.videoId) {
+        // A single video's time slice — the player auto-stops at endSeconds.
+        player.cueVideoById?.({
+          videoId: r.segment.videoId,
+          startSeconds: r.segment.startSec ?? 0,
+          endSeconds: r.segment.endSec ?? undefined,
+        });
+      } else if (r?.restrictVideoIds?.length) {
+        player.cuePlaylist?.({ playlist: r.restrictVideoIds });
+      } else {
+        return false;
+      }
+      if (lockedRef.current) player.pauseVideo?.();
+      captureVideoMeta(player);
+      return true;
+    },
+    [captureVideoMeta],
+  );
 
   // ── Broadcast helpers ─────────────────────────────────────────────────────
 
@@ -166,8 +202,10 @@ export default function YouTubeRoom({ videoId, playlistId, locked = false }) {
 
   const onReady = useCallback((e) => {
     playerRef.current = e.target;
-    // Playlist-only mode: load the playlist after player initialises
-    if (!videoId && playlistId) {
+    // Cohort rooms restrict to the day's videos/segment; otherwise fall back to
+    // playlist-only mode.
+    const applied = applyRestriction(e.target, restrictRef.current);
+    if (!applied && !videoId && playlistId) {
       e.target.loadPlaylist({ list: playlistId, listType: "playlist", index: 0 });
     }
     // Safety net: some browsers/embeds can start playback right on load
@@ -176,7 +214,15 @@ export default function YouTubeRoom({ videoId, playlistId, locked = false }) {
       e.target.pauseVideo?.();
     }
     captureVideoMeta(e.target);
-  }, [videoId, playlistId, captureVideoMeta]);
+  }, [videoId, playlistId, captureVideoMeta, applyRestriction]);
+
+  // Apply (or re-apply) the day's restriction if it arrives / changes after the
+  // player is already up.
+  useEffect(() => {
+    if (playerRef.current) {
+      applyRestriction(playerRef.current, { restrictVideoIds, segment });
+    }
+  }, [restrictVideoIds, segment, applyRestriction]);
 
   const onStateChange = useCallback((e) => {
     const YT_PLAYING = 1;
@@ -262,7 +308,8 @@ export default function YouTubeRoom({ videoId, playlistId, locked = false }) {
       ) : null}
 
       <p style={styles.hint}>
-        ▶ Anyone in this room can play, pause, or seek — everyone stays in sync.
+        {segmentPart ? `▶ Today's part ${segmentPart} of this video · ` : "▶ "}
+        Anyone in this room can play, pause, or seek — everyone stays in sync.
         Each person's view counts for the creator.
       </p>
     </div>

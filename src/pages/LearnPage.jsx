@@ -148,6 +148,8 @@ export default function LearnPage() {
             ? `${v0.title} · Part ${part} (${fmtClock(v0.startSec)}–${fmtClock(v0.endSec)})`
             : (d.videos || []).map((v) => v.title).join(" • "),
           studyHours: d.studyHours,
+          videoIds: (d.videos || []).map((v) => v.ytVideoId).filter(Boolean),
+          ...(part ? { startSec: v0.startSec, endSec: v0.endSec, part } : {}),
         };
       });
       const payload = {

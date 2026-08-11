@@ -236,11 +236,17 @@ export default function CohortPage() {
         days: Number(planDays),
         ...(planStart !== "" ? { startPosition: Number(planStart) } : {}),
       });
-      const genSessions = (sched?.days || []).map((d) => ({
-        topic: d.videos?.[0]?.title ? `Day ${d.day}: ${d.videos[0].title}` : `Day ${d.day}`,
-        description: (d.videos || []).map((v) => v.title).join(" • "),
-        studyHours: d.studyHours,
-      }));
+      const genSessions = (sched?.days || []).map((d) => {
+        const v0 = d.videos?.[0];
+        const part = v0?.part;
+        return {
+          topic: v0?.title ? `Day ${d.day}: ${v0.title}${part ? ` (Part ${part})` : ""}` : `Day ${d.day}`,
+          description: (d.videos || []).map((v) => v.title).join(" • "),
+          studyHours: d.studyHours,
+          videoIds: (d.videos || []).map((v) => v.ytVideoId).filter(Boolean),
+          ...(part ? { startSec: v0.startSec, endSec: v0.endSec, part } : {}),
+        };
+      });
       await api.post(`/cohorts/${id}/plan`, { sessions: genSessions });
       const { data } = await api.get(`/cohorts/${id}/sessions`);
       setSessions(data);

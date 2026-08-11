@@ -26,6 +26,9 @@ export default function WatchPartyLayout({
   startTime = null,
   tags = [],
   currentUser = null,
+  restrictVideoIds = null,
+  segment = null,
+  segmentPart = null,
 }) {
   const { toggleMic, micEnabled, toggleCamera, camEnabled } = useMediaControls();
   const navigate = useNavigate();
@@ -186,6 +189,9 @@ export default function WatchPartyLayout({
               videoId={youtubeVideoId}
               playlistId={youtubePlaylistId}
               locked={playbackLocked}
+              restrictVideoIds={restrictVideoIds}
+              segment={segment}
+              segmentPart={segmentPart}
             />
 
             {participants.some((p) => p.isCameraEnabled) && (
