@@ -146,7 +146,7 @@ const LinkBtn = ({ children, onClick }) => (
   </button>
 );
 
-export default function Discover() {
+export default function Discover({ embedded = false, onMessage }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const w = useWindowWidth();
@@ -178,7 +178,11 @@ export default function Discover() {
 
   const handleFriend = async (peer) => {
     const status = peer.friendStatus;
-    if (status === "friends") { navigate(`/messages/${peer.userId}`); return; }
+    if (status === "friends") {
+      if (onMessage) onMessage(peer.userId);
+      else navigate(`/messages/${peer.userId}`);
+      return;
+    }
     if (status === "outgoing") return;
     setBusyId(peer.userId);
     try {
@@ -193,19 +197,13 @@ export default function Discover() {
     }
   };
 
-  return (
-    <div style={{ minHeight: "calc(100vh - 76px)", padding: "32px 24px 56px", background: "var(--page-bg)" }}>
-      <div style={{ maxWidth: 1240, margin: "0 auto", display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "288px minmax(0, 1fr)", gap: 24 }}>
-        {!isNarrow && <AppSideNav />}
+  const body = (
+    <>
+      <p style={{ margin: "0 0 20px", fontSize: 13.5, color: "var(--text-secondary)", maxWidth: 620 }}>
+        Studying alone is hard. These learners are prepping for the same things as you — connect and study together.
+      </p>
 
-        <main>
-          <p style={{ margin: 0, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--accent)" }}>PrepSy · Community</p>
-          <h1 style={{ margin: "4px 0 4px", fontFamily: "Georgia, serif", fontSize: 30, color: "var(--text-primary)" }}>Find your people</h1>
-          <p style={{ margin: "0 0 24px", fontSize: 14, color: "var(--text-secondary)", maxWidth: 620 }}>
-            Studying alone is hard. These learners are prepping for the same things as you — connect and study together.
-          </p>
-
-          {loading ? (
+      {loading ? (
             <p style={{ color: "var(--text-muted)", fontSize: 14 }}>Finding people for you…</p>
           ) : error ? (
             <p style={{ color: "#c62828", fontSize: 14 }}>{error}</p>
@@ -229,12 +227,24 @@ export default function Discover() {
               </p>
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
-              {data.peers.map((p) => (
-                <PeerCard key={p.userId} peer={p} onOpenLink={openLink} onFriend={handleFriend} busy={busyId === p.userId} />
-              ))}
-            </div>
-          )}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+          {data.peers.map((p) => (
+            <PeerCard key={p.userId} peer={p} onOpenLink={openLink} onFriend={handleFriend} busy={busyId === p.userId} />
+          ))}
+        </div>
+      )}
+    </>
+  );
+
+  if (embedded) return body;
+
+  return (
+    <div style={{ minHeight: "calc(100vh - 76px)", padding: "32px 24px 56px", background: "var(--page-bg)" }}>
+      <div style={{ maxWidth: 1240, margin: "0 auto", display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "288px minmax(0, 1fr)", gap: 24 }}>
+        {!isNarrow && <AppSideNav />}
+        <main>
+          <h1 style={{ margin: "0 0 4px", fontFamily: "Georgia, serif", fontSize: 30, color: "var(--text-primary)" }}>Find your people</h1>
+          {body}
         </main>
       </div>
     </div>

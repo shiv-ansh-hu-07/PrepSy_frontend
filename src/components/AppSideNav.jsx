@@ -7,10 +7,8 @@ import {
   Home,
   Lock,
   MessageCircle,
-  MessageSquare,
   PlusCircle,
   UserRound,
-  Users,
   Moon,
   Sun,
   Sparkles,
@@ -22,9 +20,7 @@ import { useGuardedNavigate } from "../context/NavGuardContext";
 
 const navItems = [
   { label: "Home", path: "/dashboard", icon: Home },
-  { label: "Find your people", path: "/discover", icon: Sparkles, requiresUser: true },
-  { label: "Friends", path: "/friends", icon: Users, requiresUser: true },
-  { label: "Messages", path: "/messages", icon: MessageSquare, requiresUser: true },
+  { label: "Find your people", path: "/people", icon: Sparkles, requiresUser: true },
   { label: "YouTube Cohort", path: "/cohorts", icon: Youtube, requiresUser: true },
   { label: "Community", path: "/community", icon: MessageCircle },
   { label: "My Rooms", path: "/myRooms", icon: BookOpenCheck, requiresUser: true },

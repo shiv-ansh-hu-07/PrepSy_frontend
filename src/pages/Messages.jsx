@@ -38,12 +38,15 @@ function Avatar({ person, size = 40 }) {
   );
 }
 
-export default function Messages() {
-  const { userId: activeId } = useParams();
+export default function Messages({ embedded = false, activeId: activeIdProp = null, onSelectChat }) {
+  const params = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const w = useWindowWidth();
   const isNarrow = w < 960;
+
+  const activeId = embedded ? activeIdProp : params.userId || null;
+  const selectChat = (userId) => (onSelectChat ? onSelectChat(userId) : navigate(userId ? `/messages/${userId}` : "/messages"));
 
   const [threads, setThreads] = useState([]);
   const [friends, setFriends] = useState([]);
@@ -146,12 +149,8 @@ export default function Messages() {
   const showList = !isNarrow || !activeId;
   const showConv = !isNarrow || Boolean(activeId);
 
-  return (
-    <div style={{ minHeight: "calc(100vh - 76px)", padding: "32px 24px 40px", background: "var(--page-bg)" }}>
-      <div style={{ maxWidth: 1240, margin: "0 auto", display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "288px minmax(0, 1fr)", gap: 24 }}>
-        {!isNarrow && <AppSideNav />}
-
-        <main style={{ display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "320px minmax(0, 1fr)", gap: 16, minHeight: 560 }}>
+  const body = (
+    <div style={{ display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "320px minmax(0, 1fr)", gap: 16, minHeight: 560 }}>
           {/* Thread list */}
           {showList && (
             <div style={{ border: "1px solid var(--card-border)", borderRadius: 18, background: "var(--card-bg)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
@@ -164,11 +163,11 @@ export default function Messages() {
                 ) : (
                   <>
                     {threads.map((t) => (
-                      <Row key={t.userId} person={t} active={t.userId === activeId} onClick={() => navigate(`/messages/${t.userId}`)}
+                      <Row key={t.userId} person={t} active={t.userId === activeId} onClick={() => selectChat(t.userId)}
                         subtitle={`${t.lastFromMe ? "You: " : ""}${t.lastMessage}`} unread={t.unread} />
                     ))}
                     {friends.filter((f) => !threads.some((t) => t.userId === f.userId)).map((f) => (
-                      <Row key={f.userId} person={f} active={f.userId === activeId} onClick={() => navigate(`/messages/${f.userId}`)}
+                      <Row key={f.userId} person={f} active={f.userId === activeId} onClick={() => selectChat(f.userId)}
                         subtitle="Say hi 👋" unread={0} />
                     ))}
                   </>
@@ -189,7 +188,7 @@ export default function Messages() {
                 <>
                   <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--card-border)", display: "flex", alignItems: "center", gap: 12 }}>
                     {isNarrow && (
-                      <button onClick={() => navigate("/messages")} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", display: "flex" }}>
+                      <button onClick={() => selectChat(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", display: "flex" }}>
                         <ArrowLeft size={18} />
                       </button>
                     )}
@@ -260,7 +259,16 @@ export default function Messages() {
               )}
             </div>
           )}
-        </main>
+    </div>
+  );
+
+  if (embedded) return body;
+
+  return (
+    <div style={{ minHeight: "calc(100vh - 76px)", padding: "32px 24px 40px", background: "var(--page-bg)" }}>
+      <div style={{ maxWidth: 1240, margin: "0 auto", display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "288px minmax(0, 1fr)", gap: 24 }}>
+        {!isNarrow && <AppSideNav />}
+        <main>{body}</main>
       </div>
     </div>
   );

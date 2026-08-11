@@ -47,9 +47,10 @@ function Identity({ person }) {
   );
 }
 
-export default function Friends() {
+export default function Friends({ embedded = false, onMessage }) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const openChat = (userId) => (onMessage ? onMessage(userId) : navigate(`/messages/${userId}`));
   const w = useWindowWidth();
   const isNarrow = w < 960;
 
@@ -89,16 +90,9 @@ export default function Friends() {
     } finally { setBusy(null); }
   };
 
-  return (
-    <div style={{ minHeight: "calc(100vh - 76px)", padding: "32px 24px 56px", background: "var(--page-bg)" }}>
-      <div style={{ maxWidth: 1240, margin: "0 auto", display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "288px minmax(0, 1fr)", gap: 24 }}>
-        {!isNarrow && <AppSideNav />}
-
-        <main>
-          <p style={{ margin: 0, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--accent)" }}>PrepSy · Community</p>
-          <h1 style={{ margin: "4px 0 24px", fontFamily: "Georgia, serif", fontSize: 30, color: "var(--text-primary)" }}>Friends</h1>
-
-          {loading ? (
+  const body = (
+    <>
+      {loading ? (
             <p style={{ color: "var(--text-muted)", fontSize: 14 }}>Loading…</p>
           ) : (
             <>
@@ -140,7 +134,7 @@ export default function Friends() {
                       <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 14, border: "1px solid var(--card-border)", background: "var(--card-bg)" }}>
                         <Avatar person={p} />
                         <Identity person={p} />
-                        <button onClick={() => navigate(`/messages/${p.userId}`)} title="Message" style={{ height: 34, padding: "0 12px", borderRadius: 9, border: "none", background: "var(--accent-gradient, #7c3aed)", color: "#fff", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, fontWeight: 700, fontSize: 12.5, flexShrink: 0 }}>
+                        <button onClick={() => openChat(p.userId)} title="Message" style={{ height: 34, padding: "0 12px", borderRadius: 9, border: "none", background: "var(--accent-gradient, #7c3aed)", color: "#fff", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, fontWeight: 700, fontSize: 12.5, flexShrink: 0 }}>
                           <MessageSquare size={14} /> Message
                         </button>
                         <button onClick={() => unfriend(p)} disabled={busy === p.userId} title="Remove friend" style={{ width: 34, height: 34, borderRadius: 9, border: "1px solid var(--card-border)", background: "transparent", color: "var(--text-muted)", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -153,6 +147,18 @@ export default function Friends() {
               </section>
             </>
           )}
+    </>
+  );
+
+  if (embedded) return body;
+
+  return (
+    <div style={{ minHeight: "calc(100vh - 76px)", padding: "32px 24px 56px", background: "var(--page-bg)" }}>
+      <div style={{ maxWidth: 1240, margin: "0 auto", display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "288px minmax(0, 1fr)", gap: 24 }}>
+        {!isNarrow && <AppSideNav />}
+        <main>
+          <h1 style={{ margin: "0 0 24px", fontFamily: "Georgia, serif", fontSize: 30, color: "var(--text-primary)" }}>Friends</h1>
+          {body}
         </main>
       </div>
     </div>
