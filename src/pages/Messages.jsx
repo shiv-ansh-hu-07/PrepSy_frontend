@@ -50,6 +50,8 @@ export default function Messages() {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [myRooms, setMyRooms] = useState(null); // null = not loaded
   const scrollRef = useRef(null);
 
   const peopleById = useMemo(() => {
@@ -108,6 +110,39 @@ export default function Messages() {
     }
   };
 
+  const openPicker = () => {
+    setPickerOpen((v) => !v);
+    if (myRooms === null) {
+      api.get("/rooms/my")
+        .then((res) => {
+          const created = res.data?.createdRooms || [];
+          const joined = res.data?.joinedRooms || [];
+          const seen = new Set();
+          const all = [...created, ...joined].filter((r) => {
+            if (seen.has(r.roomId)) return false;
+            seen.add(r.roomId);
+            return true;
+          });
+          setMyRooms(all);
+        })
+        .catch(() => setMyRooms([]));
+    }
+  };
+
+  const sendInvite = async (room) => {
+    setPickerOpen(false);
+    try {
+      const res = await api.post(`/friends/${activeId}/messages`, {
+        text: `Join me in "${room.name}"`,
+        roomId: room.roomId,
+      });
+      setMessages((prev) => [...prev, res.data]);
+      loadThreads();
+    } catch (err) {
+      alert(err?.response?.data?.message || "Couldn't send the invite.");
+    }
+  };
+
   const showList = !isNarrow || !activeId;
   const showConv = !isNarrow || Boolean(activeId);
 
@@ -162,6 +197,27 @@ export default function Messages() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{activePerson?.name}</p>
                       {activePerson?.role ? <p style={{ margin: 0, fontSize: 11.5, color: "var(--text-muted)" }}>{activePerson.role}</p> : null}
+                    </div>
+                    <div style={{ position: "relative" }}>
+                      <button onClick={openPicker} title="Invite to a room" style={{ height: 34, padding: "0 12px", borderRadius: 9, border: "1px solid var(--card-border)", background: pickerOpen ? "var(--accent-soft)" : "transparent", color: "var(--accent)", fontWeight: 700, fontSize: 12.5, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                        <Video size={15} /> Invite
+                      </button>
+                      {pickerOpen && (
+                        <div style={{ position: "absolute", right: 0, top: 40, width: 260, maxHeight: 300, overflowY: "auto", background: "var(--card-bg)", border: "1px solid var(--card-border)", borderRadius: 12, boxShadow: "0 12px 32px rgba(0,0,0,0.18)", zIndex: 40, padding: 6 }}>
+                          <p style={{ margin: "6px 10px 8px", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)" }}>Invite to a room</p>
+                          {myRooms === null ? (
+                            <p style={{ padding: "6px 10px", fontSize: 12.5, color: "var(--text-muted)" }}>Loading rooms…</p>
+                          ) : myRooms.length === 0 ? (
+                            <p style={{ padding: "6px 10px", fontSize: 12.5, color: "var(--text-muted)" }}>You have no rooms yet. Create one first.</p>
+                          ) : (
+                            myRooms.map((r) => (
+                              <button key={r.roomId} onClick={() => sendInvite(r)} style={{ width: "100%", textAlign: "left", padding: "8px 10px", borderRadius: 8, border: "none", background: "transparent", color: "var(--text-primary)", fontSize: 13, fontWeight: 600, cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {r.name}
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 
