@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, MapPin, GraduationCap, Github, Linkedin, Link2, Sparkles } from "lucide-react";
+import { Users, MapPin, GraduationCap, Github, Linkedin, Link2, Sparkles, UserPlus, Check, Clock } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import AppSideNav from "../components/AppSideNav";
@@ -41,7 +41,14 @@ const Chip = ({ children, tone = "accent" }) => {
   );
 };
 
-function PeerCard({ peer, onOpenLink }) {
+const FRIEND_BTN = {
+  none: { label: "Add friend", icon: UserPlus, primary: true },
+  outgoing: { label: "Requested", icon: Clock, primary: false, disabled: true },
+  incoming: { label: "Accept request", icon: Check, primary: true },
+  friends: { label: "Friends", icon: Check, primary: false, disabled: true },
+};
+
+function PeerCard({ peer, onOpenLink, onFriend, busy }) {
   const avatar = resolveAvatar(peer.avatarUrl);
   const location = [peer.city, peer.country].filter(Boolean).join(", ");
   const affiliation = peer.role
@@ -100,8 +107,30 @@ function PeerCard({ peer, onOpenLink }) {
         </div>
       )}
 
+      {(() => {
+        const cfg = FRIEND_BTN[peer.friendStatus] || FRIEND_BTN.none;
+        const Icon = cfg.icon;
+        const disabled = cfg.disabled || busy;
+        return (
+          <button
+            onClick={() => !cfg.disabled && !busy && onFriend(peer)}
+            disabled={disabled}
+            style={{
+              marginTop: "auto", height: 38, borderRadius: 10, border: cfg.primary ? "none" : "1px solid var(--card-border)",
+              background: cfg.primary ? "var(--accent-gradient, #7c3aed)" : "transparent",
+              color: cfg.primary ? "#fff" : "var(--text-secondary)",
+              fontWeight: 700, fontSize: 13, cursor: disabled ? "default" : "pointer",
+              display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+              opacity: busy ? 0.6 : 1,
+            }}
+          >
+            <Icon size={15} /> {busy ? "…" : cfg.label}
+          </button>
+        );
+      })()}
+
       {(peer.githubUrl || peer.linkedinUrl || peer.portfolioUrl) && (
-        <div style={{ display: "flex", gap: 8, marginTop: "auto", paddingTop: 4 }}>
+        <div style={{ display: "flex", gap: 8, paddingTop: 2 }}>
           {peer.githubUrl ? <LinkBtn onClick={() => onOpenLink(peer.githubUrl)}><Github size={13} /> GitHub</LinkBtn> : null}
           {peer.linkedinUrl ? <LinkBtn onClick={() => onOpenLink(peer.linkedinUrl)}><Linkedin size={13} /> LinkedIn</LinkBtn> : null}
           {peer.portfolioUrl ? <LinkBtn onClick={() => onOpenLink(peer.portfolioUrl)}><Link2 size={13} /> Portfolio</LinkBtn> : null}
@@ -137,9 +166,30 @@ export default function Discover() {
     return () => { cancelled = true; };
   }, [user?.id]);
 
+  const [busyId, setBusyId] = useState(null);
+
   const openLink = (url) => {
     const safe = /^https?:\/\//i.test(url) ? url : `https://${url}`;
     window.open(safe, "_blank", "noopener,noreferrer");
+  };
+
+  const setPeerStatus = (userId, friendStatus) =>
+    setData((prev) => ({ ...prev, peers: prev.peers.map((p) => (p.userId === userId ? { ...p, friendStatus } : p)) }));
+
+  const handleFriend = async (peer) => {
+    const status = peer.friendStatus;
+    if (status === "outgoing" || status === "friends") return;
+    setBusyId(peer.userId);
+    try {
+      const res = status === "incoming"
+        ? await api.post("/friends/respond", { userId: peer.userId, accept: true })
+        : await api.post("/friends/request", { userId: peer.userId });
+      setPeerStatus(peer.userId, res?.data?.status || "outgoing");
+    } catch (err) {
+      alert(err?.response?.data?.message || "Couldn't update friend status.");
+    } finally {
+      setBusyId(null);
+    }
   };
 
   return (
@@ -180,7 +230,7 @@ export default function Discover() {
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
               {data.peers.map((p) => (
-                <PeerCard key={p.userId} peer={p} onOpenLink={openLink} />
+                <PeerCard key={p.userId} peer={p} onOpenLink={openLink} onFriend={handleFriend} busy={busyId === p.userId} />
               ))}
             </div>
           )}

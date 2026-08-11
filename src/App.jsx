@@ -22,6 +22,7 @@ const Profile = lazy(() => import("./pages/Profile"));
 const LearnPage = lazy(() => import("./pages/LearnPage"));
 const CohortPage = lazy(() => import("./pages/CohortPage"));
 const Discover = lazy(() => import("./pages/Discover"));
+const Friends = lazy(() => import("./pages/Friends"));
 const MyCohorts = lazy(() => import("./pages/MyCohorts"));
 
 export default function App() {
@@ -200,6 +201,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Discover />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/friends"
+            element={
+              <ProtectedRoute>
+                <Friends />
               </ProtectedRoute>
             }
           />
