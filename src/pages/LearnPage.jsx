@@ -18,6 +18,14 @@ function fmtHrs(h) {
   return `${hh}h ${mm}m`;
 }
 
+// Seconds -> "H:MM" clock label for video time ranges.
+function fmtClock(sec) {
+  const s = Math.max(0, Math.round(Number(sec) || 0));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return `${h}:${String(m).padStart(2, "0")}`;
+}
+
 const DIFF = {
   beginner: { bg: "#e8f5e9", color: "#2e7d32", label: "Beginner" },
   intermediate: { bg: "#fff3e0", color: "#e65100", label: "Intermediate" },
@@ -129,11 +137,19 @@ export default function LearnPage() {
     setCreatingCohort(true);
     setCohortError(null);
     try {
-      const sessions = (schedule?.days || []).map((d) => ({
-        topic: d.videos?.[0]?.title ? `Day ${d.day}: ${d.videos[0].title}` : `Day ${d.day}`,
-        description: (d.videos || []).map((v) => v.title).join(" • "),
-        studyHours: d.studyHours,
-      }));
+      const sessions = (schedule?.days || []).map((d) => {
+        const v0 = d.videos?.[0];
+        const part = v0?.part;
+        return {
+          topic: v0?.title
+            ? `Day ${d.day}: ${v0.title}${part ? ` (Part ${part})` : ""}`
+            : `Day ${d.day}`,
+          description: part
+            ? `${v0.title} · Part ${part} (${fmtClock(v0.startSec)}–${fmtClock(v0.endSec)})`
+            : (d.videos || []).map((v) => v.title).join(" • "),
+          studyHours: d.studyHours,
+        };
+      });
       const payload = {
         playlistId: result.id,
         name: cohortName.trim(),
@@ -155,7 +171,7 @@ export default function LearnPage() {
     }
   };
 
-  const handleSchedule = async () => {
+  const handleSchedule = async (slice = false) => {
     if (!result?.id) return;
     setScheduling(true);
     setScheduleError(null);
@@ -165,6 +181,7 @@ export default function LearnPage() {
         hoursPerDay: Number(hoursPerDay),
         days: Number(days),
         ...(startPosition !== "" ? { startPosition: Number(startPosition) } : {}),
+        ...(slice ? { sliceLongVideos: true } : {}),
       });
       setSchedule(data);
     } catch (err) {
@@ -521,7 +538,7 @@ export default function LearnPage() {
                   </label>
                   <button
                     type="button"
-                    onClick={handleSchedule}
+                    onClick={() => handleSchedule()}
                     disabled={scheduling || !hoursPerDay || !days}
                     style={btnPrimary(scheduling || !hoursPerDay || !days)}
                   >
@@ -575,20 +592,39 @@ export default function LearnPage() {
                     </div>
 
                     {schedule.longVideos?.length > 0 && (
-                      <div style={{ marginTop: 12, borderRadius: 14, padding: "14px 16px", background: "#fff3e0", border: "1px solid #ffcc80" }}>
-                        <p style={{ margin: 0, fontWeight: 800, fontSize: 13.5, color: "#e65100" }}>
-                          ⚠ {schedule.longVideos.length} video{schedule.longVideos.length === 1 ? " is" : "s are"} longer than your {fmtHrs((schedule.dailyBudgetMin || 0) / 60)}/day budget
-                        </p>
-                        <p style={{ margin: "6px 0 0", fontSize: 12.5, color: "#8a5a00", lineHeight: 1.6 }}>
-                          A single day can only cover so much. These run over even with a 1-hour grace window — you can keep them as-is, raise your hours/day, or (coming soon) let us split them by chapters across multiple days.
-                        </p>
-                        <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 12.5, color: "#8a5a00", lineHeight: 1.7 }}>
+                      <div style={{ marginTop: 12, borderRadius: 14, padding: "14px 16px", background: schedule.sliced ? "#e8f5e9" : "#fff3e0", border: `1px solid ${schedule.sliced ? "#a5d6a7" : "#ffcc80"}` }}>
+                        {schedule.sliced ? (
+                          <p style={{ margin: 0, fontWeight: 800, fontSize: 13.5, color: "#2e7d32" }}>
+                            ✓ Split {schedule.longVideos.length} long video{schedule.longVideos.length === 1 ? "" : "s"} into daily parts of ~{fmtHrs((schedule.dailyBudgetMin || 0) / 60)} each
+                          </p>
+                        ) : (
+                          <>
+                            <p style={{ margin: 0, fontWeight: 800, fontSize: 13.5, color: "#e65100" }}>
+                              ⚠ {schedule.longVideos.length} video{schedule.longVideos.length === 1 ? " is" : "s are"} longer than your {fmtHrs((schedule.dailyBudgetMin || 0) / 60)}/day budget
+                            </p>
+                            <p style={{ margin: "6px 0 0", fontSize: 12.5, color: "#8a5a00", lineHeight: 1.6 }}>
+                              A single day can only cover so much. These run over even with a 1-hour grace window — keep them as-is, raise your hours/day, or split each into day-sized parts spread across consecutive days.
+                            </p>
+                          </>
+                        )}
+                        <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 12.5, color: schedule.sliced ? "#2e7d32" : "#8a5a00", lineHeight: 1.7 }}>
                           {schedule.longVideos.map((v) => (
                             <li key={v.ytVideoId}>
                               {v.title.length > 80 ? `${v.title.slice(0, 80)}…` : v.title} — <strong>{fmtHrs(v.durationMin / 60)}</strong>
+                              {schedule.sliced ? ` → ${Math.ceil(v.durationMin / (schedule.dailyBudgetMin || v.durationMin))} parts` : ""}
                             </li>
                           ))}
                         </ul>
+                        {!schedule.sliced && (
+                          <button
+                            type="button"
+                            onClick={() => handleSchedule(true)}
+                            disabled={scheduling}
+                            style={{ marginTop: 12, height: 38, padding: "0 16px", borderRadius: 10, border: "none", background: "var(--accent-gradient, #7c3aed)", color: "#fff", fontWeight: 700, fontSize: 13, cursor: scheduling ? "default" : "pointer" }}
+                          >
+                            {scheduling ? "Splitting…" : "Split into daily parts"}
+                          </button>
+                        )}
                       </div>
                     )}
 
@@ -633,7 +669,14 @@ export default function LearnPage() {
                             </p>
                             {d.videos.map((v, j) => (
                               <div key={j} style={{ fontSize: 12.5, color: "var(--text-secondary)", padding: "2px 0" }}>
-                                • {v.title} <span style={{ color: "var(--text-muted)" }}>({v.durationMin}m)</span>
+                                • {v.title}{" "}
+                                {v.part ? (
+                                  <span style={{ color: "#e65100", fontWeight: 700 }}>
+                                    Part {v.part} ({fmtClock(v.startSec)}–{fmtClock(v.endSec)})
+                                  </span>
+                                ) : (
+                                  <span style={{ color: "var(--text-muted)" }}>({v.durationMin}m)</span>
+                                )}
                               </div>
                             ))}
                           </div>
