@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { UserCheck, UserX, Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { UserCheck, UserX, Users, MessageSquare } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import AppSideNav from "../components/AppSideNav";
@@ -48,6 +49,7 @@ function Identity({ person }) {
 
 export default function Friends() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const w = useWindowWidth();
   const isNarrow = w < 960;
 
@@ -138,6 +140,9 @@ export default function Friends() {
                       <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 14, border: "1px solid var(--card-border)", background: "var(--card-bg)" }}>
                         <Avatar person={p} />
                         <Identity person={p} />
+                        <button onClick={() => navigate(`/messages/${p.userId}`)} title="Message" style={{ height: 34, padding: "0 12px", borderRadius: 9, border: "none", background: "var(--accent-gradient, #7c3aed)", color: "#fff", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, fontWeight: 700, fontSize: 12.5, flexShrink: 0 }}>
+                          <MessageSquare size={14} /> Message
+                        </button>
                         <button onClick={() => unfriend(p)} disabled={busy === p.userId} title="Remove friend" style={{ width: 34, height: 34, borderRadius: 9, border: "1px solid var(--card-border)", background: "transparent", color: "var(--text-muted)", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                           <UserX size={15} />
                         </button>

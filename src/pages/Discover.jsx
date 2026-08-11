@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, MapPin, GraduationCap, Github, Linkedin, Link2, Sparkles, UserPlus, Check, Clock } from "lucide-react";
+import { Users, MapPin, GraduationCap, Github, Linkedin, Link2, Sparkles, UserPlus, Check, Clock, MessageSquare } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import AppSideNav from "../components/AppSideNav";
@@ -45,7 +45,7 @@ const FRIEND_BTN = {
   none: { label: "Add friend", icon: UserPlus, primary: true },
   outgoing: { label: "Requested", icon: Clock, primary: false, disabled: true },
   incoming: { label: "Accept request", icon: Check, primary: true },
-  friends: { label: "Friends", icon: Check, primary: false, disabled: true },
+  friends: { label: "Message", icon: MessageSquare, primary: false },
 };
 
 function PeerCard({ peer, onOpenLink, onFriend, busy }) {
@@ -178,7 +178,8 @@ export default function Discover() {
 
   const handleFriend = async (peer) => {
     const status = peer.friendStatus;
-    if (status === "outgoing" || status === "friends") return;
+    if (status === "friends") { navigate(`/messages/${peer.userId}`); return; }
+    if (status === "outgoing") return;
     setBusyId(peer.userId);
     try {
       const res = status === "incoming"
