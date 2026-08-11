@@ -1,6 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, MapPin, GraduationCap, Github, Linkedin, Link2, Sparkles, UserPlus, Check, Clock, MessageSquare } from "lucide-react";
+import {
+  Users, Sparkles, UserPlus, Check, Clock, MessageSquare, Search, X,
+  Github, Linkedin, Link2, MapPin, GraduationCap, Lock,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import AppSideNav from "../components/AppSideNav";
@@ -15,31 +18,23 @@ function useWindowWidth() {
   return w;
 }
 
-function initialsOf(name = "") {
+const initialsOf = (name = "") => {
   const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return "PS";
-  return parts.map((p) => p[0]?.toUpperCase()).join("").slice(0, 2);
-}
-
-function resolveAvatar(url) {
-  if (!url) return null;
-  if (url.startsWith("/uploads/")) return `${import.meta.env.VITE_API_BASE_URL}${url}`;
-  return url;
-}
-
-const Chip = ({ children, tone = "accent" }) => {
-  const tones = {
-    accent: { bg: "var(--accent-soft)", color: "var(--accent)" },
-    goal: { bg: "rgba(34,197,94,0.12)", color: "#166534" },
-    exam: { bg: "rgba(239,68,68,0.1)", color: "#dc2626" },
-  };
-  const t = tones[tone] || tones.accent;
-  return (
-    <span style={{ padding: "2px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: t.bg, color: t.color, whiteSpace: "nowrap" }}>
-      {children}
-    </span>
-  );
+  return parts.length ? parts.map((p) => p[0]?.toUpperCase()).join("").slice(0, 2) : "PS";
 };
+const resolveAvatar = (url) =>
+  !url ? null : url.startsWith("/uploads/") ? `${import.meta.env.VITE_API_BASE_URL}${url}` : url;
+
+function Avatar({ person, size = 48 }) {
+  const src = resolveAvatar(person?.avatarUrl);
+  return src ? (
+    <img src={src} alt="" referrerPolicy="no-referrer" style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "1px solid var(--card-border)" }} />
+  ) : (
+    <div style={{ width: size, height: size, borderRadius: "50%", background: "linear-gradient(135deg, var(--accent), #6f7fc0)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: size / 2.6, flexShrink: 0 }}>
+      {initialsOf(person?.name)}
+    </div>
+  );
+}
 
 const FRIEND_BTN = {
   none: { label: "Add friend", icon: UserPlus, primary: true },
@@ -48,103 +43,150 @@ const FRIEND_BTN = {
   friends: { label: "Message", icon: MessageSquare, primary: false },
 };
 
-function PeerCard({ peer, onOpenLink, onFriend, busy }) {
-  const avatar = resolveAvatar(peer.avatarUrl);
-  const location = [peer.city, peer.country].filter(Boolean).join(", ");
-  const affiliation = peer.role
-    ? `${peer.role}${peer.company ? ` · ${peer.company}` : ""}`
-    : peer.institutionName || "";
-  const chips = [
-    ...(peer.sharedExamTargets || []).map((v) => ({ v, tone: "exam" })),
-    ...(peer.sharedGoals || []).map((v) => ({ v, tone: "goal" })),
-    ...(peer.sharedInterests || []).map((v) => ({ v, tone: "accent" })),
-  ];
-  const shown = chips.slice(0, 5);
-  const extra = chips.length - shown.length;
+function FriendButton({ status, busy, onClick, full }) {
+  const cfg = FRIEND_BTN[status] || FRIEND_BTN.none;
+  const Icon = cfg.icon;
+  const disabled = cfg.disabled || busy;
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        height: 38, width: full ? "100%" : undefined, padding: full ? 0 : "0 14px", borderRadius: 10,
+        border: cfg.primary ? "none" : "1px solid var(--card-border)",
+        background: cfg.primary ? "var(--accent-gradient, #7c3aed)" : "transparent",
+        color: cfg.primary ? "#fff" : "var(--text-secondary)",
+        fontWeight: 700, fontSize: 13, cursor: disabled ? "default" : "pointer",
+        display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: busy ? 0.6 : 1,
+      }}
+    >
+      <Icon size={15} /> {busy ? "…" : cfg.label}
+    </button>
+  );
+}
 
+// Minimal, privacy-respecting card: name + bio only until you're friends.
+function MiniCard({ person, onOpen, onFriend, busy, showMatch }) {
   return (
     <div style={{ border: "1px solid var(--card-border)", borderRadius: 18, background: "var(--card-bg)", padding: 18, display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        {avatar ? (
-          <img src={avatar} alt="" referrerPolicy="no-referrer" style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "1px solid var(--card-border)" }} />
-        ) : (
-          <div style={{ width: 48, height: 48, borderRadius: "50%", background: "linear-gradient(135deg, var(--accent), #6f7fc0)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, flexShrink: 0 }}>
-            {initialsOf(peer.name)}
-          </div>
-        )}
+      <div onClick={() => onOpen(person.userId)} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+        <Avatar person={person} />
         <div style={{ minWidth: 0, flex: 1 }}>
-          <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {peer.name}
-          </p>
-          {affiliation ? (
-            <p style={{ margin: "1px 0 0", fontSize: 12, color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{affiliation}</p>
-          ) : null}
+          <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{person.name}</p>
+          <p style={{ margin: "1px 0 0", fontSize: 11.5, color: "var(--accent)" }}>View profile</p>
         </div>
-        {peer.matchPercent > 0 ? (
-          <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 800, color: "#fff", background: "linear-gradient(135deg, var(--accent), #6f7fc0)", padding: "4px 10px", borderRadius: 999 }}>
-            {peer.matchPercent}%
-          </span>
+        {showMatch && person.matchPercent > 0 ? (
+          <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 800, color: "#fff", background: "linear-gradient(135deg, var(--accent), #6f7fc0)", padding: "4px 10px", borderRadius: 999 }}>{person.matchPercent}%</span>
         ) : null}
       </div>
-
-      {(location || peer.sameInstitution) && (
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 11.5, color: "var(--text-muted)" }}>
-          {location ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><MapPin size={12} /> {location}</span> : null}
-          {peer.sameInstitution ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--accent)", fontWeight: 700 }}><GraduationCap size={12} /> Same institution</span> : null}
-        </div>
+      {person.bio ? (
+        <p style={{ margin: 0, fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{person.bio}</p>
+      ) : (
+        <p style={{ margin: 0, fontSize: 12.5, color: "var(--text-muted)", fontStyle: "italic" }}>No bio yet.</p>
       )}
-
-      {peer.bio ? (
-        <p style={{ margin: 0, fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-          {peer.bio}
-        </p>
-      ) : null}
-
-      {shown.length > 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {shown.map((c, i) => <Chip key={i} tone={c.tone}>{c.v}</Chip>)}
-          {extra > 0 ? <Chip>+{extra} more</Chip> : null}
-        </div>
-      )}
-
-      {(() => {
-        const cfg = FRIEND_BTN[peer.friendStatus] || FRIEND_BTN.none;
-        const Icon = cfg.icon;
-        const disabled = cfg.disabled || busy;
-        return (
-          <button
-            onClick={() => !cfg.disabled && !busy && onFriend(peer)}
-            disabled={disabled}
-            style={{
-              marginTop: "auto", height: 38, borderRadius: 10, border: cfg.primary ? "none" : "1px solid var(--card-border)",
-              background: cfg.primary ? "var(--accent-gradient, #7c3aed)" : "transparent",
-              color: cfg.primary ? "#fff" : "var(--text-secondary)",
-              fontWeight: 700, fontSize: 13, cursor: disabled ? "default" : "pointer",
-              display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
-              opacity: busy ? 0.6 : 1,
-            }}
-          >
-            <Icon size={15} /> {busy ? "…" : cfg.label}
-          </button>
-        );
-      })()}
-
-      {(peer.githubUrl || peer.linkedinUrl || peer.portfolioUrl) && (
-        <div style={{ display: "flex", gap: 8, paddingTop: 2 }}>
-          {peer.githubUrl ? <LinkBtn onClick={() => onOpenLink(peer.githubUrl)}><Github size={13} /> GitHub</LinkBtn> : null}
-          {peer.linkedinUrl ? <LinkBtn onClick={() => onOpenLink(peer.linkedinUrl)}><Linkedin size={13} /> LinkedIn</LinkBtn> : null}
-          {peer.portfolioUrl ? <LinkBtn onClick={() => onOpenLink(peer.portfolioUrl)}><Link2 size={13} /> Portfolio</LinkBtn> : null}
-        </div>
-      )}
+      <FriendButton status={person.friendStatus} busy={busy} full onClick={() => onFriend(person)} />
     </div>
   );
 }
 
+const Chip = ({ children, tone = "accent" }) => {
+  const tones = { accent: { bg: "var(--accent-soft)", color: "var(--accent)" }, goal: { bg: "rgba(34,197,94,0.12)", color: "#166534" }, exam: { bg: "rgba(239,68,68,0.1)", color: "#dc2626" } };
+  const t = tones[tone] || tones.accent;
+  return <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: 11.5, fontWeight: 600, background: t.bg, color: t.color }}>{children}</span>;
+};
+
 const LinkBtn = ({ children, onClick }) => (
-  <button onClick={onClick} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 9, border: "1px solid var(--card-border)", background: "transparent", color: "var(--text-secondary)", fontSize: 11.5, fontWeight: 600, cursor: "pointer" }}>
+  <button onClick={onClick} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 11px", borderRadius: 9, border: "1px solid var(--card-border)", background: "transparent", color: "var(--text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
     {children}
   </button>
 );
+
+// Full profile — minimal for strangers, complete for friends.
+function ProfileModal({ userId, onClose, onFriend, busy, onMessage }) {
+  const [p, setP] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(
+    () => api.get(`/profiles/${userId}`).then((res) => setP(res.data)).catch(() => setP(null)).finally(() => setLoading(false)),
+    [userId],
+  );
+  useEffect(() => { load(); }, [load]);
+
+  const openLink = (url) => {
+    const safe = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+    window.open(safe, "_blank", "noopener,noreferrer");
+  };
+  const location = p ? [p.city, p.country].filter(Boolean).join(", ") : "";
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(15,18,32,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 16 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, maxHeight: "86vh", overflowY: "auto", background: "var(--card-bg)", borderRadius: 20, border: "1px solid var(--card-border)", padding: 22, position: "relative" }}>
+        <button onClick={onClose} style={{ position: "absolute", top: 14, right: 14, background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}><X size={20} /></button>
+        {loading ? (
+          <p style={{ color: "var(--text-muted)", fontSize: 14 }}>Loading…</p>
+        ) : !p ? (
+          <p style={{ color: "#c62828", fontSize: 14 }}>Couldn't load this profile.</p>
+        ) : (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
+              <Avatar person={p} size={64} />
+              <div style={{ minWidth: 0 }}>
+                <h3 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: "var(--text-primary)" }}>{p.name}</h3>
+                {p.isFriend && p.role ? <p style={{ margin: "2px 0 0", fontSize: 13, color: "var(--text-secondary)" }}>{p.role}{p.company ? ` · ${p.company}` : ""}</p> : null}
+              </div>
+            </div>
+
+            {p.bio ? <p style={{ margin: "0 0 14px", fontSize: 13.5, color: "var(--text-secondary)", lineHeight: 1.55 }}>{p.bio}</p> : null}
+
+            <div style={{ marginBottom: 16 }}>
+              {p.friendStatus === "friends" ? (
+                <FriendButton status="friends" full onClick={() => onMessage(p.userId)} />
+              ) : (
+                <FriendButton status={p.friendStatus} busy={busy} full onClick={() => onFriend({ userId: p.userId, friendStatus: p.friendStatus }, load)} />
+              )}
+            </div>
+
+            {p.isFriend ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {(location || p.institutionName) && (
+                  <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: 12.5, color: "var(--text-secondary)" }}>
+                    {location ? <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><MapPin size={14} /> {location}</span> : null}
+                    {p.institutionName ? <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><GraduationCap size={14} /> {p.institutionName}</span> : null}
+                  </div>
+                )}
+                <Section title="Goals" items={p.goals} tone="goal" />
+                <Section title="Exam targets" items={p.examTargets} tone="exam" />
+                <Section title="Interests" items={p.interests} tone="accent" />
+                <Section title="Skills" items={p.skills} tone="accent" />
+                <Section title="Languages" items={p.languages} tone="accent" />
+                {(p.githubUrl || p.linkedinUrl || p.portfolioUrl) && (
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {p.githubUrl ? <LinkBtn onClick={() => openLink(p.githubUrl)}><Github size={13} /> GitHub</LinkBtn> : null}
+                    {p.linkedinUrl ? <LinkBtn onClick={() => openLink(p.linkedinUrl)}><Linkedin size={13} /> LinkedIn</LinkBtn> : null}
+                    {p.portfolioUrl ? <LinkBtn onClick={() => openLink(p.portfolioUrl)}><Link2 size={13} /> Portfolio</LinkBtn> : null}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderRadius: 12, background: "var(--accent-soft)", color: "var(--text-secondary)", fontSize: 13 }}>
+                <Lock size={16} style={{ color: "var(--accent)", flexShrink: 0 }} />
+                Add them as a friend to see their goals, interests, links, and to chat.
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const Section = ({ title, items, tone }) =>
+  Array.isArray(items) && items.length ? (
+    <div>
+      <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)" }}>{title}</p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{items.map((v, i) => <Chip key={i} tone={tone}>{v}</Chip>)}</div>
+    </div>
+  ) : null;
 
 export default function Discover({ embedded = false, onMessage }) {
   const { user } = useAuth();
@@ -155,41 +197,55 @@ export default function Discover({ embedded = false, onMessage }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [data, setData] = useState({ hasProfileSignals: true, peers: [] });
+  const [busyId, setBusyId] = useState(null);
+  const [openId, setOpenId] = useState(null);
+
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState(null); // null = not searching
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    api
-      .get("/profiles/discover")
+    api.get("/profiles/discover")
       .then((res) => { if (!cancelled) { setData(res.data); setError(""); } })
       .catch((err) => { if (!cancelled) setError(err?.response?.data?.message || "Couldn't load people right now."); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [user?.id]);
 
-  const [busyId, setBusyId] = useState(null);
+  // Debounced search over all discoverable users.
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) { setResults(null); return undefined; }
+    setSearching(true);
+    const t = setTimeout(() => {
+      api.get(`/profiles/search?q=${encodeURIComponent(q)}`)
+        .then((res) => setResults(res.data || []))
+        .catch(() => setResults([]))
+        .finally(() => setSearching(false));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [query]);
 
-  const openLink = (url) => {
-    const safe = /^https?:\/\//i.test(url) ? url : `https://${url}`;
-    window.open(safe, "_blank", "noopener,noreferrer");
+  const patchStatus = (userId, friendStatus) => {
+    setData((prev) => ({ ...prev, peers: prev.peers.map((p) => (p.userId === userId ? { ...p, friendStatus } : p)) }));
+    setResults((prev) => (prev ? prev.map((p) => (p.userId === userId ? { ...p, friendStatus } : p)) : prev));
   };
 
-  const setPeerStatus = (userId, friendStatus) =>
-    setData((prev) => ({ ...prev, peers: prev.peers.map((p) => (p.userId === userId ? { ...p, friendStatus } : p)) }));
-
-  const handleFriend = async (peer) => {
-    const status = peer.friendStatus;
+  const handleFriend = async (person, after) => {
+    const status = person.friendStatus;
     if (status === "friends") {
-      if (onMessage) onMessage(peer.userId);
-      else navigate(`/messages/${peer.userId}`);
+      if (onMessage) onMessage(person.userId); else navigate(`/messages/${person.userId}`);
       return;
     }
     if (status === "outgoing") return;
-    setBusyId(peer.userId);
+    setBusyId(person.userId);
     try {
       const res = status === "incoming"
-        ? await api.post("/friends/respond", { userId: peer.userId, accept: true })
-        : await api.post("/friends/request", { userId: peer.userId });
-      setPeerStatus(peer.userId, res?.data?.status || "outgoing");
+        ? await api.post("/friends/respond", { userId: person.userId, accept: true })
+        : await api.post("/friends/request", { userId: person.userId });
+      patchStatus(person.userId, res?.data?.status || "outgoing");
+      if (after) after();
     } catch (err) {
       alert(err?.response?.data?.message || "Couldn't update friend status.");
     } finally {
@@ -197,13 +253,44 @@ export default function Discover({ embedded = false, onMessage }) {
     }
   };
 
+  const searchList = results || [];
+
   const body = (
     <>
-      <p style={{ margin: "0 0 20px", fontSize: 13.5, color: "var(--text-secondary)", maxWidth: 620 }}>
-        Studying alone is hard. These learners are prepping for the same things as you — connect and study together.
-      </p>
+      {/* Search bar */}
+      <div style={{ position: "relative", marginBottom: 20, maxWidth: 520 }}>
+        <Search size={16} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search everyone by name…"
+          style={{ width: "100%", height: 44, borderRadius: 12, border: "1px solid var(--card-border)", background: "var(--card-bg)", color: "var(--text-primary)", padding: "0 38px 0 40px", fontSize: 14, outline: "none" }}
+        />
+        {query ? (
+          <button onClick={() => setQuery("")} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}><X size={16} /></button>
+        ) : null}
+      </div>
 
-      {loading ? (
+      {results !== null ? (
+        // Search results
+        searching ? (
+          <p style={{ color: "var(--text-muted)", fontSize: 14 }}>Searching…</p>
+        ) : searchList.length === 0 ? (
+          <p style={{ color: "var(--text-muted)", fontSize: 14 }}>No users found for “{query}”.</p>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+            {searchList.map((p) => (
+              <MiniCard key={p.userId} person={p} onOpen={setOpenId} onFriend={handleFriend} busy={busyId === p.userId} showMatch={false} />
+            ))}
+          </div>
+        )
+      ) : (
+        // Matched people
+        <>
+          <p style={{ margin: "0 0 18px", fontSize: 13.5, color: "var(--text-secondary)", maxWidth: 620 }}>
+            Studying alone is hard. These learners are prepping for the same things as you — connect and study together.
+          </p>
+          {loading ? (
             <p style={{ color: "var(--text-muted)", fontSize: 14 }}>Finding people for you…</p>
           ) : error ? (
             <p style={{ color: "#c62828", fontSize: 14 }}>{error}</p>
@@ -211,28 +298,35 @@ export default function Discover({ embedded = false, onMessage }) {
             <div style={{ border: "1px dashed var(--accent)", borderRadius: 18, background: "var(--accent-soft)", padding: "28px 22px", textAlign: "center" }}>
               <Sparkles size={26} style={{ color: "var(--accent)" }} />
               <p style={{ margin: "10px 0 4px", fontSize: 16, fontWeight: 800, color: "var(--text-primary)" }}>Complete your profile to get matched</p>
-              <p style={{ margin: "0 0 16px", fontSize: 13, color: "var(--text-secondary)" }}>
-                Add your goals, interests, and exam targets — that's how we find people prepping like you.
-              </p>
-              <button onClick={() => navigate("/profile")} style={{ height: 40, padding: "0 20px", borderRadius: 12, border: "none", background: "var(--accent-gradient, #7c3aed)", color: "#fff", fontWeight: 800, cursor: "pointer" }}>
-                Complete profile →
-              </button>
+              <p style={{ margin: "0 0 16px", fontSize: 13, color: "var(--text-secondary)" }}>Add your goals, interests, and exam targets — that's how we find people prepping like you.</p>
+              <button onClick={() => navigate("/profile")} style={{ height: 40, padding: "0 20px", borderRadius: 12, border: "none", background: "var(--accent-gradient, #7c3aed)", color: "#fff", fontWeight: 800, cursor: "pointer" }}>Complete profile →</button>
             </div>
           ) : data.peers.length === 0 ? (
             <div style={{ border: "1px solid var(--card-border)", borderRadius: 18, background: "var(--card-bg)", padding: "28px 22px", textAlign: "center" }}>
               <Users size={26} style={{ color: "var(--accent)" }} />
               <p style={{ margin: "10px 0 4px", fontSize: 16, fontWeight: 800, color: "var(--text-primary)" }}>No matches yet</p>
-              <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)" }}>
-                As more learners join and make their profile discoverable, they'll show up here.
-              </p>
+              <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)" }}>Search above to find and add anyone, or check back as more learners join.</p>
             </div>
           ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
-          {data.peers.map((p) => (
-            <PeerCard key={p.userId} peer={p} onOpenLink={openLink} onFriend={handleFriend} busy={busyId === p.userId} />
-          ))}
-        </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+              {data.peers.map((p) => (
+                <MiniCard key={p.userId} person={p} onOpen={setOpenId} onFriend={handleFriend} busy={busyId === p.userId} showMatch />
+              ))}
+            </div>
+          )}
+        </>
       )}
+
+      {openId ? (
+        <ProfileModal
+          key={openId}
+          userId={openId}
+          onClose={() => setOpenId(null)}
+          onFriend={handleFriend}
+          busy={busyId === openId}
+          onMessage={(uid) => { setOpenId(null); if (onMessage) onMessage(uid); else navigate(`/messages/${uid}`); }}
+        />
+      ) : null}
     </>
   );
 
@@ -243,7 +337,7 @@ export default function Discover({ embedded = false, onMessage }) {
       <div style={{ maxWidth: 1240, margin: "0 auto", display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "288px minmax(0, 1fr)", gap: 24 }}>
         {!isNarrow && <AppSideNav />}
         <main>
-          <h1 style={{ margin: "0 0 4px", fontFamily: "Georgia, serif", fontSize: 30, color: "var(--text-primary)" }}>Find your people</h1>
+          <h1 style={{ margin: "0 0 16px", fontFamily: "Georgia, serif", fontSize: 30, color: "var(--text-primary)" }}>Find your people</h1>
           {body}
         </main>
       </div>
