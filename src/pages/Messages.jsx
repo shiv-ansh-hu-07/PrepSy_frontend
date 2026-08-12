@@ -1,6 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Send, MessageSquare, Video } from "lucide-react";
+import { ArrowLeft, Send, MessageSquare, Video, Paperclip, Smile, FileText } from "lucide-react";
+
+const STICKERS = ["👍", "🔥", "🎉", "😂", "😍", "🙌", "💯", "😎", "🤝", "📚", "☕", "💪", "🧠", "✅", "👏", "🥳", "😴", "🤯", "❤️", "🚀"];
+
+// A short emoji-only message renders big, like a sticker.
+const isSticker = (t) => {
+  if (!t) return false;
+  const chars = [...t.trim()];
+  return chars.length > 0 && chars.length <= 3 && /\p{Extended_Pictographic}/u.test(t) && !/[a-z0-9]/i.test(t);
+};
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import AppSideNav from "../components/AppSideNav";
@@ -55,7 +64,12 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
   const [sending, setSending] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [myRooms, setMyRooms] = useState(null); // null = not loaded
+  const [uploading, setUploading] = useState(false);
+  const [stickerOpen, setStickerOpen] = useState(false);
+  const [otherTyping, setOtherTyping] = useState(false);
   const scrollRef = useRef(null);
+  const fileRef = useRef(null);
+  const lastTypingSent = useRef(0);
 
   const peopleById = useMemo(() => {
     const m = new Map();
@@ -92,6 +106,18 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
     return () => { cancelled = true; clearInterval(id); };
   }, [activeId]);
 
+  // Poll whether the other person is typing.
+  useEffect(() => {
+    if (!activeId) { setOtherTyping(false); return undefined; }
+    let cancelled = false;
+    const check = () => api.get(`/friends/${activeId}/typing`)
+      .then((res) => { if (!cancelled) setOtherTyping(Boolean(res.data?.typing)); })
+      .catch(() => {});
+    check();
+    const id = setInterval(check, 2000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [activeId]);
+
   // Keep scrolled to the latest message.
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -110,6 +136,45 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
       alert(err?.response?.data?.message || "Couldn't send message.");
     } finally {
       setSending(false);
+    }
+  };
+
+  // Tell the other person we're typing (throttled to once / 2s).
+  const notifyTyping = () => {
+    if (!activeId) return;
+    const now = Date.now();
+    if (now - lastTypingSent.current > 2000) {
+      lastTypingSent.current = now;
+      api.post(`/friends/${activeId}/typing`).catch(() => {});
+    }
+  };
+
+  const onFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !activeId) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await api.post(`/friends/${activeId}/media`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+      setMessages((prev) => [...prev, res.data]);
+      loadThreads();
+    } catch (err) {
+      alert(err?.response?.data?.message || "Couldn't send the file.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const sendSticker = async (emoji) => {
+    setStickerOpen(false);
+    try {
+      const res = await api.post(`/friends/${activeId}/messages`, { text: emoji });
+      setMessages((prev) => [...prev, res.data]);
+      loadThreads();
+    } catch {
+      /* ignore */
     }
   };
 
@@ -157,7 +222,7 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
               <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid var(--card-border)" }}>
                 <h2 style={{ margin: 0, fontFamily: "Georgia, serif", fontSize: 20, color: "var(--text-primary)" }}>Messages</h2>
               </div>
-              <div style={{ overflowY: "auto", flex: 1 }}>
+              <div style={{ overflowY: "auto", overflowX: "hidden", flex: 1 }}>
                 {threads.length === 0 && friends.length === 0 ? (
                   <p style={{ padding: 16, fontSize: 13, color: "var(--text-muted)" }}>Add friends to start chatting.</p>
                 ) : (
@@ -220,7 +285,7 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
                     </div>
                   </div>
 
-                  <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
                     {messages.length === 0 ? (
                       <p style={{ margin: "auto", fontSize: 13, color: "var(--text-muted)" }}>No messages yet — say hello.</p>
                     ) : (
@@ -228,8 +293,20 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
                         const mine = m.senderId === user?.id;
                         return (
                           <div key={m.id} style={{ alignSelf: mine ? "flex-end" : "flex-start", maxWidth: "78%" }}>
-                            {m.roomId ? (
+                            {m.mediaType === "image" ? (
+                              <a href={m.mediaUrl} target="_blank" rel="noreferrer">
+                                <img src={m.mediaUrl} alt="" style={{ maxWidth: 240, maxHeight: 280, borderRadius: 14, display: "block", border: "1px solid var(--card-border)" }} />
+                              </a>
+                            ) : m.mediaType === "file" ? (
+                              <a href={m.mediaUrl} target="_blank" rel="noreferrer" download style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 14, textDecoration: "none",
+                                background: mine ? "var(--accent-gradient, #7c3aed)" : "var(--accent-soft)", color: mine ? "#fff" : "var(--text-primary)", maxWidth: 240 }}>
+                                <FileText size={20} style={{ flexShrink: 0 }} />
+                                <span style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.fileName || "File"}</span>
+                              </a>
+                            ) : m.roomId ? (
                               <RoomInvite mine={mine} text={m.text} onJoin={() => navigate(`/room/${m.roomId}`)} />
+                            ) : isSticker(m.text) ? (
+                              <div style={{ fontSize: 44, lineHeight: 1.1, padding: "2px 4px" }}>{m.text}</div>
                             ) : (
                               <div style={{ padding: "8px 12px", borderRadius: 14, fontSize: 13.5, lineHeight: 1.45, whiteSpace: "pre-wrap", wordBreak: "break-word",
                                 background: mine ? "var(--accent-gradient, #7c3aed)" : "var(--accent-soft)", color: mine ? "#fff" : "var(--text-primary)" }}>
@@ -243,12 +320,32 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
                     )}
                   </div>
 
-                  <div style={{ padding: 12, borderTop: "1px solid var(--card-border)", display: "flex", gap: 8 }}>
+                  {otherTyping ? (
+                    <div style={{ padding: "0 16px 6px", fontSize: 12, color: "var(--text-muted)", fontStyle: "italic" }}>
+                      {(activePerson?.name || "They").split(" ")[0]} is typing…
+                    </div>
+                  ) : null}
+
+                  <div style={{ padding: 12, borderTop: "1px solid var(--card-border)", display: "flex", gap: 8, alignItems: "center", position: "relative" }}>
+                    <input ref={fileRef} type="file" onChange={onFileChange} style={{ display: "none" }} />
+                    <button onClick={() => fileRef.current?.click()} disabled={uploading} title="Attach a photo or file" style={{ width: 40, height: 42, borderRadius: 12, border: "1px solid var(--card-border)", background: "transparent", color: "var(--text-secondary)", cursor: uploading ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <Paperclip size={17} />
+                    </button>
+                    <button onClick={() => setStickerOpen((v) => !v)} title="Stickers" style={{ width: 40, height: 42, borderRadius: 12, border: "1px solid var(--card-border)", background: stickerOpen ? "var(--accent-soft)" : "transparent", color: "var(--accent)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <Smile size={17} />
+                    </button>
+                    {stickerOpen && (
+                      <div style={{ position: "absolute", left: 12, bottom: 60, width: 264, background: "var(--card-bg)", border: "1px solid var(--card-border)", borderRadius: 14, boxShadow: "0 12px 32px rgba(0,0,0,0.2)", padding: 10, display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 4, zIndex: 40 }}>
+                        {STICKERS.map((s) => (
+                          <button key={s} onClick={() => sendSticker(s)} style={{ fontSize: 24, background: "none", border: "none", cursor: "pointer", padding: 4, borderRadius: 8, lineHeight: 1 }}>{s}</button>
+                        ))}
+                      </div>
+                    )}
                     <input
                       value={text}
-                      onChange={(e) => setText(e.target.value)}
+                      onChange={(e) => { setText(e.target.value); notifyTyping(); }}
                       onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-                      placeholder="Message…"
+                      placeholder={uploading ? "Uploading…" : "Message…"}
                       style={{ flex: 1, height: 42, borderRadius: 12, border: "1px solid var(--card-border)", background: "var(--card-bg)", color: "var(--text-primary)", padding: "0 14px", fontSize: 14, outline: "none" }}
                     />
                     <button onClick={send} disabled={sending || !text.trim()} style={{ width: 46, height: 42, borderRadius: 12, border: "none", background: "var(--accent-gradient, #7c3aed)", color: "#fff", cursor: sending || !text.trim() ? "default" : "pointer", opacity: sending || !text.trim() ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
