@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import io from "socket.io-client";
 import { ArrowLeft, Send, MessageSquare, Video, Paperclip, Smile, FileText } from "lucide-react";
 
 const STICKERS = ["👍", "🔥", "🎉", "😂", "😍", "🙌", "💯", "😎", "🤝", "📚", "☕", "💪", "🧠", "✅", "👏", "🥳", "😴", "🤯", "❤️", "🚀"];
@@ -70,6 +71,10 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
   const scrollRef = useRef(null);
   const fileRef = useRef(null);
   const lastTypingSent = useRef(0);
+  const socketRef = useRef(null);
+  const activeIdRef = useRef(activeId);
+  const typingTimer = useRef(null);
+  useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
 
   const peopleById = useMemo(() => {
     const m = new Map();
@@ -79,18 +84,48 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
   }, [friends, threads]);
   const activePerson = activeId ? peopleById.get(activeId) || { userId: activeId, name: "Chat" } : null;
 
-  const loadThreads = () => {
+  const loadThreads = useCallback(() => {
     Promise.all([api.get("/friends/threads"), api.get("/friends")])
       .then(([t, f]) => { setThreads(t.data || []); setFriends(f.data || []); })
       .catch(() => {});
-  };
+  }, []);
+
+  // Real-time layer: a dedicated socket for instant messages + typing. Polling
+  // (below) stays as a fallback if the socket can't connect.
+  useEffect(() => {
+    const base = import.meta.env.VITE_API_BASE_URL;
+    if (!base || !user?.id) return undefined;
+    const s = io(`${base}/dm`, {
+      transports: ["websocket"],
+      withCredentials: true,
+      auth: { token: localStorage.getItem("token") },
+    });
+    socketRef.current = s;
+
+    s.on("dm:message", (msg) => {
+      const other = msg.senderId === user.id ? msg.recipientId : msg.senderId;
+      if (other === activeIdRef.current) {
+        setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+      }
+      loadThreads();
+    });
+    s.on("dm:typing", ({ from }) => {
+      if (from === activeIdRef.current) {
+        setOtherTyping(true);
+        clearTimeout(typingTimer.current);
+        typingTimer.current = setTimeout(() => setOtherTyping(false), 3000);
+      }
+    });
+
+    return () => { s.disconnect(); socketRef.current = null; };
+  }, [user?.id, loadThreads]);
 
   // Load threads + friends, and poll threads every 12s for new conversations.
   useEffect(() => {
     loadThreads();
     const id = setInterval(loadThreads, 12000);
     return () => clearInterval(id);
-  }, [user?.id]);
+  }, [user?.id, loadThreads]);
 
   // Load + poll the active conversation.
   useEffect(() => {
@@ -139,9 +174,11 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
     }
   };
 
-  // Tell the other person we're typing (throttled to once / 2s).
+  // Tell the other person we're typing — instantly over the socket, throttled
+  // HTTP as a fallback.
   const notifyTyping = () => {
     if (!activeId) return;
+    if (socketRef.current?.connected) socketRef.current.emit("dm:typing", { to: activeId });
     const now = Date.now();
     if (now - lastTypingSent.current > 2000) {
       lastTypingSent.current = now;
