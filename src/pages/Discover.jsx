@@ -81,6 +81,15 @@ function MiniCard({ person, onOpen, onFriend, busy }) {
       ) : (
         <p style={{ margin: 0, fontSize: 12.5, color: "var(--text-muted)", fontStyle: "italic" }}>No bio yet.</p>
       )}
+      {Array.isArray(person.reasons) && person.reasons.length > 0 ? (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {person.reasons.map((r, i) => (
+            <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: "var(--accent-soft)", color: "var(--accent)" }}>
+              <Sparkles size={10} /> {r}
+            </span>
+          ))}
+        </div>
+      ) : null}
       <FriendButton status={person.friendStatus} busy={busy} full onClick={() => onFriend(person)} />
     </div>
   );
