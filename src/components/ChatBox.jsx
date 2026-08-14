@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSocket } from "../context/SocketContext";
 import api from "../services/api";
+import EmojiPicker from "./EmojiPicker";
 
 export default function ChatBox({ roomId }) {
   const { messages, setMessages, sendMessage } = useSocket();
@@ -76,7 +77,8 @@ export default function ChatBox({ roomId }) {
       </div>
 
       {/* Input */}
-      <div className="mt-4 flex gap-2">
+      <div className="mt-4 flex gap-2 items-center">
+        <EmojiPicker onPick={(e) => setText((t) => t + e)} />
         <input
           className="flex-1 px-3 py-2 rounded bg-gray-900 text-white border border-gray-700"
           placeholder="Type a message..."

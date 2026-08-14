@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api";
 import { useAuth } from "../context/AuthContext";
+import EmojiPicker from "../components/EmojiPicker";
 
 const pageBg = {
   minHeight: "calc(100vh - 76px)",
@@ -63,7 +64,7 @@ const dangerBtn = {
 };
 
 function emptyForm() {
-  return { title: "", content: "", applicationLink: "", tags: "" };
+  return { title: "", content: "", applicationLink: "", tags: "", imageUrl: "" };
 }
 
 function parseTags(value) {
@@ -113,6 +114,25 @@ export default function Community() {
   const [modalMode, setModalMode] = useState("create");
   const [editingPostId, setEditingPostId] = useState("");
   const [postForm, setPostForm] = useState(emptyForm());
+  const [imgUploading, setImgUploading] = useState(false);
+  const postFileRef = useRef(null);
+
+  async function handlePostImage(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setImgUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await api.post("/community/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      setPostForm((prev) => ({ ...prev, imageUrl: res.data.url }));
+    } catch (err) {
+      setModalError(err?.response?.data?.message || "Couldn't upload the image.");
+    } finally {
+      setImgUploading(false);
+    }
+  }
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState("");
 
@@ -230,6 +250,7 @@ export default function Community() {
       content: post.content || "",
       applicationLink: post.applicationLink || "",
       tags: (post.tags || []).join(", "),
+      imageUrl: post.imageUrl || "",
     });
     setModalError("");
     setModalOpen(true);
@@ -265,6 +286,7 @@ export default function Community() {
         content: postForm.content,
         applicationLink: postForm.applicationLink,
         tags: parseTags(postForm.tags),
+        imageUrl: postForm.imageUrl || undefined,
       };
       const res =
         modalMode === "edit"
@@ -585,6 +607,12 @@ export default function Community() {
                     {selectedPost.content}
                   </p>
 
+                  {selectedPost.imageUrl ? (
+                    <a href={selectedPost.imageUrl} target="_blank" rel="noreferrer">
+                      <img src={selectedPost.imageUrl} alt="" style={{ marginTop: 14, maxWidth: "100%", maxHeight: 420, borderRadius: 14, border: "1px solid rgba(190,200,235,0.55)", display: "block" }} />
+                    </a>
+                  ) : null}
+
                   <p style={{ margin: "16px 0 0", color: "var(--text-secondary)", fontSize: "13px" }}>
                     Posted by {selectedPost.author?.name} on {formatDate(selectedPost.createdAt)}
                   </p>
@@ -623,6 +651,7 @@ export default function Community() {
                           rows={4}
                           style={{ ...input, resize: "vertical", minHeight: "110px" }}
                         />
+                        <div><EmojiPicker onPick={(e) => setReplyDraft((t) => t + e)} above={false} /></div>
                         {replyError ? <p style={{ margin: 0, color: "#b44b3c" }}>{replyError}</p> : null}
                         <div style={{ display: "flex", justifyContent: "flex-end" }}>
                           <button
@@ -702,6 +731,21 @@ export default function Community() {
                   rows={6}
                   style={{ ...input, resize: "vertical", minHeight: "160px" }}
                 />
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                  <EmojiPicker onPick={(e) => setPostForm((prev) => ({ ...prev, content: prev.content + e }))} above={false} />
+                  <input ref={postFileRef} type="file" accept="image/*" onChange={handlePostImage} style={{ display: "none" }} />
+                  <button type="button" onClick={() => postFileRef.current?.click()} disabled={imgUploading}
+                    style={{ height: 38, padding: "0 14px", borderRadius: 10, border: "1px solid var(--card-border)", background: "transparent", color: "var(--text-secondary)", fontSize: 13, fontWeight: 600, cursor: imgUploading ? "default" : "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    {imgUploading ? "Uploading…" : "📎 Add image"}
+                  </button>
+                </div>
+                {postForm.imageUrl ? (
+                  <div style={{ marginTop: 10, position: "relative", display: "inline-block" }}>
+                    <img src={postForm.imageUrl} alt="" style={{ maxHeight: 160, maxWidth: "100%", borderRadius: 10, border: "1px solid var(--card-border)" }} />
+                    <button type="button" onClick={() => setPostForm((prev) => ({ ...prev, imageUrl: "" }))}
+                      style={{ position: "absolute", top: 6, right: 6, width: 24, height: 24, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.6)", color: "#fff", cursor: "pointer", fontSize: 12 }}>✕</button>
+                  </div>
+                ) : null}
               </Field>
 
               <Field label="Application link">

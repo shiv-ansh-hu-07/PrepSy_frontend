@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRoomContext, useLocalParticipant } from "@livekit/components-react";
 import { DataPacket_Kind } from "livekit-client";
+import EmojiPicker from "./EmojiPicker";
 
 export default function ChatDrawer({ onClose, currentUser, embedded = false }) {
   const room = useRoomContext();
@@ -208,6 +209,7 @@ export default function ChatDrawer({ onClose, currentUser, embedded = false }) {
       {/* Input */}
       <div className="p-4 border-t border-gray-200 bg-white">
         <div className="flex items-center gap-2">
+          <EmojiPicker onPick={(e) => setInput((t) => t + e)} />
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
