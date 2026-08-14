@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
-import { useAuth } from "../context/AuthContext";
 
 const BG = "var(--page-bg)";
 
@@ -58,6 +57,7 @@ export default function JoinRoom() {
   const [roomId, setRoomId] = useState("");
   const [tagQuery, setTagQuery] = useState("");
   const [allRooms, setAllRooms] = useState([]);
+  const [recommended, setRecommended] = useState([]);
   const [searchResults, setSearchResults] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("");
@@ -65,7 +65,6 @@ export default function JoinRoom() {
   const [now, setNow] = useState(() => Date.now());
 
   const navigate = useNavigate();
-  const { user } = useAuth();
   const windowWidth = useWindowWidth();
   const isMobile = windowWidth < 640;
   const isTablet = windowWidth < 960;
@@ -89,6 +88,9 @@ export default function JoinRoom() {
       }
     }
     loadRooms();
+    api.get("/rooms/recommended")
+      .then((res) => setRecommended(res.data?.rooms || []))
+      .catch(() => {});
   }, []);
 
   const handleJoin = () => {
@@ -240,6 +242,18 @@ export default function JoinRoom() {
             {loading || searching ? "Loading rooms..." : `${displayRooms.length} room${displayRooms.length !== 1 ? "s" : ""} available`}
           </p>
         </div>
+
+        {/* Recommended for you */}
+        {!searching && searchResults === null && recommended.length > 0 && (
+          <div style={{ marginBottom: 28 }}>
+            <p style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 800, color: "var(--text-primary)" }}>✨ Recommended for you</p>
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: isMobile ? 12 : 16 }}>
+              {recommended.map((room) => (
+                <RoomCard key={`rec-${room.roomId}`} room={room} now={now} isMobile={isMobile} onJoin={() => navigate(`/room/${room.roomId}`)} />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Room grid */}
         {(loading || searching) ? (

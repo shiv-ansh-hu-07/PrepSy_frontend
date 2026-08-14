@@ -23,6 +23,7 @@ export default function MyCohorts() {
   const isTablet = w < 900;
 
   const [cohorts, setCohorts] = useState([]);
+  const [recommended, setRecommended] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -39,6 +40,10 @@ export default function MyCohorts() {
       .finally(() => {
         if (active) setLoading(false);
       });
+    api
+      .get("/cohorts/recommended")
+      .then(({ data }) => { if (active) setRecommended(Array.isArray(data) ? data : []); })
+      .catch(() => {});
     return () => {
       active = false;
     };
@@ -80,6 +85,29 @@ export default function MyCohorts() {
               + Create Cohort
             </button>
           </div>
+
+          {recommended.length > 0 && (
+            <div style={{ marginBottom: 28 }}>
+              <p style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 800, color: "var(--text-primary)" }}>✨ Recommended for you</p>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
+                {recommended.map((c) => (
+                  <button key={c.id} onClick={() => navigate(`/cohort/${c.id}`)} style={{ ...card, marginBottom: 0, textAlign: "left", cursor: "pointer", display: "flex", flexDirection: "column", gap: 10, padding: 14 }}>
+                    {c.thumbnailUrl && (
+                      <img src={c.thumbnailUrl} alt="" style={{ width: "100%", height: 110, borderRadius: 10, objectFit: "cover" }} />
+                    )}
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: 14.5, fontWeight: 800, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</h3>
+                      {c.playlistTitle && <p style={{ margin: "3px 0 0", fontSize: 12, color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.playlistTitle}</p>}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <span style={{ padding: "2px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: "var(--accent-soft)", color: "var(--accent)" }}>✨ {c.reason}</span>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--text-muted)", fontSize: 12 }}><Users size={13} /> {c.memberCount}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {loading ? (
             <div style={{ ...card, textAlign: "center", color: "var(--text-secondary)" }}>Loading your cohorts…</div>
