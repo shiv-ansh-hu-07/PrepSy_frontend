@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useWindowWidth } from "../hooks/useBreakpoint";
 import {
   AlertCircle,
   BarChart3,
@@ -183,9 +184,8 @@ export default function Profile() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
-  const [isNarrow, setIsNarrow] = useState(
-    typeof window !== "undefined" ? window.innerWidth < 1080 : false
-  );
+  const width = useWindowWidth();
+  const isNarrow = width < 1024;
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -193,13 +193,6 @@ export default function Profile() {
     return () => window.clearTimeout(t);
   }, [toast]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return undefined;
-    const onResize = () => setIsNarrow(window.innerWidth < 1080);
-    onResize();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
 
   useEffect(() => {
     let cancelled = false;

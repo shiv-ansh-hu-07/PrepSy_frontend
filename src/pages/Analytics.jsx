@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import AppSideNav from "../components/AppSideNav";
 import { fetchMyAnalytics, fetchFocusSummary } from "../services/api";
+import { useWindowWidth } from "../hooks/useBreakpoint";
 
 const analyticsTabs = [
   { id: "activity", label: "Activity" },
@@ -33,17 +34,9 @@ export default function Analytics() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeAnalyticsTab, setActiveAnalyticsTab] = useState("activity");
-  const [isNarrow, setIsNarrow] = useState(
-    typeof window !== "undefined" ? window.innerWidth < 1060 : false
-  );
-
-  useEffect(() => {
-    if (typeof window === "undefined") return undefined;
-    const onResize = () => setIsNarrow(window.innerWidth < 1060);
-    onResize();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
+  const width = useWindowWidth();
+  const isNarrow = width < 1024; // side nav collapses, layout goes single-column
+  const isPhone = width < 640; // tighten dense grids on small phones
 
   async function loadAnalytics() {
     setLoading(true);
@@ -671,7 +664,7 @@ function PeakFocusHoursChart({ sessions }) {
             </div>
           )}
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 5 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isPhone ? "repeat(4, 1fr)" : "repeat(6, 1fr)", gap: 5 }}>
             {visibleHours.map((h) => {
               const hasData = h.avgScore !== null;
               const bg = scoreToHeatColor(h.avgScore);

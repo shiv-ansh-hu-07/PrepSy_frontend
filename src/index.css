@@ -115,3 +115,46 @@ a {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* -----------------------------
+   RESPONSIVE SAFETY NET
+   App-wide guards so nothing can force horizontal scrolling on small
+   screens, regardless of a page's own layout. `overflow-x: clip` is used
+   instead of `hidden` because it does NOT create a scroll container and so
+   never breaks `position: sticky` (the Navbar depends on it).
+------------------------------ */
+html,
+body,
+#root {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+/* Media never overflows its container; keep aspect ratio when it shrinks. */
+img,
+video,
+canvas {
+  max-width: 100%;
+}
+img,
+video {
+  height: auto;
+}
+
+/* Long unbroken strings (URLs, IDs, emails) wrap instead of pushing width. */
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+span,
+a,
+li,
+td,
+th,
+label,
+button {
+  overflow-wrap: break-word;
+}

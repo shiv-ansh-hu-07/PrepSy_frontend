@@ -1,20 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { useWindowWidth } from "../hooks/useBreakpoint";
 import { useSearchParams } from "react-router-dom";
 import { Sparkles, Users, MessageSquare } from "lucide-react";
 import AppSideNav from "../components/AppSideNav";
 import Discover from "./Discover";
 import Friends from "./Friends";
 import Messages from "./Messages";
-
-function useWindowWidth() {
-  const [w, setW] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1200));
-  useEffect(() => {
-    const fn = () => setW(window.innerWidth);
-    window.addEventListener("resize", fn);
-    return () => window.removeEventListener("resize", fn);
-  }, []);
-  return w;
-}
 
 const TABS = [
   { id: "discover", label: "Find people", icon: Sparkles },
@@ -25,7 +16,7 @@ const TABS = [
 export default function People() {
   const [params, setParams] = useSearchParams();
   const w = useWindowWidth();
-  const isNarrow = w < 960;
+  const isNarrow = w < 1024;
 
   const tab = TABS.some((t) => t.id === params.get("tab")) ? params.get("tab") : "discover";
   const chat = params.get("chat") || null;

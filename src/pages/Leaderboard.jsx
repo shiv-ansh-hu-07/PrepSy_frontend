@@ -1,19 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useWindowWidth } from "../hooks/useBreakpoint";
 import { useNavigate } from "react-router-dom";
 import { Trophy, Flame } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import AppSideNav from "../components/AppSideNav";
-
-function useWindowWidth() {
-  const [w, setW] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1200));
-  useEffect(() => {
-    const fn = () => setW(window.innerWidth);
-    window.addEventListener("resize", fn);
-    return () => window.removeEventListener("resize", fn);
-  }, []);
-  return w;
-}
 
 const initialsOf = (name = "") => {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -61,7 +52,7 @@ export default function Leaderboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const w = useWindowWidth();
-  const isNarrow = w < 960;
+  const isNarrow = w < 1024;
 
   const [scope, setScope] = useState("friends");
   const [period, setPeriod] = useState("week");

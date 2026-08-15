@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useWindowWidth } from "../hooks/useBreakpoint";
 
 // ─── Theme tokens ─────────────────────────────────────────────────────────────
 const T = {
@@ -545,9 +546,7 @@ function AIVisual() {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function Home() {
-  const [isSmallScreen, setIsSmallScreen] = useState(
-    typeof window !== "undefined" ? window.innerWidth < 900 : false
-  );
+  const width = useWindowWidth();
   const [visible, setVisible] = useState(new Set());
 
   // Landing page is always light — ignore the saved/system theme while mounted,
@@ -558,14 +557,6 @@ export default function Home() {
     return () => {
       root.setAttribute("data-theme", localStorage.getItem("theme") === "dark" ? "dark" : "light");
     };
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const onResize = () => setIsSmallScreen(window.innerWidth < 900);
-    onResize();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   useEffect(() => {
@@ -589,7 +580,7 @@ export default function Home() {
     transition: `opacity 0.62s ease ${delay}ms, transform 0.62s ease ${delay}ms`,
   });
 
-  const sm = isSmallScreen;
+  const sm = width < 900; // landing hero/grids stack below this (marketing-specific)
   const px = sm ? "20px" : "32px";
 
   const heroFeatures = FEATURES.filter((f) => f.hero);

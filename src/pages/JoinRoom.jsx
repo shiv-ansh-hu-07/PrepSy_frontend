@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useWindowWidth } from "../hooks/useBreakpoint";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import RoomsTabs from "../components/RoomsTabs";
@@ -12,16 +13,6 @@ const FILTER_TABS = [
   { label: "Web Dev", tag: "web" },
   { label: "Aptitude", tag: "aptitude" },
 ];
-
-function useWindowWidth() {
-  const [w, setW] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1200));
-  useEffect(() => {
-    const fn = () => setW(window.innerWidth);
-    window.addEventListener("resize", fn);
-    return () => window.removeEventListener("resize", fn);
-  }, []);
-  return w;
-}
 
 function roomIcon(room) {
   const tags = (room.tags || []).map((t) => t.toLowerCase());
@@ -68,7 +59,7 @@ export default function JoinRoom() {
   const navigate = useNavigate();
   const windowWidth = useWindowWidth();
   const isMobile = windowWidth < 640;
-  const isTablet = windowWidth < 960;
+  const isTablet = windowWidth < 1024;
   const cols = isMobile ? 1 : isTablet ? 2 : 3;
 
   useEffect(() => {

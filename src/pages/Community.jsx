@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import api from "../api";
 import { useAuth } from "../context/AuthContext";
 import EmojiPicker from "../components/EmojiPicker";
+import { useWindowWidth } from "../hooks/useBreakpoint";
 
 const pageBg = {
   minHeight: "calc(100vh - 76px)",
@@ -93,9 +94,8 @@ function looksLikeUrl(value) {
 
 export default function Community() {
   const { user } = useAuth();
-  const [isNarrow, setIsNarrow] = useState(
-    typeof window !== "undefined" ? window.innerWidth < 1040 : false
-  );
+  const width = useWindowWidth();
+  const isNarrow = width < 1024;
   const [posts, setPosts] = useState([]);
   const [myPosts, setMyPosts] = useState([]);
   const [selectedPostId, setSelectedPostId] = useState("");
@@ -135,14 +135,6 @@ export default function Community() {
   }
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState("");
-
-  useEffect(() => {
-    if (typeof window === "undefined") return undefined;
-    const onResize = () => setIsNarrow(window.innerWidth < 1040);
-    onResize();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
 
   useEffect(() => {
     let cancelled = false;

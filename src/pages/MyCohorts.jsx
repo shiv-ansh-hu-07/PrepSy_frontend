@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useWindowWidth } from "../hooks/useBreakpoint";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import AppSideNav from "../components/AppSideNav";
@@ -6,21 +7,11 @@ import { Users } from "lucide-react";
 
 const PAGE_BG = "var(--page-bg)";
 
-function useWindowWidth() {
-  const [w, setW] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1200));
-  useEffect(() => {
-    const fn = () => setW(window.innerWidth);
-    window.addEventListener("resize", fn);
-    return () => window.removeEventListener("resize", fn);
-  }, []);
-  return w;
-}
-
 export default function MyCohorts() {
   const navigate = useNavigate();
   const w = useWindowWidth();
-  const isMobile = w < 600;
-  const isTablet = w < 900;
+  const isMobile = w < 640;
+  const isTablet = w < 1024;
 
   const [cohorts, setCohorts] = useState([]);
   const [recommended, setRecommended] = useState([]);

@@ -1,17 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useWindowWidth } from "../hooks/useBreakpoint";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import RoomsTabs from "../components/RoomsTabs";
-
-function useWindowWidth() {
-  const [w, setW] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1200));
-  useEffect(() => {
-    const fn = () => setW(window.innerWidth);
-    window.addEventListener("resize", fn);
-    return () => window.removeEventListener("resize", fn);
-  }, []);
-  return w;
-}
 
 const COLLAB_STYLE_OPTIONS = [
   { value: "quiet-focus", label: "Quiet Focus", desc: "Silent deep work, no interruptions" },
@@ -226,7 +217,7 @@ export default function CreateRoom() {
 
   const windowWidth = useWindowWidth();
   const isMobile = windowWidth < 640;
-  const isTablet = windowWidth < 960;
+  const isTablet = windowWidth < 1024;
 
   const visibility = visibilityMode;
   const expertiseLabel = ROOM_TYPE_OPTIONS.find((e) => e.value === expertise)?.label || "Learning";

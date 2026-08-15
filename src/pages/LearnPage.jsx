@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useWindowWidth } from "../hooks/useBreakpoint";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api, { fetchMyProfile } from "../services/api";
@@ -32,16 +33,6 @@ const DIFF = {
   advanced: { bg: "#fce4ec", color: "#c62828", label: "Advanced" },
 };
 
-function useWindowWidth() {
-  const [w, setW] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1200));
-  useEffect(() => {
-    const fn = () => setW(window.innerWidth);
-    window.addEventListener("resize", fn);
-    return () => window.removeEventListener("resize", fn);
-  }, []);
-  return w;
-}
-
 const LOADING_STEPS = [
   "Fetching playlist from YouTube…",
   "Extracting video metadata…",
@@ -54,8 +45,8 @@ export default function LearnPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const w = useWindowWidth();
-  const isMobile = w < 600;
-  const isTablet = w < 900;
+  const isMobile = w < 640;
+  const isTablet = w < 1024;
 
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);

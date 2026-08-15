@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useWindowWidth } from "../hooks/useBreakpoint";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
@@ -63,16 +64,6 @@ function isSessionDone(s) {
   return Boolean(s.attendedByMe || s.caughtUpByMe);
 }
 
-function useWindowWidth() {
-  const [w, setW] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1200));
-  useEffect(() => {
-    const fn = () => setW(window.innerWidth);
-    window.addEventListener("resize", fn);
-    return () => window.removeEventListener("resize", fn);
-  }, []);
-  return w;
-}
-
 const TABS = [
   { id: "roadmap", label: "Roadmap", icon: BookOpen },
   { id: "discussions", label: "Discussions", icon: MessageSquare },
@@ -86,8 +77,8 @@ export default function CohortPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const w = useWindowWidth();
-  const isMobile = w < 600;
-  const isTablet = w < 900;
+  const isMobile = w < 640;
+  const isTablet = w < 1024;
 
   const [cohort, setCohort] = useState(null);
   const [loading, setLoading] = useState(true);
