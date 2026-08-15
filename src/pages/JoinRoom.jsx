@@ -240,7 +240,7 @@ export default function JoinRoom() {
         {!searching && searchResults === null && recommended.length > 0 && (
           <div style={{ marginBottom: 28 }}>
             <p style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 800, color: "var(--text-primary)" }}>✨ Recommended for you</p>
-            <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: isMobile ? 12 : 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: isMobile ? 12 : 16 }}>
               {recommended.map((room) => (
                 <RoomCard key={`rec-${room.roomId}`} room={room} now={now} isMobile={isMobile} onJoin={() => navigate(`/room/${room.roomId}`)} />
               ))}
@@ -250,7 +250,7 @@ export default function JoinRoom() {
 
         {/* Room grid */}
         {(loading || searching) ? (
-          <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: 16 }}>
             {Array.from({ length: cols * 2 }).map((_, i) => (
               <div key={i} style={{ background: "var(--card-bg)", borderRadius: 18, border: "1px solid var(--card-border)", height: 150, opacity: 0.5 }} />
             ))}
@@ -258,7 +258,7 @@ export default function JoinRoom() {
         ) : displayRooms.length === 0 ? (
           <EmptyRoomsState onClear={() => { setSearchResults(null); setActiveTab(""); setTagQuery(""); }} />
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: isMobile ? 12 : 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: isMobile ? 12 : 16 }}>
             {displayRooms.map((room) => (
               <RoomCard key={room.roomId} room={room} now={now} isMobile={isMobile} onJoin={() => navigate(`/room/${room.roomId}`)} />
             ))}

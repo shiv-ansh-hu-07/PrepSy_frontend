@@ -120,7 +120,7 @@ export default function Dashboard() {
         maxWidth: 1360,
         margin: "0 auto",
         display: "grid",
-        gridTemplateColumns: isTablet ? "1fr" : "288px minmax(0, 1fr)",
+        gridTemplateColumns: isTablet ? "minmax(0, 1fr)" : "288px minmax(0, 1fr)",
         gap: 24,
         alignItems: "start",
       }}>
@@ -151,7 +151,7 @@ export default function Dashboard() {
         {/* Stat cards */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, minmax(0, 1fr))",
+          gridTemplateColumns: isMobile ? "repeat(2, minmax(0, 1fr))" : "repeat(4, minmax(0, 1fr))",
           gap: isMobile ? 10 : 14,
           marginBottom: isMobile ? 16 : 22,
         }}>
@@ -164,7 +164,7 @@ export default function Dashboard() {
         {/* Two-column content */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: isTablet ? "1fr" : "minmax(0,1fr) 288px",
+          gridTemplateColumns: isTablet ? "minmax(0, 1fr)" : "minmax(0,1fr) 288px",
           gap: 20,
           alignItems: "start",
         }}>

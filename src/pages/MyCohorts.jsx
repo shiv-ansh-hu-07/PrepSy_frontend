@@ -55,7 +55,7 @@ export default function MyCohorts() {
           maxWidth: 1360,
           margin: "0 auto",
           display: "grid",
-          gridTemplateColumns: isTablet ? "1fr" : "288px minmax(0, 1fr)",
+          gridTemplateColumns: isTablet ? "minmax(0, 1fr)" : "288px minmax(0, 1fr)",
           gap: 24,
           alignItems: "start",
         }}
@@ -80,7 +80,7 @@ export default function MyCohorts() {
           {recommended.length > 0 && (
             <div style={{ marginBottom: 28 }}>
               <p style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 800, color: "var(--text-primary)" }}>✨ Recommended for you</p>
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "minmax(0, 1fr)" : "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
                 {recommended.map((c) => (
                   <button key={c.id} onClick={() => navigate(`/cohort/${c.id}`)} style={{ ...card, marginBottom: 0, textAlign: "left", cursor: "pointer", display: "flex", flexDirection: "column", gap: 10, padding: 14 }}>
                     {c.thumbnailUrl && (
@@ -119,7 +119,7 @@ export default function MyCohorts() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(300px, 1fr))",
+                gridTemplateColumns: isMobile ? "minmax(0, 1fr)" : "repeat(auto-fill, minmax(300px, 1fr))",
                 gap: 16,
               }}
             >

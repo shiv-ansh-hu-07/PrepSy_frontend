@@ -1255,7 +1255,7 @@ const styles = {
   layout: (isNarrow) => ({
     width: "100%", maxWidth: 1360, margin: "0 auto",
     display: "grid",
-    gridTemplateColumns: isNarrow ? "1fr" : "288px minmax(0, 1fr)",
+    gridTemplateColumns: isNarrow ? "minmax(0, 1fr)" : "288px minmax(0, 1fr)",
     gap: 24, alignItems: "start",
   }),
   main: { display: "grid", gap: 18, minWidth: 0 },
@@ -1289,7 +1289,7 @@ const styles = {
   },
   contentGrid: (isNarrow) => ({
     display: "grid",
-    gridTemplateColumns: isNarrow ? "1fr" : "minmax(260px, 290px) minmax(0, 1fr)",
+    gridTemplateColumns: isNarrow ? "minmax(0, 1fr)" : "minmax(260px, 290px) minmax(0, 1fr)",
     gap: 22, alignItems: "start",
   }),
   profileCard: (isNarrow) => ({

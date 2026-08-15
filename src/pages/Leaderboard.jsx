@@ -91,7 +91,7 @@ export default function Leaderboard() {
 
   return (
     <div style={{ minHeight: "calc(100vh - 76px)", padding: "32px 24px 56px", background: "var(--page-bg)" }}>
-      <div style={{ maxWidth: 1240, margin: "0 auto", display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "288px minmax(0, 1fr)", gap: 24 }}>
+      <div style={{ maxWidth: 1240, margin: "0 auto", display: "grid", gridTemplateColumns: isNarrow ? "minmax(0, 1fr)" : "288px minmax(0, 1fr)", gap: 24 }}>
         {!isNarrow && <AppSideNav />}
 
         <main style={{ minWidth: 0, maxWidth: 720 }}>

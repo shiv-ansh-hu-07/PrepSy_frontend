@@ -407,7 +407,7 @@ export default function Community() {
         <section
           style={{
             display: "grid",
-            gridTemplateColumns: isNarrow ? "1fr" : "340px minmax(0, 1fr)",
+            gridTemplateColumns: isNarrow ? "minmax(0, 1fr)" : "340px minmax(0, 1fr)",
             gap: "20px",
             alignItems: "start",
           }}

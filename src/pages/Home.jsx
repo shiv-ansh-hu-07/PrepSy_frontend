@@ -728,7 +728,7 @@ export default function Home() {
 
         {/* Hero row — two equal-height wide cards */}
         {!sm && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginBottom: 18, alignItems: "stretch" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 18, marginBottom: 18, alignItems: "stretch" }}>
             {heroFeatures.map((f, i) => (
               <div key={f.title} data-s={`hero-${i}`} style={{ ...fi(`hero-${i}`, i * 80), display: "flex" }}>
                 <HeroFeatureCard feature={f} fadeStyle={{ flex: 1 }} />
@@ -747,7 +747,7 @@ export default function Home() {
         {/* Regular grid — equal height via align-items: stretch */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: sm ? "1fr" : "repeat(4, 1fr)",
+          gridTemplateColumns: sm ? "minmax(0, 1fr)" : "repeat(4, minmax(0, 1fr))",
           gap: 18,
           alignItems: "stretch",
         }}>
@@ -773,7 +773,7 @@ export default function Home() {
 
           <div style={{
             display: "grid",
-            gridTemplateColumns: sm ? "1fr" : "1fr 1fr",
+            gridTemplateColumns: sm ? "minmax(0, 1fr)" : "minmax(0, 1fr) minmax(0, 1fr)",
             gap: sm ? "40px" : "56px",
             alignItems: "center", position: "relative", zIndex: 1,
           }}>
@@ -827,7 +827,7 @@ export default function Home() {
           </h2>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: sm ? "1fr" : "repeat(3, 1fr)", gap: "22px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: sm ? "minmax(0, 1fr)" : "repeat(3, minmax(0, 1fr))", gap: "22px" }}>
           {STEPS.map((s, i) => (
             <div key={s.num} data-s={`step-${i}`} className="home-step-card" style={{
               background: "var(--card-bg)", borderRadius: "24px", padding: "32px 28px",
@@ -862,7 +862,7 @@ export default function Home() {
       <section data-s="analytics" style={{ maxWidth: "1140px", margin: "0 auto", padding: `0 ${px} 96px` }}>
         <div style={{
           display: "grid",
-          gridTemplateColumns: sm ? "1fr" : "1fr 1fr",
+          gridTemplateColumns: sm ? "minmax(0, 1fr)" : "minmax(0, 1fr) minmax(0, 1fr)",
           gap: "52px", alignItems: "center",
         }}>
           <div style={{ ...fi("analytics") }}>
@@ -887,7 +887,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", ...fi("analytics", 200) }}>
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: "14px", ...fi("analytics", 200) }}>
             {ANALYTICS_CARDS.map((c) => (
               <div key={c.label} className="home-stat-card" style={{
                 background: "var(--card-bg)", borderRadius: "20px", padding: "22px 20px",
@@ -916,7 +916,7 @@ export default function Home() {
       }}>
         <div style={{
           maxWidth: "900px", margin: "0 auto",
-          display: "grid", gridTemplateColumns: sm ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
+          display: "grid", gridTemplateColumns: sm ? "repeat(2, minmax(0, 1fr))" : "repeat(4, minmax(0, 1fr))",
           gap: "28px",
         }}>
           {STATS.map((s, i) => (
@@ -981,7 +981,7 @@ export default function Home() {
 
         <div style={{
           display: "grid",
-          gridTemplateColumns: sm ? "1fr 1fr" : "repeat(4, 1fr)",
+          gridTemplateColumns: sm ? "minmax(0, 1fr) minmax(0, 1fr)" : "repeat(4, minmax(0, 1fr))",
           gap: "16px",
         }}>
           {COMING_SOON.map((c, i) => (

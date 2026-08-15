@@ -365,7 +365,7 @@ export default function CohortPage() {
           maxWidth: 1360,
           margin: "0 auto",
           display: "grid",
-          gridTemplateColumns: isTablet ? "1fr" : "288px minmax(0, 1fr)",
+          gridTemplateColumns: isTablet ? "minmax(0, 1fr)" : "288px minmax(0, 1fr)",
           gap: 24,
           alignItems: "start",
         }}

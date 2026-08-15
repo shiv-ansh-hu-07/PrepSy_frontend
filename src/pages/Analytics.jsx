@@ -664,7 +664,7 @@ function PeakFocusHoursChart({ sessions }) {
             </div>
           )}
 
-          <div style={{ display: "grid", gridTemplateColumns: isPhone ? "repeat(4, 1fr)" : "repeat(6, 1fr)", gap: 5 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isPhone ? "repeat(4, minmax(0, 1fr))" : "repeat(6, minmax(0, 1fr))", gap: 5 }}>
             {visibleHours.map((h) => {
               const hasData = h.avgScore !== null;
               const bg = scoreToHeatColor(h.avgScore);
@@ -813,7 +813,7 @@ function DistractionBreakdown({ sessions }) {
             ))}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 8 }}>
             <MiniMetric label="Avg distractions" value={stats.avgDistractions} unit="/session" color="#f59e0b" />
             <MiniMetric label="Off-screen time" value={stats.avgOffScreenMin} unit="m/session" color="#ef4444" />
             <MiniMetric label="Avg engagement" value={`${stats.avgEngagement}%`} color="#22c55e" />
@@ -1011,7 +1011,7 @@ const styles = {
     maxWidth: 1360,
     margin: "0 auto",
     display: "grid",
-    gridTemplateColumns: isNarrow ? "1fr" : "288px minmax(0, 1fr)",
+    gridTemplateColumns: isNarrow ? "minmax(0, 1fr)" : "288px minmax(0, 1fr)",
     gap: 24,
     alignItems: "start",
   }),
@@ -1180,7 +1180,7 @@ const styles = {
   },
   twoColGrid: (isNarrow) => ({
     display: "grid",
-    gridTemplateColumns: isNarrow ? "1fr" : "minmax(0, 1fr) minmax(0, 1fr)",
+    gridTemplateColumns: isNarrow ? "minmax(0, 1fr)" : "minmax(0, 1fr) minmax(0, 1fr)",
     gap: 16,
     alignItems: "start",
   }),
@@ -1190,7 +1190,7 @@ const styles = {
   },
   achievementsTabGrid: (isNarrow) => ({
     display: "grid",
-    gridTemplateColumns: isNarrow ? "1fr" : "minmax(0, 1.4fr) minmax(0, 1fr)",
+    gridTemplateColumns: isNarrow ? "minmax(0, 1fr)" : "minmax(0, 1.4fr) minmax(0, 1fr)",
     gap: 16,
     alignItems: "start",
   }),
@@ -1281,7 +1281,7 @@ const styles = {
     minWidth: 0,
     height: "100%",
     display: "grid",
-    gridTemplateRows: "20px 1fr 18px",
+    gridTemplateRows: "20px minmax(0, 1fr) 18px",
     alignItems: "end",
     justifyItems: "center",
     gap: 5,
@@ -1438,7 +1438,7 @@ const styles = {
     background: achieved ? "rgba(88,169,120,0.15)" : "var(--card-bg)",
     padding: 12,
     display: "grid",
-    gridTemplateRows: "auto auto 1fr auto auto",
+    gridTemplateRows: "auto auto minmax(0, 1fr) auto auto",
     gap: 7,
     boxSizing: "border-box",
   }),

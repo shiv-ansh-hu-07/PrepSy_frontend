@@ -217,7 +217,7 @@ export default function RoomLayout({
         </div>
 
         <div style={styles.sidePanel(isMobile)}>
-          <div style={{ ...styles.card, minHeight: isMobile ? 210 : 224, overflow: "visible", display: "grid", gridTemplateRows: "auto 1fr auto" }}>
+          <div style={{ ...styles.card, minHeight: isMobile ? 210 : 224, overflow: "visible", display: "grid", gridTemplateRows: "auto minmax(0, 1fr) auto" }}>
             <PomodoroTimer onLeaveRoom={handleLeave} roomDurationMinutes={roomDurationMinutes} />
           </div>
 
@@ -610,7 +610,7 @@ const styles = {
     maxWidth: 1420,
     alignItems: "stretch",
     display: "grid",
-    gridTemplateColumns: m ? "1fr" : "minmax(0, 1.92fr) minmax(300px, 0.68fr)",
+    gridTemplateColumns: m ? "minmax(0, 1fr)" : "minmax(0, 1.92fr) minmax(300px, 0.68fr)",
     gap: 16,
     boxSizing: "border-box",
   }),

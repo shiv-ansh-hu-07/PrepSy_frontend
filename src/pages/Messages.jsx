@@ -266,7 +266,7 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
   const panelHeight = isNarrow ? "70vh" : "max(420px, calc(100vh - 240px))";
 
   const body = (
-    <div style={{ display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "320px minmax(0, 1fr)", gap: 16, alignItems: "stretch" }}>
+    <div style={{ display: "grid", gridTemplateColumns: isNarrow ? "minmax(0, 1fr)" : "320px minmax(0, 1fr)", gap: 16, alignItems: "stretch" }}>
           {/* Thread list */}
           {showList && (
             <div style={{ border: "1px solid var(--card-border)", borderRadius: 18, background: "var(--card-bg)", overflow: "hidden", display: "flex", flexDirection: "column", height: isNarrow ? "auto" : panelHeight }}>
@@ -392,7 +392,7 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
                       <Smile size={17} />
                     </button>
                     {stickerOpen && (
-                      <div style={{ position: "absolute", left: 12, bottom: 60, width: 264, background: "var(--card-bg)", border: "1px solid var(--card-border)", borderRadius: 14, boxShadow: "0 12px 32px rgba(0,0,0,0.2)", padding: 10, display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 4, zIndex: 40 }}>
+                      <div style={{ position: "absolute", left: 12, bottom: 60, width: 264, background: "var(--card-bg)", border: "1px solid var(--card-border)", borderRadius: 14, boxShadow: "0 12px 32px rgba(0,0,0,0.2)", padding: 10, display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 4, zIndex: 40 }}>
                         {STICKERS.map((s) => (
                           <button key={s} onClick={() => sendSticker(s)} style={{ fontSize: 24, background: "none", border: "none", cursor: "pointer", padding: 4, borderRadius: 8, lineHeight: 1 }}>{s}</button>
                         ))}
@@ -420,7 +420,7 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
 
   return (
     <div style={{ minHeight: "calc(100vh - 76px)", padding: "32px 24px 40px", background: "var(--page-bg)" }}>
-      <div style={{ maxWidth: 1240, margin: "0 auto", display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "288px minmax(0, 1fr)", gap: 24 }}>
+      <div style={{ maxWidth: 1240, margin: "0 auto", display: "grid", gridTemplateColumns: isNarrow ? "minmax(0, 1fr)" : "288px minmax(0, 1fr)", gap: 24 }}>
         {!isNarrow && <AppSideNav />}
         <main>{body}</main>
       </div>

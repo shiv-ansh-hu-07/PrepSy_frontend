@@ -269,7 +269,7 @@ export default function CreateRoom() {
       <div style={{
         width: "100%", maxWidth: 1100,
         display: "grid",
-        gridTemplateColumns: isTablet ? "1fr" : "1fr 300px",
+        gridTemplateColumns: isTablet ? "minmax(0, 1fr)" : "minmax(0, 1fr) 300px",
         gap: 24, alignItems: "start",
       }}>
 
@@ -310,7 +310,7 @@ export default function CreateRoom() {
           {/* ── Room Type ── */}
           <SectionHeader>Room Type</SectionHeader>
           <p style={{ margin: "-8px 0 12px", fontSize: 12, color: "var(--text-muted)" }}>What kind of session will this be?</p>
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: 10, marginBottom: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, minmax(0, 1fr))" : "repeat(4, minmax(0, 1fr))", gap: 10, marginBottom: 10 }}>
             {ROOM_TYPE_OPTIONS.map((opt) => {
               const active = expertise === opt.value;
               return (
@@ -332,7 +332,7 @@ export default function CreateRoom() {
           {/* ── Visibility ── */}
           <SectionHeader>Visibility</SectionHeader>
           <p style={{ margin: "-8px 0 12px", fontSize: 12, color: "var(--text-muted)" }}>Who can see and join this room?</p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, marginBottom: 12 }}>
             {VISIBILITY_OPTIONS.map((opt) => {
               const active = visibilityMode === opt.value;
               return (
@@ -382,7 +382,7 @@ export default function CreateRoom() {
           {/* ── Collaboration Style ── */}
           <SectionHeader>Collaboration Style</SectionHeader>
           <p style={{ margin: "-8px 0 12px", fontSize: 12, color: "var(--text-muted)" }}>How will participants work together in this room?</p>
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10, marginBottom: 6 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "minmax(0, 1fr)" : "minmax(0, 1fr) minmax(0, 1fr)", gap: 10, marginBottom: 6 }}>
             {COLLAB_STYLE_OPTIONS.map((opt) => {
               const active = collaborationStyle === opt.value;
               return (

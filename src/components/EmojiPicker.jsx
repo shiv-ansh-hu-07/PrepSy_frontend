@@ -37,7 +37,7 @@ export default function EmojiPicker({ onPick, size = 18, above = true }) {
             [above ? "bottom" : "top"]: "calc(100% + 8px)",
             width: 250, background: "var(--card-bg)", border: "1px solid var(--card-border)",
             borderRadius: 14, boxShadow: "0 12px 32px rgba(0,0,0,0.2)", padding: 8,
-            display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 2,
+            display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 2,
           }}
         >
           {EMOJIS.map((e) => (

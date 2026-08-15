@@ -421,7 +421,7 @@ const styles = {
     maxWidth: 1420,
     alignItems: "stretch",
     display: "grid",
-    gridTemplateColumns: m ? "1fr" : "minmax(0, 1.92fr) minmax(300px, 0.68fr)",
+    gridTemplateColumns: m ? "minmax(0, 1fr)" : "minmax(0, 1.92fr) minmax(300px, 0.68fr)",
     gap: 16,
     boxSizing: "border-box",
   }),

@@ -6,10 +6,10 @@ export default function VideoGrid({ tracks }) {
 
   const columns =
     count === 1
-      ? "1fr"
+      ? "minmax(0, 1fr)"
       : count <= 4
-      ? "1fr 1fr"
-      : "1fr 1fr 1fr";
+      ? "minmax(0, 1fr) minmax(0, 1fr)"
+      : "minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)";
 
   return (
     <div
