@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+import RoomsTabs from "../components/RoomsTabs";
 
 const BG = "var(--page-bg)";
 
@@ -127,6 +128,7 @@ export default function JoinRoom() {
   return (
     <div style={{ minHeight: "100vh", background: BG, padding: isMobile ? "24px 16px 48px" : "40px 24px 64px", fontFamily: "'Inter', system-ui, sans-serif" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+        <RoomsTabs />
 
         {/* Header */}
         <div style={{ marginBottom: isMobile ? 20 : 28, textAlign: "center" }}>

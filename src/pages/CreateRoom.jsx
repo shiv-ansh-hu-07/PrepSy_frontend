@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+import RoomsTabs from "../components/RoomsTabs";
 
 function useWindowWidth() {
   const [w, setW] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1200));
@@ -269,10 +270,11 @@ export default function CreateRoom() {
     <div style={{
       minHeight: "100vh",
       background: "var(--page-bg)",
-      display: "flex", justifyContent: "center",
+      display: "flex", flexDirection: "column", alignItems: "center",
       padding: isMobile ? "20px 14px 48px" : isTablet ? "28px 20px 56px" : "36px 24px 64px",
       fontFamily: "'Inter', system-ui, sans-serif",
     }}>
+      <RoomsTabs />
       <div style={{
         width: "100%", maxWidth: 1100,
         display: "grid",

@@ -345,9 +345,7 @@ function buildMobileLinks({ user, isHomePage, isFeaturePage }) {
     links.push({ label: "Leaderboard", path: "/leaderboard", active: false });
     links.push({ label: "YouTube Cohort", path: "/cohorts", active: false });
     links.push({ label: "Community", path: "/community", active: false });
-    links.push({ label: "My Rooms", path: "/myRooms", active: false });
-    links.push({ label: "Join Room", path: "/join-room", active: false });
-    links.push({ label: "Create Room", path: "/create-room", active: false });
+    links.push({ label: "Rooms", path: "/join-room", active: false });
     links.push({ label: "Analytics", path: "/analytics", active: false });
     links.push({ label: "Profile", path: "/profile", active: false });
     links.push({ label: "Features", path: "/feature", active: false });

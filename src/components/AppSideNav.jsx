@@ -1,13 +1,11 @@
 import React from "react";
 import {
   BarChart3,
-  BookOpenCheck,
   DoorOpen,
   Youtube,
   Home,
   Lock,
   MessageCircle,
-  PlusCircle,
   UserRound,
   Moon,
   Sun,
@@ -25,9 +23,7 @@ const navItems = [
   { label: "Leaderboard", path: "/leaderboard", icon: Trophy, requiresUser: true },
   { label: "YouTube Cohort", path: "/cohorts", icon: Youtube, requiresUser: true },
   { label: "Community", path: "/community", icon: MessageCircle },
-  { label: "My Rooms", path: "/myRooms", icon: BookOpenCheck, requiresUser: true },
-  { label: "Create Room", path: "/create-room", icon: PlusCircle, requiresUser: true },
-  { label: "Join Room", path: "/join-room", icon: DoorOpen },
+  { label: "Rooms", path: "/join-room", icon: DoorOpen, requiresUser: true, match: ["/join-room", "/myRooms", "/create-room"] },
   { label: "Analytics", path: "/analytics", icon: BarChart3, requiresUser: true },
   { label: "Profile", path: "/profile", icon: UserRound, requiresUser: true },
 ];
@@ -53,7 +49,9 @@ export default function AppSideNav() {
       <nav style={styles.navList} aria-label="Dashboard navigation">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const active = location.pathname === item.path;
+          const active = item.match
+            ? item.match.includes(location.pathname)
+            : location.pathname === item.path;
           const disabled = Boolean(item.requiresUser && !user);
 
           return (

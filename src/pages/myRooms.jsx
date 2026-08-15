@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import RoomsTabs from "../components/RoomsTabs";
 
 function MyRooms() {
   const [rooms, setRooms] = useState(null);
@@ -63,6 +64,7 @@ function MyRooms() {
 
   return (
     <div className="flex-1 px-10 py-8" style={{ minHeight: "calc(100vh - 76px)", background: "var(--page-bg)" }}>
+      <RoomsTabs />
       {/* Heading */}
       <div className="mb-8 text-center">
         <h1
