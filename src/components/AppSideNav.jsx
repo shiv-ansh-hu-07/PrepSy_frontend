@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   BarChart3,
   DoorOpen,
@@ -16,6 +16,7 @@ import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { useGuardedNavigate } from "../context/NavGuardContext";
+import api from "../services/api";
 
 const navItems = [
   { label: "Home", path: "/dashboard", icon: Home },
@@ -35,6 +36,29 @@ export default function AppSideNav() {
   const navigate = useGuardedNavigate();
   const isGuestViewer = !user && guestSessionActive;
   const streakDays = user?.attendanceStreak ?? 0;
+
+  // Count of distinct people with unread DMs, for the "Find your people" badge.
+  // Polls so it stays fresh on any page the side nav is visible on.
+  const [newMsgUsers, setNewMsgUsers] = useState(0);
+  useEffect(() => {
+    if (!user?.id) {
+      setNewMsgUsers(0);
+      return undefined;
+    }
+    let cancelled = false;
+    const load = () =>
+      api.get("/friends/threads")
+        .then((res) => {
+          if (!cancelled) setNewMsgUsers((res.data || []).filter((t) => t.unread > 0).length);
+        })
+        .catch(() => {});
+    load();
+    const id = setInterval(load, 20000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [user?.id]);
 
   return (
     <aside style={styles.shell}>
@@ -67,6 +91,9 @@ export default function AppSideNav() {
             >
               <Icon size={18} strokeWidth={2} />
               <span style={styles.navLabel}>{item.label}</span>
+              {item.path === "/people" && !disabled && newMsgUsers > 0 ? (
+                <span style={styles.navBadge}>{newMsgUsers}</span>
+              ) : null}
               {disabled ? <Lock size={13} style={styles.lockIcon} /> : null}
             </button>
           );
@@ -199,6 +226,20 @@ const styles = {
   },
   lockIcon: {
     flexShrink: 0,
+  },
+  navBadge: {
+    flexShrink: 0,
+    minWidth: 18,
+    height: 18,
+    padding: "0 5px",
+    borderRadius: 999,
+    background: "#ef4444",
+    color: "#fff",
+    fontSize: 10.5,
+    fontWeight: 800,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   themeToggle: {
     minHeight: 44,

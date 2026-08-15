@@ -2,7 +2,27 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useWindowWidth } from "../hooks/useBreakpoint";
 import { useParams, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
-import { ArrowLeft, Send, MessageSquare, Video, Paperclip, Smile, FileText } from "lucide-react";
+import { ArrowLeft, Send, MessageSquare, Video, Paperclip, Smile, FileText, FileSpreadsheet, FileArchive, FileAudio, FileVideo, FileCode, File, Image as ImageIcon } from "lucide-react";
+
+// Attachments get a colour + icon by file type, so a PDF, a spreadsheet, a
+// zip, etc. are each instantly recognizable in the thread. Tints use rgba so
+// they read correctly in both light and dark themes.
+const ATTACH_KINDS = [
+  { exts: ["pdf"], Icon: FileText, color: "#ef4444", bg: "rgba(239,68,68,0.14)", border: "rgba(239,68,68,0.34)" },
+  { exts: ["doc", "docx", "rtf", "txt", "pages"], Icon: FileText, color: "#3b82f6", bg: "rgba(59,130,246,0.14)", border: "rgba(59,130,246,0.34)" },
+  { exts: ["xls", "xlsx", "csv", "numbers"], Icon: FileSpreadsheet, color: "#22c55e", bg: "rgba(34,197,94,0.14)", border: "rgba(34,197,94,0.34)" },
+  { exts: ["ppt", "pptx", "key"], Icon: FileText, color: "#f97316", bg: "rgba(249,115,22,0.14)", border: "rgba(249,115,22,0.34)" },
+  { exts: ["zip", "rar", "7z", "tar", "gz"], Icon: FileArchive, color: "#f59e0b", bg: "rgba(245,158,11,0.14)", border: "rgba(245,158,11,0.34)" },
+  { exts: ["mp3", "wav", "ogg", "m4a", "flac"], Icon: FileAudio, color: "#8b5cf6", bg: "rgba(139,92,246,0.16)", border: "rgba(139,92,246,0.34)" },
+  { exts: ["mp4", "mov", "webm", "mkv", "avi"], Icon: FileVideo, color: "#ec4899", bg: "rgba(236,72,153,0.14)", border: "rgba(236,72,153,0.34)" },
+  { exts: ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "heic"], Icon: ImageIcon, color: "#14b8a6", bg: "rgba(20,184,166,0.14)", border: "rgba(20,184,166,0.34)" },
+  { exts: ["js", "ts", "jsx", "tsx", "py", "java", "c", "cpp", "cs", "go", "rb", "php", "json", "html", "css", "md", "sh"], Icon: FileCode, color: "#64748b", bg: "rgba(100,116,139,0.16)", border: "rgba(100,116,139,0.34)" },
+];
+const DEFAULT_ATTACH = { Icon: File, color: "#94a3b8", bg: "rgba(148,163,184,0.16)", border: "rgba(148,163,184,0.34)" };
+const attachStyle = (name = "") => {
+  const ext = (name.split(".").pop() || "").toLowerCase();
+  return ATTACH_KINDS.find((k) => k.exts.includes(ext)) || DEFAULT_ATTACH;
+};
 
 const STICKERS = ["👍", "🔥", "🎉", "😂", "😍", "🙌", "💯", "😎", "🤝", "📚", "☕", "💪", "🧠", "✅", "👏", "🥳", "😴", "🤯", "❤️", "🚀"];
 
@@ -241,16 +261,19 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
 
   const showList = !isNarrow || !activeId;
   const showConv = !isNarrow || Boolean(activeId);
+  // Fixed panel height so the chat scrolls internally instead of growing the
+  // page as messages pile up.
+  const panelHeight = isNarrow ? "70vh" : "max(420px, calc(100vh - 240px))";
 
   const body = (
-    <div style={{ display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "320px minmax(0, 1fr)", gap: 16, minHeight: 560 }}>
+    <div style={{ display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "320px minmax(0, 1fr)", gap: 16, alignItems: "stretch" }}>
           {/* Thread list */}
           {showList && (
-            <div style={{ border: "1px solid var(--card-border)", borderRadius: 18, background: "var(--card-bg)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            <div style={{ border: "1px solid var(--card-border)", borderRadius: 18, background: "var(--card-bg)", overflow: "hidden", display: "flex", flexDirection: "column", height: isNarrow ? "auto" : panelHeight }}>
               <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid var(--card-border)" }}>
                 <h2 style={{ margin: 0, fontFamily: "Georgia, serif", fontSize: 20, color: "var(--text-primary)" }}>Messages</h2>
               </div>
-              <div style={{ overflowY: "auto", overflowX: "hidden", flex: 1 }}>
+              <div style={{ overflowY: "auto", overflowX: "hidden", flex: 1, minHeight: 0 }}>
                 {threads.length === 0 && friends.length === 0 ? (
                   <p style={{ padding: 16, fontSize: 13, color: "var(--text-muted)" }}>Add friends to start chatting.</p>
                 ) : (
@@ -271,7 +294,7 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
 
           {/* Conversation */}
           {showConv && (
-            <div style={{ border: "1px solid var(--card-border)", borderRadius: 18, background: "var(--card-bg)", display: "flex", flexDirection: "column", minHeight: isNarrow ? "70vh" : 560, overflow: "hidden" }}>
+            <div style={{ border: "1px solid var(--card-border)", borderRadius: 18, background: "var(--card-bg)", display: "flex", flexDirection: "column", height: panelHeight, overflow: "hidden" }}>
               {!activeId ? (
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", gap: 8 }}>
                   <MessageSquare size={28} />
@@ -313,7 +336,7 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
                     </div>
                   </div>
 
-                  <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div ref={scrollRef} style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
                     {messages.length === 0 ? (
                       <p style={{ margin: "auto", fontSize: 13, color: "var(--text-muted)" }}>No messages yet — say hello.</p>
                     ) : (
@@ -326,11 +349,17 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
                                 <img src={m.mediaUrl} alt="" style={{ maxWidth: 240, maxHeight: 280, borderRadius: 14, display: "block", border: "1px solid var(--card-border)" }} />
                               </a>
                             ) : m.mediaType === "file" ? (
-                              <a href={m.mediaUrl} target="_blank" rel="noreferrer" download style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 14, textDecoration: "none",
-                                background: mine ? "var(--accent-gradient, #7c3aed)" : "var(--accent-soft)", color: mine ? "#fff" : "var(--text-primary)", maxWidth: 240 }}>
-                                <FileText size={20} style={{ flexShrink: 0 }} />
-                                <span style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.fileName || "File"}</span>
-                              </a>
+                              (() => {
+                                const a = attachStyle(m.fileName);
+                                const AIcon = a.Icon;
+                                return (
+                                  <a href={m.mediaUrl} target="_blank" rel="noreferrer" download style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 14, textDecoration: "none",
+                                    background: a.bg, border: `1px solid ${a.border}`, color: "var(--text-primary)", maxWidth: 240 }}>
+                                    <AIcon size={20} style={{ flexShrink: 0, color: a.color }} />
+                                    <span style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.fileName || "File"}</span>
+                                  </a>
+                                );
+                              })()
                             ) : m.roomId ? (
                               <RoomInvite mine={mine} text={m.text} onJoin={() => navigate(`/room/${m.roomId}`)} />
                             ) : isSticker(m.text) ? (

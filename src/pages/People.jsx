@@ -20,6 +20,8 @@ export default function People() {
 
   const tab = TABS.some((t) => t.id === params.get("tab")) ? params.get("tab") : "discover";
   const chat = params.get("chat") || null;
+  // Messages needs the whole width for the chat — drop the side nav on that tab.
+  const hideSideNav = tab === "messages";
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
@@ -41,8 +43,8 @@ export default function People() {
 
   return (
     <div style={{ minHeight: "calc(100vh - 76px)", padding: "32px 24px 48px", background: "var(--page-bg)" }}>
-      <div style={{ maxWidth: 1240, margin: "0 auto", display: "grid", gridTemplateColumns: isNarrow ? "1fr" : "288px minmax(0, 1fr)", gap: 24 }}>
-        {!isNarrow && <AppSideNav />}
+      <div style={{ maxWidth: 1240, margin: "0 auto", display: "grid", gridTemplateColumns: isNarrow || hideSideNav ? "1fr" : "288px minmax(0, 1fr)", gap: 24 }}>
+        {!isNarrow && !hideSideNav && <AppSideNav />}
 
         <main style={{ minWidth: 0 }}>
           <h1 style={{ margin: "0 0 16px", fontFamily: "Georgia, serif", fontSize: 30, color: "var(--text-primary)" }}>Find your people</h1>

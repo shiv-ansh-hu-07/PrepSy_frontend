@@ -32,7 +32,7 @@ function Identity({ person }) {
     : person.institutionName || (person.username ? `@${person.username}` : "");
   return (
     <div style={{ minWidth: 0, flex: 1 }}>
-      <p style={{ margin: 0, fontWeight: 700, fontSize: 14.5, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{person.name}</p>
+      <p style={{ margin: 0, fontWeight: 700, fontSize: 14.5, color: "var(--text-primary)", wordBreak: "break-word", lineHeight: 1.3 }}>{person.name}</p>
       {sub ? <p style={{ margin: "1px 0 0", fontSize: 12, color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub}</p> : null}
     </div>
   );
@@ -120,7 +120,7 @@ export default function Friends({ embedded = false, onMessage }) {
                     <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)" }}>Head to “Find your people” to connect with learners like you.</p>
                   </div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 12 }}>
                     {friends.map((p) => (
                       <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 14, border: "1px solid var(--card-border)", background: "var(--card-bg)" }}>
                         <Avatar person={p} />
