@@ -26,6 +26,7 @@ const Friends = lazy(() => import("./pages/Friends"));
 const Messages = lazy(() => import("./pages/Messages"));
 const People = lazy(() => import("./pages/People"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
+const Mastery = lazy(() => import("./pages/Mastery"));
 const MyCohorts = lazy(() => import("./pages/MyCohorts"));
 
 export default function App() {
@@ -213,6 +214,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Leaderboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/mastery"
+            element={
+              <ProtectedRoute>
+                <Mastery />
               </ProtectedRoute>
             }
           />

@@ -343,6 +343,7 @@ function buildMobileLinks({ user, isHomePage, isFeaturePage }) {
     links.push({ label: "Home", path: "/dashboard", active: false });
     links.push({ label: "Find your people", path: "/people", active: false });
     links.push({ label: "Leaderboard", path: "/leaderboard", active: false });
+    links.push({ label: "Concept Mastery", path: "/mastery", active: false });
     links.push({ label: "YouTube Cohort", path: "/cohorts", active: false });
     links.push({ label: "Community", path: "/community", active: false });
     links.push({ label: "Rooms", path: "/join-room", active: false });

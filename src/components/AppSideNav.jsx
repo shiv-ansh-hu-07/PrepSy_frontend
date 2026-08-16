@@ -11,6 +11,7 @@ import {
   Sun,
   Sparkles,
   Trophy,
+  Brain,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -22,6 +23,7 @@ const navItems = [
   { label: "Home", path: "/dashboard", icon: Home },
   { label: "Find your people", path: "/people", icon: Sparkles, requiresUser: true },
   { label: "Leaderboard", path: "/leaderboard", icon: Trophy, requiresUser: true },
+  { label: "Concept Mastery", path: "/mastery", icon: Brain, requiresUser: true },
   { label: "YouTube Cohort", path: "/cohorts", icon: Youtube, requiresUser: true },
   { label: "Community", path: "/community", icon: MessageCircle },
   { label: "Rooms", path: "/join-room", icon: DoorOpen, requiresUser: true, match: ["/join-room", "/myRooms", "/create-room"] },
