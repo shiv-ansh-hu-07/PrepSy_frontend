@@ -2,18 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Brain, TrendingUp, AlertTriangle, Target } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useBreakpoint } from "../hooks/useBreakpoint";
 import api from "../services/api";
 import AppSideNav from "../components/AppSideNav";
-
-function useWindowWidth() {
-  const [w, setW] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1200));
-  useEffect(() => {
-    const fn = () => setW(window.innerWidth);
-    window.addEventListener("resize", fn);
-    return () => window.removeEventListener("resize", fn);
-  }, []);
-  return w;
-}
 
 const LEVEL = {
   weak: { color: "#dc2626", track: "rgba(239,68,68,0.15)" },
@@ -37,12 +28,12 @@ function TopicRow({ t }) {
   );
 }
 
-function Section({ icon: Icon, title, color, hint, topics }) {
+function Section({ icon, title, hint, topics }) {
   if (!topics?.length) return null;
   return (
     <section style={{ marginBottom: 26 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-        <Icon size={17} style={{ color }} />
+        {icon}
         <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "var(--text-primary)" }}>{title}</h3>
       </div>
       {hint ? <p style={{ margin: "0 0 12px", fontSize: 12.5, color: "var(--text-secondary)" }}>{hint}</p> : null}
@@ -56,8 +47,8 @@ function Section({ icon: Icon, title, color, hint, topics }) {
 export default function Mastery() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const w = useWindowWidth();
-  const isNarrow = w < 960;
+  const { isTablet } = useBreakpoint();
+  const isNarrow = isTablet;
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -102,7 +93,7 @@ export default function Mastery() {
           ) : (
             <>
               {/* Overview */}
-              <div style={{ display: "grid", gridTemplateColumns: isNarrow ? "1fr 1fr" : "repeat(3, 1fr)", gap: 12, marginBottom: 26 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isNarrow ? "minmax(0, 1fr) minmax(0, 1fr)" : "repeat(3, minmax(0, 1fr))", gap: 12, marginBottom: 26 }}>
                 {[
                   { label: "Overall accuracy", value: `${data.overallAccuracy}%` },
                   { label: "Questions answered", value: data.totalQuestions },
@@ -121,11 +112,11 @@ export default function Mastery() {
                 </p>
               )}
 
-              <Section icon={AlertTriangle} title="Weak concepts — revise these" color="#dc2626"
+              <Section icon={<AlertTriangle size={17} style={{ color: "#dc2626" }} />} title="Weak concepts — revise these"
                 hint="Below 50% accuracy. Prioritise these before your next study session." topics={data.weak} />
-              <Section icon={TrendingUp} title="Strong concepts" color="#16a34a"
+              <Section icon={<TrendingUp size={17} style={{ color: "#16a34a" }} />} title="Strong concepts"
                 hint="70%+ accuracy — you've got these down." topics={data.strong} />
-              <Section icon={Target} title="Keep practicing" color="#e65100"
+              <Section icon={<Target size={17} style={{ color: "#e65100" }} />} title="Keep practicing"
                 hint="Not enough answers yet to judge — take more quizzes on these." topics={data.developing} />
             </>
           )}
