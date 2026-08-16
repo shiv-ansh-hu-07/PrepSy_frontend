@@ -36,7 +36,6 @@ export default function Analytics() {
   const [activeAnalyticsTab, setActiveAnalyticsTab] = useState("activity");
   const width = useWindowWidth();
   const isNarrow = width < 1024; // side nav collapses, layout goes single-column
-  const isPhone = width < 640; // tighten dense grids on small phones
 
   async function loadAnalytics() {
     setLoading(true);
@@ -615,6 +614,7 @@ function formatHour(hour, short = false) {
 }
 
 function PeakFocusHoursChart({ sessions }) {
+  const isPhone = useWindowWidth() < 640; // fewer heatmap columns on small phones
   const hasSessions = sessions && sessions.length > 0;
 
   const hourlyData = useMemo(() => {
