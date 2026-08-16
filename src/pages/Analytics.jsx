@@ -17,12 +17,14 @@ import {
   Zap,
 } from "lucide-react";
 import AppSideNav from "../components/AppSideNav";
+import MasteryPanel from "../components/MasteryPanel";
 import { fetchMyAnalytics, fetchFocusSummary } from "../services/api";
 import { useWindowWidth } from "../hooks/useBreakpoint";
 
 const analyticsTabs = [
   { id: "activity", label: "Activity" },
   { id: "topics", label: "Topics" },
+  { id: "mastery", label: "Mastery" },
   { id: "sessions", label: "Sessions" },
   { id: "focus", label: "Focus" },
   { id: "achievements", label: "Achievements" },
@@ -194,6 +196,10 @@ export default function Analytics() {
                       <TopicsStudied topics={analytics.topics || []} />
                       <MostActiveRooms rooms={analytics.rooms || []} />
                     </div>
+                  ) : null}
+
+                  {activeAnalyticsTab === "mastery" ? (
+                    <MasteryPanel />
                   ) : null}
 
                   {activeAnalyticsTab === "sessions" ? (

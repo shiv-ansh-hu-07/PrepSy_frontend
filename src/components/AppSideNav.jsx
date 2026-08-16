@@ -11,7 +11,6 @@ import {
   Sun,
   Sparkles,
   Trophy,
-  Brain,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -23,7 +22,6 @@ const navItems = [
   { label: "Home", path: "/dashboard", icon: Home },
   { label: "Find your people", path: "/people", icon: Sparkles, requiresUser: true },
   { label: "Leaderboard", path: "/leaderboard", icon: Trophy, requiresUser: true },
-  { label: "Concept Mastery", path: "/mastery", icon: Brain, requiresUser: true },
   { label: "YouTube Cohort", path: "/cohorts", icon: Youtube, requiresUser: true },
   { label: "Community", path: "/community", icon: MessageCircle },
   { label: "Rooms", path: "/join-room", icon: DoorOpen, requiresUser: true, match: ["/join-room", "/myRooms", "/create-room"] },
@@ -43,10 +41,9 @@ export default function AppSideNav() {
   // Polls so it stays fresh on any page the side nav is visible on.
   const [newMsgUsers, setNewMsgUsers] = useState(0);
   useEffect(() => {
-    if (!user?.id) {
-      setNewMsgUsers(0);
-      return undefined;
-    }
+    // The badge only renders for a signed-in user (gated by !disabled below),
+    // so no reset is needed when there's no user — just don't poll.
+    if (!user?.id) return undefined;
     let cancelled = false;
     const load = () =>
       api.get("/friends/threads")
