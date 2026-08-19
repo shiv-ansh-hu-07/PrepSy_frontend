@@ -1,10 +1,16 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { track } from "../services/analytics";
 
 export default function Register() {
   const navigate = useNavigate();
   const { register } = useAuth();
+
+  // Top of the signup funnel — pairs with signup_completed to give conversion.
+  useEffect(() => {
+    track("signup_started");
+  }, []);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");

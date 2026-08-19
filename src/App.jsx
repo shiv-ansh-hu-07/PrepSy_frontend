@@ -27,6 +27,7 @@ const Messages = lazy(() => import("./pages/Messages"));
 const People = lazy(() => import("./pages/People"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const MyCohorts = lazy(() => import("./pages/MyCohorts"));
+const FounderAnalytics = lazy(() => import("./pages/FounderAnalytics"));
 
 export default function App() {
   return (
@@ -249,6 +250,16 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Messages />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Founder-only — unlinked; access enforced server-side */}
+          <Route
+            path="/founder"
+            element={
+              <ProtectedRoute>
+                <FounderAnalytics />
               </ProtectedRoute>
             }
           />

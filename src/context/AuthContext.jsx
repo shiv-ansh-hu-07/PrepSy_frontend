@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import api from "../services/api";
+import { track } from "../services/analytics";
 
 const AuthContext = createContext();
 const USER_CACHE_KEY = "auth_user_cache";
@@ -123,12 +124,14 @@ export const AuthProvider = ({ children }) => {
     persistUser(res.data.user);
     setLoading(false);
     persistGuestSession(false);
+    track("login_completed", { method: "password" });
     return res.data.user;
   };
 
   // Register (no auto-login)
   const register = async (name, email, password) => {
     await api.post("/auth/register", { name, email, password });
+    track("signup_completed", { method: "password" });
   };
 
   // ✅ ADD THIS (Google / OAuth login)
@@ -141,6 +144,7 @@ export const AuthProvider = ({ children }) => {
       await loadUser();
     }
     persistGuestSession(false);
+    track("login_completed", { method: "google" });
   };
 
   const logout = () => {

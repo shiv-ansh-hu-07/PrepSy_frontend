@@ -1,4 +1,5 @@
 import axios from "axios";
+import { track } from "./analytics";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -19,6 +20,13 @@ export async function fetchStats() {
   return data;
 }
 
+// Founder-only product analytics summary. Backend enforces the allowlist
+// (ANALYTICS_ADMIN_EMAILS); non-admins receive 403.
+export async function fetchEventsSummary() {
+  const { data } = await api.get("/events/summary");
+  return data;
+}
+
 export async function fetchMyAnalytics() {
   const { data } = await api.get("/api/analytics/me");
   return data;
@@ -26,6 +34,12 @@ export async function fetchMyAnalytics() {
 
 export async function saveFocusSession(payload) {
   const { data } = await api.post("/focus-analytics", payload);
+  // Choke point for a completed monitored study session — key core-loop event.
+  track("session_completed", {
+    roomId: payload?.roomId,
+    durationMinutes: payload?.durationMinutes,
+    focusScore: payload?.focusScore,
+  });
   return data;
 }
 

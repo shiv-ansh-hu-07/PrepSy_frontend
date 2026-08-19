@@ -11,6 +11,7 @@ import RoomLayout from "../components/RoomLayout";
 import WatchPartyLayout from "../components/WatchPartyLayout";
 import TeamsRoom from "../components/teamsRoom";
 import ChatDrawer from "../components/ChatDrawer";
+import { track } from "../services/analytics";
 import { useEffect, useState } from "react";
 
 export default function RoomPage() {
@@ -55,6 +56,15 @@ export default function RoomPage() {
           setStartTime(res.data.startTime || null);
           setRoomTags(res.data.tags || []);
           setJoinError(null);
+          // Core-loop event: user successfully entered a room.
+          track("room_joined", {
+            roomId,
+            isGuest: !user?.id,
+            kind:
+              res.data.youtubeVideoId || res.data.youtubePlaylistId
+                ? "watch_party"
+                : "study",
+          });
         }
       })
       .catch((error) => {
