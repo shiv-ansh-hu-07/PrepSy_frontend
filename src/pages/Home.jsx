@@ -798,7 +798,7 @@ export default function Home() {
               </h2>
 
               <p style={{ fontSize: "16px", color: "var(--card-bg)", lineHeight: 1.72, marginBottom: "28px" }}>
-                Camera-based AI powered by face-api.js + TensorFlow.js. Classifies your attention state every 5 seconds and scores every session — so you can actually see improvement over time.
+                Camera-based AI powered by Google MediaPipe gaze &amp; face-landmark tracking. It tells note-taking apart from real distraction, classifies your attention state, and scores every session — so you can actually see improvement over time.
               </p>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
