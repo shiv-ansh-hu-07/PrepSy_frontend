@@ -463,6 +463,20 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
     const noteTakingPercent = Math.round((s.filter((x) => x.noteTaking).length / n) * 100);
     const drowsinessPercent = Math.round((s.filter((x) => x.drowsy).length / n) * 100);
     const phonePercent = Math.round((s.filter((x) => x.phone).length / n) * 100);
+    const lookAwayPercent = Math.round((s.filter((x) => x.state === "distracted").length / n) * 100);
+
+    // Longest unbroken run of focused/decent samples → deep-focus streak.
+    let longestRun = 0;
+    let run = 0;
+    for (const x of s) {
+      if (x.score >= 60) {
+        run += 1;
+        if (run > longestRun) longestRun = run;
+      } else {
+        run = 0;
+      }
+    }
+    const longestFocusStreakSec = Math.round(longestRun * (intervalMs / 1000));
 
     let distractionCount = 0;
     for (let i = 1; i < n; i++) {
@@ -493,6 +507,8 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
       noteTakingPercent,
       drowsinessPercent,
       phonePercent,
+      lookAwayPercent,
+      longestFocusStreakSec,
       avgNoiseLevel,
       highFocusPercent,
       medFocusPercent,

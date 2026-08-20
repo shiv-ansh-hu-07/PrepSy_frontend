@@ -659,13 +659,22 @@ function PeakFocusHoursChart({ sessions }) {
         <EmptyState text="Complete monitored sessions to discover your peak focus hours." />
       ) : (
         <>
-          {peakHour && (
+          {peakHour && sessions.length >= 5 ? (
             <div style={{
               padding: "10px 14px", background: "var(--accent-soft)", borderRadius: 10,
               border: "1px solid rgba(124,58,237,0.15)", marginBottom: 14,
             }}>
               <p style={{ margin: 0, fontSize: 13, color: "#6f3bd6", fontWeight: 600 }}>
                 ⚡ Your brain works best around {formatHour(peakHour.hour)} — avg score {peakHour.avgScore}/100
+              </p>
+            </div>
+          ) : (
+            <div style={{
+              padding: "10px 14px", background: "var(--card-bg)", borderRadius: 10,
+              border: "1px solid var(--accent-soft)", marginBottom: 14,
+            }}>
+              <p style={{ margin: 0, fontSize: 12, color: "var(--text-muted)" }}>
+                Complete a few more sessions at different times to reveal your peak focus hours.
               </p>
             </div>
           )}
@@ -745,38 +754,63 @@ function MiniMetric({ label, value, unit, color }) {
   );
 }
 
+function TypeChip({ emoji, label, value, color }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 6, padding: "6px 10px",
+      borderRadius: 999, background: `${color}14`, border: `1px solid ${color}40`,
+    }}>
+      <span style={{ fontSize: 12 }}>{emoji}</span>
+      <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{label}</span>
+      <span style={{ fontSize: 12, fontWeight: 700, color }}>{value}</span>
+    </div>
+  );
+}
+
 function DistractionBreakdown({ sessions }) {
   const hasSessions = sessions && sessions.length > 0;
 
   const stats = useMemo(() => {
     if (!hasSessions) return null;
     const n = sessions.length;
-    const avg = (arr) => Math.round(arr.reduce((a, b) => a + b, 0) / arr.length);
+    const avg = (fn) => Math.round(sessions.reduce((a, s) => a + (fn(s) || 0), 0) / n);
     const avgDistractions = (
       sessions.reduce((a, s) => a + (s.distractionCount || 0), 0) / n
     ).toFixed(1);
     const avgOffScreenMin = Math.round(
       (sessions.reduce((a, s) => a + (s.offScreenSeconds || 0), 0) / n / 60) * 10,
     ) / 10;
+    const bestStreakMin = Math.round(
+      (Math.max(0, ...sessions.map((s) => s.longestFocusStreakSec || 0)) / 60) * 10,
+    ) / 10;
 
     return {
       avgDistractions,
       avgOffScreenMin,
-      avgHighPct: avg(sessions.map((s) => s.highFocusPercent || 0)),
-      avgMedPct: avg(sessions.map((s) => s.medFocusPercent || 0)),
-      avgLowPct: avg(sessions.map((s) => s.lowFocusPercent || 0)),
-      avgEngagement: avg(sessions.map((s) => s.engagementScore || 0)),
+      bestStreakMin,
+      avgHighPct: avg((s) => s.highFocusPercent),
+      avgMedPct: avg((s) => s.medFocusPercent),
+      avgLowPct: avg((s) => s.lowFocusPercent),
+      avgPhonePct: avg((s) => s.phonePercent),
+      avgLookAwayPct: avg((s) => s.lookAwayPercent),
+      avgNotePct: avg((s) => s.noteTakingPercent),
+      avgDrowsyPct: avg((s) => s.drowsinessPercent),
     };
   }, [sessions, hasSessions]);
 
-  const insight = stats
-    ? Number(stats.avgOffScreenMin) >= 1
-      ? `Off-screen costs you ~${stats.avgOffScreenMin}m per session`
-      : Number(stats.avgDistractions) > 2
-      ? `You average ${stats.avgDistractions} distractions per session`
-      : stats.avgHighPct >= 60
-      ? `Great discipline — ${stats.avgHighPct}% of your time is in high focus`
-      : null
+  // Priority-ordered insight so we never say "great discipline" while low-focus is high.
+  const insight = !stats
+    ? null
+    : stats.avgPhonePct >= 8
+    ? { warn: true, text: `Phone showed up ~${stats.avgPhonePct}% of the time — try keeping it out of reach` }
+    : stats.avgLowPct >= 30
+    ? { warn: true, text: `${stats.avgLowPct}% of your time was low-focus — room to improve` }
+    : Number(stats.avgOffScreenMin) >= 1
+    ? { warn: true, text: `Off-screen costs you ~${stats.avgOffScreenMin}m per session` }
+    : stats.avgHighPct >= 60
+    ? { warn: false, text: `Great discipline — ${stats.avgHighPct}% of your time is in high focus` }
+    : stats.avgNotePct >= 15
+    ? { warn: false, text: `Solid work — ${stats.avgNotePct}% productive note-taking` }
     : null;
 
   return (
@@ -788,12 +822,14 @@ function DistractionBreakdown({ sessions }) {
         <>
           {insight && (
             <div style={{
-              padding: "10px 14px", background: "rgba(245,158,11,0.12)", borderRadius: 10,
-              border: "1px solid rgba(245,158,11,0.35)", marginBottom: 14,
+              padding: "10px 14px",
+              background: insight.warn ? "rgba(245,158,11,0.12)" : "rgba(34,197,94,0.12)",
+              borderRadius: 10,
+              border: `1px solid ${insight.warn ? "rgba(245,158,11,0.35)" : "rgba(34,197,94,0.35)"}`,
+              marginBottom: 14,
             }}>
-              <p style={{ margin: 0, fontSize: 13, color: "#c2410c", fontWeight: 600 }}>
-                {Number(stats.avgOffScreenMin) >= 1 || Number(stats.avgDistractions) > 2 ? "⚠ " : "✓ "}
-                {insight}
+              <p style={{ margin: 0, fontSize: 13, color: insight.warn ? "#c2410c" : "#15803d", fontWeight: 600 }}>
+                {insight.warn ? "⚠ " : "✓ "}{insight.text}
               </p>
             </div>
           )}
@@ -819,11 +855,20 @@ function DistractionBreakdown({ sessions }) {
             ))}
           </div>
 
+          <p style={{ margin: "0 0 7px", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.5 }}>
+            Distraction types
+          </p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+            <TypeChip emoji="📱" label="Phone" value={`${stats.avgPhonePct}%`} color="#ef4444" />
+            <TypeChip emoji="👀" label="Looked away" value={`${stats.avgLookAwayPct}%`} color="#f59e0b" />
+            <TypeChip emoji="🚪" label="Off-screen" value={`${stats.avgOffScreenMin}m`} color="#ef4444" />
+          </div>
+
           <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 8 }}>
+            <MiniMetric label="Best focus streak" value={stats.bestStreakMin} unit="m" color="#22c55e" />
+            <MiniMetric label="Note-taking" value={`${stats.avgNotePct}%`} color="#22c55e" />
             <MiniMetric label="Avg distractions" value={stats.avgDistractions} unit="/session" color="#f59e0b" />
-            <MiniMetric label="Off-screen time" value={stats.avgOffScreenMin} unit="m/session" color="#ef4444" />
-            <MiniMetric label="Avg engagement" value={`${stats.avgEngagement}%`} color="#22c55e" />
-            <MiniMetric label="Sessions analyzed" value={sessions.length} color="var(--accent)" />
+            <MiniMetric label="Drowsiness" value={`${stats.avgDrowsyPct}%`} color="#f59e0b" />
           </div>
         </>
       )}
@@ -895,13 +940,26 @@ function FocusOverviewPanel({ focusData }) {
               How it works
             </p>
             <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.55 }}>
-              Face detection tracks your head orientation, eye openness, and expressions every 5 seconds while your camera is on. Scores improve as you build consistent focused study habits.
+              On-device MediaPipe AI tracks your eye gaze, head pose and blinks — and spots a phone in frame — every 5 seconds while your camera is on. It tells note-taking apart from real distraction, so scores stay fair. Video never leaves your device.
             </p>
           </div>
         </>
       )}
     </Panel>
   );
+}
+
+// Compact typed signal line for a session card; falls back for old sessions.
+function sessionMetaLine(s) {
+  const parts = [];
+  if (s.phonePercent) parts.push(`📱 ${s.phonePercent}%`);
+  if (s.lookAwayPercent) parts.push(`👀 ${s.lookAwayPercent}%`);
+  if (s.noteTakingPercent) parts.push(`📝 ${s.noteTakingPercent}%`);
+  if (s.offScreenSeconds > 0) parts.push(`${s.offScreenSeconds}s off-screen`);
+  if (!parts.length) {
+    parts.push(`${s.distractionCount || 0} distraction${s.distractionCount === 1 ? "" : "s"}`);
+  }
+  return parts.join(" · ");
 }
 
 function FocusSessionList({ sessions }) {
@@ -931,8 +989,7 @@ function FocusSessionList({ sessions }) {
                     {s.lowFocusPercent > 0 && <div style={{ width: `${s.lowFocusPercent}%`, background: "#ef4444" }} />}
                   </div>
                   <p style={{ margin: "4px 0 0", fontSize: 10, color: "var(--text-muted)" }}>
-                    {s.distractionCount} distraction{s.distractionCount === 1 ? "" : "s"}
-                    {s.offScreenSeconds > 0 ? ` · ${s.offScreenSeconds}s off-screen` : ""}
+                    {sessionMetaLine(s)}
                   </p>
                 </div>
                 <div style={{ flexShrink: 0, textAlign: "center" }}>
