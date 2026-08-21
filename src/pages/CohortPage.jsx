@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import AppSideNav from "../components/AppSideNav";
-import { Users, BookOpen, MessageSquare, Brain, Calendar, ChevronDown, ChevronUp, Link2 } from "lucide-react";
+import { Users, BookOpen, MessageSquare, Brain, Calendar, ChevronDown, ChevronUp, Link2, TrendingUp } from "lucide-react";
 
 const PAGE_BG = "var(--page-bg)";
 
@@ -64,11 +64,23 @@ function isSessionDone(s) {
   return Boolean(s.attendedByMe || s.caughtUpByMe);
 }
 
+// Small status pill with a coloured border.
+const pill = (color) => ({
+  padding: "3px 10px",
+  borderRadius: 999,
+  fontSize: 11.5,
+  fontWeight: 700,
+  background: "var(--card-bg)",
+  border: `1px solid ${color}`,
+  color,
+});
+
 const TABS = [
   { id: "roadmap", label: "Roadmap", icon: BookOpen },
   { id: "discussions", label: "Discussions", icon: MessageSquare },
   { id: "quiz", label: "Quiz", icon: Brain },
   { id: "sessions", label: "Sessions", icon: Calendar },
+  { id: "progress", label: "Progress", icon: TrendingUp },
   { id: "members", label: "Members", icon: Users },
 ];
 
@@ -135,6 +147,9 @@ export default function CohortPage() {
   const [quizScore, setQuizScore] = useState(null);
   // When set, the quiz is a per-day checkpoint scoped to this StudySession.
   const [checkpointSession, setCheckpointSession] = useState(null);
+
+  // Progress / leaderboard
+  const [progress, setProgress] = useState(null);
   const [pastAttempts, setPastAttempts] = useState([]);
 
   const fetchCohort = useCallback(async () => {
@@ -161,6 +176,8 @@ export default function CohortPage() {
       api.get(`/cohorts/${id}/sessions`).then(({ data }) => setSessions(data)).catch(() => {});
     } else if (activeTab === "quiz") {
       api.get(`/cohorts/${id}/quiz/attempts`).then(({ data }) => setPastAttempts(data)).catch(() => {});
+    } else if (activeTab === "progress") {
+      api.get(`/cohorts/${id}/progress`).then(({ data }) => setProgress(data)).catch(() => {});
     }
   }, [activeTab, id, cohort?.isMember]);
 
@@ -824,6 +841,73 @@ export default function CohortPage() {
                     </button>
                   )}
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* Tab: Progress */}
+          {activeTab === "progress" && (
+            <div style={card}>
+              <h3 style={sectionTitle}>📈 Progress</h3>
+              {!cohort.isMember ? (
+                <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>Join the cohort to see progress.</p>
+              ) : !progress ? (
+                <p style={{ color: "var(--text-muted)", fontSize: 14 }}>Loading…</p>
+              ) : progress.totalDays === 0 ? (
+                <p style={{ color: "var(--text-muted)", fontSize: 14 }}>No schedule yet — generate the plan in Sessions.</p>
+              ) : (
+                <>
+                  {progress.me && (
+                    <div style={{ marginBottom: 20, padding: 16, borderRadius: 14, border: "1px solid var(--accent)", background: "var(--accent-soft)" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: "var(--text-primary)" }}>Your progress</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>
+                          {progress.me.completed}/{progress.totalDays} days · {progress.me.progressPct}%
+                        </span>
+                      </div>
+                      <div style={{ height: 8, borderRadius: 999, background: "rgba(138,155,214,0.25)", overflow: "hidden", marginBottom: 12 }}>
+                        <div style={{ width: `${progress.me.progressPct}%`, height: "100%", borderRadius: 999, background: "linear-gradient(90deg, var(--accent), #b7a6e6)", transition: "width 300ms ease" }} />
+                      </div>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <span style={pill("#f59e0b")}>🔥 {progress.me.streak}-day streak</span>
+                        {progress.me.onTrack ? (
+                          <span style={pill("#16a34a")}>✓ On track</span>
+                        ) : (
+                          <span style={pill("#dc2626")}>{progress.me.behind} day{progress.me.behind === 1 ? "" : "s"} behind</span>
+                        )}
+                        {progress.me.avgCheckpointScore != null && (
+                          <span style={pill("var(--accent)")}>🎯 {progress.me.avgCheckpointScore}% avg checkpoint</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <p style={{ margin: "0 0 10px", fontSize: 12, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                    Leaderboard
+                  </p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {progress.leaderboard.map((m, i) => {
+                      const isMe = m.userId === user?.id;
+                      return (
+                        <div key={m.userId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 12, border: isMe ? "1px solid var(--accent)" : "1px solid var(--card-border)", background: isMe ? "var(--accent-soft)" : "var(--card-bg)" }}>
+                          <span style={{ width: 22, textAlign: "center", fontWeight: 800, fontSize: 13, color: i < 3 ? "var(--accent)" : "var(--text-muted)" }}>{i + 1}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {m.name}{isMe ? " (you)" : ""}
+                              </span>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", flexShrink: 0 }}>{m.progressPct}%</span>
+                            </div>
+                            <div style={{ height: 5, borderRadius: 999, background: "rgba(138,155,214,0.2)", overflow: "hidden", marginTop: 6 }}>
+                              <div style={{ width: `${m.progressPct}%`, height: "100%", borderRadius: 999, background: "var(--accent)" }} />
+                            </div>
+                          </div>
+                          <span style={{ flexShrink: 0, fontSize: 12, color: "var(--text-secondary)", fontWeight: 600 }} title="Current streak">🔥 {m.streak}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
               )}
             </div>
           )}
