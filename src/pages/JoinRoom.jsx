@@ -311,9 +311,9 @@ function RoomCard({ room, now, isMobile, onJoin }) {
         </span>
       )}
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 12, flex: 1 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", alignContent: "flex-start", gap: 4, marginBottom: 12, flex: 1 }}>
         {tags.map((t) => (
-          <span key={t} style={{ fontSize: 11, color: accent, background: bg, padding: "2px 7px", borderRadius: 999, fontWeight: 500 }}>#{t}</span>
+          <span key={t} style={{ fontSize: 11, color: accent, background: bg, padding: "2px 7px", borderRadius: 999, fontWeight: 500, lineHeight: 1.6 }}>#{t}</span>
         ))}
       </div>
 
