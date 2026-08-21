@@ -125,6 +125,8 @@ export default function CohortPage() {
   const [newPost, setNewPost] = useState("");
   const [replyContent, setReplyContent] = useState({});
   const [replyOpen, setReplyOpen] = useState({});
+  // When set, the discussion board is scoped to a day's checkpoint thread.
+  const [discussionSession, setDiscussionSession] = useState(null);
   const [postingDiscussion, setPostingDiscussion] = useState(false);
   const [expandedTopics, setExpandedTopics] = useState({});
 
@@ -171,7 +173,8 @@ export default function CohortPage() {
   useEffect(() => {
     if (!cohort?.isMember) return;
     if (activeTab === "discussions") {
-      api.get(`/cohorts/${id}/discussions`).then(({ data }) => setDiscussions(data)).catch(() => {});
+      const q = discussionSession ? `?sessionId=${discussionSession.id}` : "";
+      api.get(`/cohorts/${id}/discussions${q}`).then(({ data }) => setDiscussions(data)).catch(() => {});
     } else if (activeTab === "sessions" || activeTab === "roadmap") {
       api.get(`/cohorts/${id}/sessions`).then(({ data }) => setSessions(data)).catch(() => {});
     } else if (activeTab === "quiz") {
@@ -179,7 +182,7 @@ export default function CohortPage() {
     } else if (activeTab === "progress") {
       api.get(`/cohorts/${id}/progress`).then(({ data }) => setProgress(data)).catch(() => {});
     }
-  }, [activeTab, id, cohort?.isMember]);
+  }, [activeTab, id, cohort?.isMember, discussionSession]);
 
   const handleJoin = async () => {
     setJoining(true);
@@ -290,8 +293,13 @@ export default function CohortPage() {
     if (!content?.trim()) return;
     setPostingDiscussion(true);
     try {
-      await api.post(`/cohorts/${id}/discussions`, { content: content.trim(), parentId: parentId || undefined });
-      const { data } = await api.get(`/cohorts/${id}/discussions`);
+      await api.post(`/cohorts/${id}/discussions`, {
+        content: content.trim(),
+        parentId: parentId || undefined,
+        studySessionId: discussionSession?.id || undefined,
+      });
+      const q = discussionSession ? `?sessionId=${discussionSession.id}` : "";
+      const { data } = await api.get(`/cohorts/${id}/discussions${q}`);
       setDiscussions(data);
       if (parentId) {
         setReplyContent((prev) => ({ ...prev, [parentId]: "" }));
@@ -636,6 +644,16 @@ export default function CohortPage() {
           {activeTab === "discussions" && (
             <div style={card}>
               <h3 style={sectionTitle}>💬 Discussions</h3>
+              {discussionSession ? (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 16, padding: "8px 12px", borderRadius: 10, background: "var(--accent-soft)", border: "1px solid var(--accent)" }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--accent)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    💬 Discussing · {discussionSession.topic}
+                  </span>
+                  <button onClick={() => setDiscussionSession(null)} style={{ flexShrink: 0, background: "none", border: "none", color: "var(--accent)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                    ← All discussions
+                  </button>
+                </div>
+              ) : null}
               {cohort.isMember ? (
                 <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
                   <textarea
@@ -1010,13 +1028,22 @@ export default function CohortPage() {
                             <p style={{ margin: "6px 0 0", fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.5 }}>{s.description}</p>
                           ) : null}
                           {cohort.isMember ? (
-                            <button
-                              onClick={() => startCheckpoint(s)}
-                              title="Take a short AI quiz on this day's topic"
-                              style={{ height: 32, padding: "0 14px", marginTop: 10, fontSize: 12.5, fontWeight: 700, borderRadius: 9, border: "1px solid var(--accent)", background: "var(--accent-soft)", color: "var(--accent)", cursor: "pointer" }}
-                            >
-                              🎯 Checkpoint
-                            </button>
+                            <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+                              <button
+                                onClick={() => startCheckpoint(s)}
+                                title="Take a short AI quiz on this day's topic"
+                                style={{ height: 32, padding: "0 14px", fontSize: 12.5, fontWeight: 700, borderRadius: 9, border: "1px solid var(--accent)", background: "var(--accent-soft)", color: "var(--accent)", cursor: "pointer" }}
+                              >
+                                🎯 Checkpoint
+                              </button>
+                              <button
+                                onClick={() => { setDiscussionSession(s); setActiveTab("discussions"); }}
+                                title="Discuss this day with the cohort"
+                                style={{ height: 32, padding: "0 14px", fontSize: 12.5, fontWeight: 700, borderRadius: 9, border: "1px solid var(--card-border)", background: "var(--card-bg)", color: "var(--text-secondary)", cursor: "pointer" }}
+                              >
+                                💬 Discuss
+                              </button>
+                            </div>
                           ) : null}
                           {st.kind === "soon" && roomId && cohort.isMember ? (
                             <button
