@@ -417,13 +417,17 @@ const styles = {
   },
   centerWrap: (m) => ({
     width: "100%",
-    minHeight: "calc(100vh - 118px)",
     maxWidth: 1420,
     alignItems: "stretch",
     display: "grid",
     gridTemplateColumns: m ? "minmax(0, 1fr)" : "minmax(0, 1.92fr) minmax(300px, 0.68fr)",
     gap: 16,
     boxSizing: "border-box",
+    // Desktop: a definite height + a shrinkable row so the chat scrolls inside
+    // its own box instead of stretching the whole page. Mobile: let it flow.
+    ...(m
+      ? { minHeight: "calc(100vh - 118px)" }
+      : { height: "calc(100vh - 118px)", gridTemplateRows: "minmax(0, 1fr)" }),
   }),
   stageWrap: { position: "relative", minHeight: 360, display: "flex", flexDirection: "column", gap: 10 },
   roomHeaderBar: {
