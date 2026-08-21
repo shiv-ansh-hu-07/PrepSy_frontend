@@ -87,4 +87,15 @@ export async function fetchVideoSummary(roomId) {
   return data;
 }
 
+// Persistent watch-party playback memory (resume where the video was left off).
+export async function fetchRoomVideoState(roomId) {
+  const { data } = await api.get(`/rooms/${roomId}/video-state`);
+  return data; // null if none saved yet
+}
+
+export async function saveRoomVideoState(roomId, state) {
+  const { data } = await api.post(`/rooms/${roomId}/video-state`, state);
+  return data;
+}
+
 export default api;

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import YouTube from "react-youtube";
 import { useRoomContext, useLocalParticipant, useParticipants } from "@livekit/components-react";
+import { fetchRoomVideoState, saveRoomVideoState } from "../services/api";
 
 // ── Sync protocol ────────────────────────────────────────────────────────────
 // All events sent via LiveKit data channel (same as Pomodoro + chat).
@@ -13,6 +14,7 @@ const DRIFT_TOLERANCE_S = 2; // only re-seek if drift > 2 seconds
 const HEARTBEAT_MS = 15000;  // periodic sync every 15s to prevent drift
 
 export default function YouTubeRoom({
+  roomId = null,
   videoId,
   playlistId,
   locked = false,
@@ -32,6 +34,8 @@ export default function YouTubeRoom({
   const playerRef = useRef(null);       // YT.Player instance
   const isSyncingRef = useRef(false);   // suppress re-broadcast while applying remote sync
   const heartbeatRef = useRef(null);
+  const savedStateRef = useRef(null);   // persisted playback memory for this room
+  const receivedSyncRef = useRef(false); // a live participant has synced us this session
 
   // Current video's title + channel, for creator attribution. Read live from
   // the player so it stays correct as the playlist advances.
@@ -95,12 +99,31 @@ export default function YouTubeRoom({
     });
   }, [broadcast, videoId]);
 
+  // ── Persist playback memory (so an empty room resumes, not restarts) ───────
+
+  const isHost = useCallback(() => {
+    const sorted = [...participants].sort((a, b) => a.identity.localeCompare(b.identity));
+    return sorted[0]?.identity === localParticipant?.identity;
+  }, [participants, localParticipant]);
+
+  const persistState = useCallback(() => {
+    const player = playerRef.current;
+    if (!player || !roomId) return;
+    const data = player.getVideoData?.();
+    saveRoomVideoState(roomId, {
+      videoId: data?.video_id || null,
+      positionSec: Math.round(player.getCurrentTime?.() || 0),
+      playing: player.getPlayerState?.() === 1,
+    }).catch(() => {});
+  }, [roomId]);
+
   // ── Apply incoming sync (with drift correction) ───────────────────────────
 
   const applySync = useCallback((msg) => {
     const player = playerRef.current;
     if (!player) return;
 
+    receivedSyncRef.current = true; // a live peer is driving our position now
     const networkDelay = (Date.now() - msg.ts) / 1000;
     const targetTime = msg.currentTime + networkDelay;
 
@@ -186,7 +209,44 @@ export default function YouTubeRoom({
     return () => clearTimeout(id);
   }, [room, broadcast]);
 
-  // ── Periodic heartbeat to prevent drift ──────────────────────────────────
+  // ── Load this room's saved playback memory on mount ───────────────────────
+
+  useEffect(() => {
+    if (!roomId) return;
+    fetchRoomVideoState(roomId)
+      .then((s) => { savedStateRef.current = s || null; })
+      .catch(() => {});
+  }, [roomId]);
+
+  // ── Resume from saved memory if nobody synced us (empty-room case) ─────────
+
+  useEffect(() => {
+    if (!room) return undefined;
+    // Wait past the 1500ms sync request + a response window. If a live peer
+    // synced us, do nothing (we joined the group's live position). Otherwise
+    // resume the room's last saved video + position instead of restarting.
+    const id = setTimeout(() => {
+      if (receivedSyncRef.current) return;
+      const saved = savedStateRef.current;
+      const player = playerRef.current;
+      if (!player || !saved || !saved.videoId) return;
+
+      isSyncingRef.current = true;
+      const list = restrictRef.current?.restrictVideoIds;
+      const idx = list?.length ? list.indexOf(saved.videoId) : -1;
+      if (idx >= 0) {
+        player.loadPlaylist?.({ playlist: list, index: idx, startSeconds: saved.positionSec || 0 });
+      } else {
+        player.loadVideoById?.({ videoId: saved.videoId, startSeconds: saved.positionSec || 0 });
+      }
+      if (lockedRef.current || !saved.playing) player.pauseVideo?.();
+      captureVideoMeta(player);
+      setTimeout(() => { isSyncingRef.current = false; }, 500);
+    }, 2800);
+    return () => clearTimeout(id);
+  }, [room, captureVideoMeta]);
+
+  // ── Periodic heartbeat: sync drift + persist playback memory (host only) ──
 
   useEffect(() => {
     heartbeatRef.current = setInterval(() => {
@@ -194,9 +254,10 @@ export default function YouTubeRoom({
       if (!player) return;
       const state = player.getPlayerState?.();
       if (state === 1) broadcastState("PLAY"); // only host-style broadcast when playing
+      if (isHost()) persistState(); // one writer keeps the room's memory fresh
     }, HEARTBEAT_MS);
     return () => clearInterval(heartbeatRef.current);
-  }, [broadcastState]);
+  }, [broadcastState, isHost, persistState]);
 
   // ── YouTube player event handlers ─────────────────────────────────────────
 
@@ -240,10 +301,19 @@ export default function YouTubeRoom({
     if (e.data === YT_PLAYING) captureVideoMeta(e.target);
 
     if (isSyncingRef.current) return; // skip — this change was caused by applySync
-    if (e.data === YT_PLAYING) broadcastState("PLAY");
-    if (e.data === YT_PAUSED) broadcastState("PAUSE");
-    if (e.data === YT_ENDED) broadcastState("PAUSE");
-  }, [broadcastState, captureVideoMeta]);
+    if (e.data === YT_PLAYING) {
+      broadcastState("PLAY");
+      if (isHost()) persistState(); // capture a new video / resumed play
+    }
+    if (e.data === YT_PAUSED) {
+      broadcastState("PAUSE");
+      persistState(); // remember exactly where we paused
+    }
+    if (e.data === YT_ENDED) {
+      broadcastState("PAUSE");
+      persistState();
+    }
+  }, [broadcastState, captureVideoMeta, isHost, persistState]);
 
   // Manual seek detection — YouTube API doesn't fire a "seeked" event,
   // but PAUSE immediately followed by PLAY with a time jump signals a seek.

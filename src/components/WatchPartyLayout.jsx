@@ -192,6 +192,7 @@ export default function WatchPartyLayout({
             </div>
 
             <YouTubeRoom
+              roomId={roomId}
               videoId={youtubeVideoId}
               playlistId={youtubePlaylistId}
               locked={playbackLocked}
