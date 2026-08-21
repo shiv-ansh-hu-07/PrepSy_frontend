@@ -210,9 +210,9 @@ export default function RoomLayout({
               </div>
             )}
             {children}
-            {!isMobile && <div style={styles.bottomBarDesktop}>{controls}</div>}
           </div>
 
+          {!isMobile && <div style={styles.bottomBarDesktop}>{controls}</div>}
           {isMobile && <div style={styles.mobileControls}>{controls}</div>}
         </div>
 
@@ -606,13 +606,17 @@ const styles = {
   },
   centerWrap: (m) => ({
     width: "100%",
-    minHeight: "calc(100vh - 118px)",
     maxWidth: 1420,
     alignItems: "stretch",
     display: "grid",
     gridTemplateColumns: m ? "minmax(0, 1fr)" : "minmax(0, 1.92fr) minmax(300px, 0.68fr)",
     gap: 16,
     boxSizing: "border-box",
+    // Desktop: definite height + a shrinkable row so the video fills and the
+    // side panel scrolls internally. Mobile: let it flow.
+    ...(m
+      ? { minHeight: "calc(100vh - 118px)" }
+      : { height: "calc(100vh - 118px)", gridTemplateRows: "minmax(0, 1fr)" }),
   }),
   stageWrap: { position: "relative", minHeight: 360, display: "flex", flexDirection: "column", gap: 10 },
   roomHeaderBar: {
@@ -622,7 +626,7 @@ const styles = {
     display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
   },
   roomHeaderTextWrap: { minWidth: 0, display: "flex", alignItems: "center" },
-  roomHeaderName: { margin: 0, fontSize: 15, fontWeight: 700, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+  roomHeaderName: { margin: 0, fontSize: 15, fontWeight: 700, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
   roomHeaderButton: {
     height: 30, padding: "0 11px", borderRadius: 999,
     border: "1px solid var(--card-border)", background: "var(--input-bg)", color: "var(--text-primary)",
@@ -643,16 +647,16 @@ const styles = {
   liveDot: { width: 7, height: 7, borderRadius: "50%", background: "#22c55e" },
   sessionDivider: { color: "#94A3B8" },
   stage: {
-    width: "100%", minHeight: 360, height: "100%", borderRadius: 24,
+    width: "100%", minHeight: 360, flex: 1, borderRadius: 24,
     border: "1px solid rgba(238,242,255,0.8)", background: "#05070b",
     overflow: "hidden", display: "flex", alignItems: "stretch", justifyContent: "stretch",
     position: "relative", boxShadow: "0 16px 32px rgba(15,23,42,0.14)",
   },
   bottomBarDesktop: {
-    position: "absolute", left: "50%", bottom: 14, transform: "translateX(-50%)",
-    width: "fit-content", maxWidth: "100%", display: "flex", gap: 8, flexWrap: "wrap",
-    justifyContent: "center", padding: "8px 14px", background: "var(--card-bg)",
-    borderRadius: 20, boxShadow: "0 8px 20px rgba(0,0,0,0.16)", zIndex: 30,
+    marginTop: 10, alignSelf: "center", width: "fit-content", maxWidth: "100%",
+    display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center",
+    padding: "8px 14px", background: "var(--card-bg)", borderRadius: 20,
+    boxShadow: "0 8px 20px rgba(0,0,0,0.16)", flexShrink: 0,
   },
   mobileControls: {
     width: "100%", display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center",
