@@ -63,6 +63,9 @@ export default function WatchPartyLayout({
     startTimeMs && startTimeMs > mountedAtRef.current
       ? Math.max(startTimeMs, prepEndsAt)
       : prepEndsAt;
+  // A genuine scheduled start (vs a short ad-hoc settle-in): everyone must wait
+  // for the fixed time, so we don't offer the "start now" bypass for these.
+  const isScheduledStart = Boolean(startTimeMs && startTimeMs > mountedAtRef.current);
   const isPreparing = now < effectiveEndsAt;
   const showWaiting = !dismissed && isPreparing;
   const [manuallyStarted, setManuallyStarted] = useState(false);
@@ -233,7 +236,9 @@ export default function WatchPartyLayout({
                     </span>
                     <p style={styles.waitingCountdown}>{formatCountdown(effectiveEndsAt - now)}</p>
                     <p style={styles.waitingSub}>
-                      Take a moment to settle in — the video starts automatically when the timer ends.
+                      {isScheduledStart
+                        ? "This session starts at its scheduled time so everyone watches in sync — the video begins automatically."
+                        : "Take a moment to settle in — the video starts automatically when the timer ends."}
                     </p>
                   </div>
 
@@ -247,10 +252,12 @@ export default function WatchPartyLayout({
                   )}
 
                   <div style={styles.waitingActions}>
-                    <button type="button" style={styles.startBtn} onClick={handleStartWatching}>
-                      <Play size={15} fill="currentColor" />
-                      Start watching now
-                    </button>
+                    {!isScheduledStart && (
+                      <button type="button" style={styles.startBtn} onClick={handleStartWatching}>
+                        <Play size={15} fill="currentColor" />
+                        Start watching now
+                      </button>
+                    )}
                     <button type="button" style={styles.waitingShareBtn} onClick={copyRoomId}>
                       <Copy size={15} />
                       {shareStatus || "Share room"}
