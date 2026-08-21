@@ -121,6 +121,37 @@ export default function RoomPage() {
     };
   }, [roomId, token, user?.id, refreshUser]);
 
+  // Close the attendance row when the user actually leaves — navigating away or
+  // closing the tab — not only when they click the in-room Leave button. Without
+  // this, a passive watch party (where people just close the tab) never records
+  // `leftAt`, so the time never counts toward analytics or the leaderboard.
+  // Uses a keepalive fetch so it survives page unload; leaveRoom is idempotent,
+  // so the explicit Leave button still works.
+  useEffect(() => {
+    if (!roomId || !user?.id) return undefined;
+    const base = import.meta.env.VITE_API_BASE_URL || "";
+    const closeAttendance = () => {
+      try {
+        const authToken = localStorage.getItem("token");
+        fetch(`${base}/rooms/${roomId}/leave`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+          },
+          keepalive: true,
+        }).catch(() => {});
+      } catch {
+        /* best effort */
+      }
+    };
+    window.addEventListener("pagehide", closeAttendance);
+    return () => {
+      window.removeEventListener("pagehide", closeAttendance);
+      closeAttendance();
+    };
+  }, [roomId, user?.id]);
+
   if (joinError) {
     return (
       <div
