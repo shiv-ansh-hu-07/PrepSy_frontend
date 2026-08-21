@@ -3,6 +3,7 @@ import { useWindowWidth } from "../hooks/useBreakpoint";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
+import { track } from "../services/analytics";
 import AppSideNav from "../components/AppSideNav";
 import { Users, BookOpen, MessageSquare, Brain, Calendar, ChevronDown, ChevronUp, Link2, TrendingUp } from "lucide-react";
 
@@ -188,6 +189,7 @@ export default function CohortPage() {
     setJoining(true);
     try {
       await api.post(`/cohorts/${id}/join`);
+      track("cohort_joined", { cohortId: id });
       await fetchCohort();
       if (cohort?.roomId) navigate(`/room/${cohort.roomId}`);
     } catch (err) {
@@ -339,6 +341,7 @@ export default function CohortPage() {
   const startCheckpoint = (session) => {
     setCheckpointSession(session);
     setActiveTab("quiz");
+    track("checkpoint_taken", { cohortId: id, sessionId: session.id });
     generateQuizFor(session.id);
   };
 

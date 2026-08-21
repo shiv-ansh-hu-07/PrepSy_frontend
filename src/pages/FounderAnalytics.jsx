@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { fetchEventsSummary } from "../services/api";
+import { fetchEventsSummary, fetchEventsTesters } from "../services/api";
 
 // Founder-only analytics dashboard. Not linked anywhere in the app — reachable
 // via /founder. Access is enforced server-side (ANALYTICS_ADMIN_EMAILS); if the
@@ -14,6 +14,7 @@ const FUNNEL = [
 
 export default function FounderAnalytics() {
   const [data, setData] = useState(null);
+  const [testers, setTesters] = useState([]);
   const [status, setStatus] = useState("loading"); // loading | ok | denied | error
 
   const load = useCallback(async () => {
@@ -22,6 +23,7 @@ export default function FounderAnalytics() {
       const res = await fetchEventsSummary();
       setData(res);
       setStatus("ok");
+      fetchEventsTesters().then(setTesters).catch(() => setTesters([]));
     } catch (err) {
       const code = err?.response?.status;
       setStatus(code === 401 || code === 403 ? "denied" : "error");
@@ -149,6 +151,48 @@ export default function FounderAnalytics() {
               ))}
             </tbody>
           </table>
+        )}
+      </div>
+
+      {/* Testers — per-person activity (the September view) */}
+      <SectionTitle>
+        Testers <span style={{ fontWeight: 400, color: "var(--text-secondary)", fontSize: 13 }}>· did each person sign up → join a room → finish a session → come back</span>
+      </SectionTitle>
+      <div style={cardStyle}>
+        {!testers || testers.length === 0 ? (
+          <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>No tester activity yet.</p>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 560 }}>
+              <thead>
+                <tr style={{ textAlign: "left", color: "var(--text-secondary)", fontSize: 12 }}>
+                  <th style={{ padding: "6px 8px 6px 0" }}>Tester</th>
+                  <th style={{ padding: "6px 8px", textAlign: "center" }}>Signed up</th>
+                  <th style={{ padding: "6px 8px", textAlign: "center" }}>Room</th>
+                  <th style={{ padding: "6px 8px", textAlign: "center" }}>Session</th>
+                  <th style={{ padding: "6px 8px", textAlign: "right" }}>Active days</th>
+                  <th style={{ padding: "6px 0 6px 8px", textAlign: "right" }}>Last seen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {testers.map((t) => (
+                  <tr key={t.userId} style={{ borderTop: "1px solid var(--card-border, #eee)" }}>
+                    <td style={{ padding: "8px 8px 8px 0", color: "var(--text-primary)" }}>
+                      <div style={{ fontWeight: 600 }}>{t.name || "—"}</div>
+                      <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>{t.email || t.userId}</div>
+                    </td>
+                    <td style={{ padding: 8, textAlign: "center" }}>{t.signedUp ? "✅" : "—"}</td>
+                    <td style={{ padding: 8, textAlign: "center" }}>{t.joinedRoom ? "✅" : "—"}</td>
+                    <td style={{ padding: 8, textAlign: "center" }}>{t.completedSession ? "✅" : "—"}</td>
+                    <td style={{ padding: 8, textAlign: "right", color: "var(--text-primary)" }}>{t.activeDays}</td>
+                    <td style={{ padding: "8px 0 8px 8px", textAlign: "right", color: "var(--text-secondary)" }}>
+                      {new Date(t.lastSeen).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

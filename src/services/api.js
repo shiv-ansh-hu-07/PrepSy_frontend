@@ -27,6 +27,12 @@ export async function fetchEventsSummary() {
   return data;
 }
 
+// Founder-only per-tester activity table (September view).
+export async function fetchEventsTesters() {
+  const { data } = await api.get("/events/testers");
+  return data;
+}
+
 export async function fetchMyAnalytics() {
   const { data } = await api.get("/api/analytics/me");
   return data;
