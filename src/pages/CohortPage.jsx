@@ -133,6 +133,8 @@ export default function CohortPage() {
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(null);
+  // When set, the quiz is a per-day checkpoint scoped to this StudySession.
+  const [checkpointSession, setCheckpointSession] = useState(null);
   const [pastAttempts, setPastAttempts] = useState([]);
 
   const fetchCohort = useCallback(async () => {
@@ -287,14 +289,17 @@ export default function CohortPage() {
     }
   };
 
-  const handleGenerateQuiz = async () => {
+  const generateQuizFor = async (sessionId) => {
     setQuizLoading(true);
     setQuiz(null);
     setSelectedAnswers({});
     setQuizSubmitted(false);
     setQuizScore(null);
     try {
-      const { data } = await api.post(`/cohorts/${id}/quiz/generate`, { numQuestions: 5 });
+      const { data } = await api.post(`/cohorts/${id}/quiz/generate`, {
+        numQuestions: 5,
+        sessionId: sessionId || undefined,
+      });
       setQuiz(data.questions);
     } catch (err) {
       alert(err?.response?.data?.message || "Quiz generation failed");
@@ -303,11 +308,32 @@ export default function CohortPage() {
     }
   };
 
+  const handleGenerateQuiz = () => generateQuizFor(checkpointSession?.id);
+
+  // Start a per-day checkpoint quiz (scoped to that day's topic).
+  const startCheckpoint = (session) => {
+    setCheckpointSession(session);
+    setActiveTab("quiz");
+    generateQuizFor(session.id);
+  };
+
+  const clearCheckpoint = () => {
+    setCheckpointSession(null);
+    setQuiz(null);
+    setSelectedAnswers({});
+    setQuizSubmitted(false);
+    setQuizScore(null);
+  };
+
   const handleSubmitQuiz = async () => {
     if (!quiz) return;
     const answers = quiz.map((_, i) => selectedAnswers[i] || "");
     try {
-      const { data } = await api.post(`/cohorts/${id}/quiz/attempt`, { questions: quiz, answers });
+      const { data } = await api.post(`/cohorts/${id}/quiz/attempt`, {
+        questions: quiz,
+        answers,
+        studySessionId: checkpointSession?.id || undefined,
+      });
       setQuizScore({ score: data.score, total: quiz.length });
       setQuizSubmitted(true);
       api.get(`/cohorts/${id}/quiz/attempts`).then(({ data: a }) => setPastAttempts(a)).catch(() => {});
@@ -686,6 +712,16 @@ export default function CohortPage() {
           {activeTab === "quiz" && (
             <div style={card}>
               <h3 style={sectionTitle}>🧠 Quiz</h3>
+              {checkpointSession ? (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 14, padding: "8px 12px", borderRadius: 10, background: "var(--accent-soft)", border: "1px solid var(--accent)" }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--accent)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    🎯 Checkpoint · {checkpointSession.topic}
+                  </span>
+                  <button onClick={clearCheckpoint} style={{ flexShrink: 0, background: "none", border: "none", color: "var(--accent)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                    ← Full cohort quiz
+                  </button>
+                </div>
+              ) : null}
               {!cohort.isMember ? (
                 <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>Join the cohort to access quizzes.</p>
               ) : !quiz && !quizLoading ? (
@@ -888,6 +924,15 @@ export default function CohortPage() {
                           </p>
                           {s.description ? (
                             <p style={{ margin: "6px 0 0", fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.5 }}>{s.description}</p>
+                          ) : null}
+                          {cohort.isMember ? (
+                            <button
+                              onClick={() => startCheckpoint(s)}
+                              title="Take a short AI quiz on this day's topic"
+                              style={{ height: 32, padding: "0 14px", marginTop: 10, fontSize: 12.5, fontWeight: 700, borderRadius: 9, border: "1px solid var(--accent)", background: "var(--accent-soft)", color: "var(--accent)", cursor: "pointer" }}
+                            >
+                              🎯 Checkpoint
+                            </button>
                           ) : null}
                           {st.kind === "soon" && roomId && cohort.isMember ? (
                             <button
