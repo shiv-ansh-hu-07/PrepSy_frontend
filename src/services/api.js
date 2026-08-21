@@ -87,14 +87,4 @@ export async function fetchVideoSummary(roomId) {
   return data;
 }
 
-export async function fetchRooms() {
-  return {
-    rooms: [
-      { id: 1, name: "JEE Room", participants: 6 },
-      { id: 2, name: "UPSC Math", participants: 4 },
-      { id: 3, name: "NEET Bio", participants: 3 },
-    ],
-  };
-}
-
 export default api;
