@@ -8,7 +8,6 @@ import ChatDrawer from "./ChatDrawer";
 import api, { fetchMyAnalytics, fetchFocusSummary, fetchVideoSummary } from "../services/api";
 
 const PREP_MS = 60_000;
-const MAX_LEAD_MS = 30 * 60_000; // never force more than a 30-min pre-start wait
 
 function formatCountdown(ms) {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -57,14 +56,13 @@ export default function WatchPartyLayout({
 
   const startTimeMs = startTime ? new Date(startTime).getTime() : null;
   const prepEndsAt = mountedAtRef.current + PREP_MS;
-  // Only sync to a scheduled start if it's reasonably soon. Joining hours early
-  // (or a schedule that drifted forward from missed days) shouldn't force a
-  // multi-hour countdown — fall back to a short settle-in prep instead.
-  const scheduledSoon =
-    startTimeMs &&
-    startTimeMs > mountedAtRef.current &&
-    startTimeMs - mountedAtRef.current <= MAX_LEAD_MS;
-  const effectiveEndsAt = scheduledSoon ? Math.max(startTimeMs, prepEndsAt) : prepEndsAt;
+  // Scheduled sessions start at their fixed time so everyone stays in sync — if
+  // the scheduled start is still ahead, count down to it (however far away).
+  // Ad-hoc rooms (no future startTime) just get a short settle-in prep.
+  const effectiveEndsAt =
+    startTimeMs && startTimeMs > mountedAtRef.current
+      ? Math.max(startTimeMs, prepEndsAt)
+      : prepEndsAt;
   const isPreparing = now < effectiveEndsAt;
   const showWaiting = !dismissed && isPreparing;
   const [manuallyStarted, setManuallyStarted] = useState(false);
