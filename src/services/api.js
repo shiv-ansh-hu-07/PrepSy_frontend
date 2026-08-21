@@ -48,6 +48,12 @@ export async function fetchFocusSummary() {
   return data;
 }
 
+// AI-written coaching from the user's focus history (numbers only, no video).
+export async function fetchFocusInsight() {
+  const { data } = await api.get("/focus-analytics/insight");
+  return data;
+}
+
 export async function fetchFocusForRoom(roomId) {
   const { data } = await api.get(`/focus-analytics/room/${roomId}`);
   return data;

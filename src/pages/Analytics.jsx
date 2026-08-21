@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import AppSideNav from "../components/AppSideNav";
 import MasteryPanel from "../components/MasteryPanel";
-import { fetchMyAnalytics, fetchFocusSummary } from "../services/api";
+import { fetchMyAnalytics, fetchFocusSummary, fetchFocusInsight } from "../services/api";
 import { useWindowWidth } from "../hooks/useBreakpoint";
 
 const analyticsTabs = [
@@ -210,6 +210,7 @@ export default function Analytics() {
 
                   {activeAnalyticsTab === "focus" ? (
                     <div style={{ display: "grid", gap: 18 }}>
+                      <FocusCoach hasSessions={focusData?.totalAnalyzedSessions > 0} />
                       <div style={styles.twoColGrid(isNarrow)}>
                         <FocusOverviewPanel focusData={focusData} />
                         <FocusSessionList sessions={focusData?.recentSessions || []} />
@@ -871,6 +872,72 @@ function DistractionBreakdown({ sessions }) {
             <MiniMetric label="Drowsiness" value={`${stats.avgDrowsyPct}%`} color="#f59e0b" />
           </div>
         </>
+      )}
+    </Panel>
+  );
+}
+
+function FocusCoach({ hasSessions }) {
+  const [state, setState] = useState("idle"); // idle | loading | ok | error | empty
+  const [data, setData] = useState(null);
+
+  const load = async () => {
+    setState("loading");
+    try {
+      const res = await fetchFocusInsight();
+      if (res?.empty || (!res?.headline && !(res?.insights || []).length && !res?.tip)) {
+        setState("empty");
+        return;
+      }
+      setData(res);
+      setState("ok");
+    } catch {
+      setState("error");
+    }
+  };
+
+  return (
+    <Panel>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 14 }}>
+        <div style={styles.sectionTitleWrap}>
+          <Brain size={16} />
+          <h2 style={styles.sectionTitle}>AI Focus Coach</h2>
+        </div>
+        {hasSessions && (
+          <button onClick={load} disabled={state === "loading"} style={styles.refreshButton}>
+            {state === "loading" ? "Thinking…" : state === "ok" ? "Refresh" : "Get coaching"}
+          </button>
+        )}
+      </div>
+
+      {!hasSessions ? (
+        <EmptyState text="Complete a monitored session to get personalised AI coaching." />
+      ) : state === "idle" ? (
+        <p style={styles.emptyState}>Tap “Get coaching” for AI-written tips based on your real focus sessions — what you do best, where focus dips, and one thing to try next time.</p>
+      ) : state === "loading" ? (
+        <p style={styles.emptyState}>Reading your session data…</p>
+      ) : state === "error" ? (
+        <p style={{ ...styles.emptyState, color: "#b44b3c" }}>Couldn’t generate coaching right now. Please try again.</p>
+      ) : state === "empty" ? (
+        <p style={styles.emptyState}>Not enough data yet — complete a monitored session first.</p>
+      ) : (
+        <div>
+          {data.headline ? (
+            <p style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 700, color: "var(--text-primary)" }}>{data.headline}</p>
+          ) : null}
+          {(data.insights || []).map((t, i) => (
+            <div key={i} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+              <span style={{ color: "var(--accent)", flexShrink: 0 }}>•</span>
+              <span style={{ fontSize: 13.5, color: "var(--text-secondary)", lineHeight: 1.55 }}>{t}</span>
+            </div>
+          ))}
+          {data.tip ? (
+            <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 10, background: "var(--accent-soft)", border: "1px solid rgba(124,58,237,0.15)" }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#6f3bd6" }}>Next session: </span>
+              <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{data.tip}</span>
+            </div>
+          ) : null}
+        </div>
       )}
     </Panel>
   );
