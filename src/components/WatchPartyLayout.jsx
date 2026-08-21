@@ -8,6 +8,7 @@ import ChatDrawer from "./ChatDrawer";
 import api, { fetchMyAnalytics, fetchFocusSummary, fetchVideoSummary } from "../services/api";
 
 const PREP_MS = 60_000;
+const MAX_LEAD_MS = 30 * 60_000; // never force more than a 30-min pre-start wait
 
 function formatCountdown(ms) {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -56,10 +57,14 @@ export default function WatchPartyLayout({
 
   const startTimeMs = startTime ? new Date(startTime).getTime() : null;
   const prepEndsAt = mountedAtRef.current + PREP_MS;
-  const effectiveEndsAt =
-    startTimeMs && startTimeMs > mountedAtRef.current
-      ? Math.max(startTimeMs, prepEndsAt)
-      : prepEndsAt;
+  // Only sync to a scheduled start if it's reasonably soon. Joining hours early
+  // (or a schedule that drifted forward from missed days) shouldn't force a
+  // multi-hour countdown — fall back to a short settle-in prep instead.
+  const scheduledSoon =
+    startTimeMs &&
+    startTimeMs > mountedAtRef.current &&
+    startTimeMs - mountedAtRef.current <= MAX_LEAD_MS;
+  const effectiveEndsAt = scheduledSoon ? Math.max(startTimeMs, prepEndsAt) : prepEndsAt;
   const isPreparing = now < effectiveEndsAt;
   const showWaiting = !dismissed && isPreparing;
   const [manuallyStarted, setManuallyStarted] = useState(false);
@@ -268,13 +273,14 @@ export default function WatchPartyLayout({
               </div>
             )}
 
-            <div style={styles.bottomBar}>
-              <Control icon={micEnabled ? Mic : MicOff} active={micEnabled} onClick={toggleMic} title="Toggle mic" />
-              <Control icon={camEnabled ? Video : VideoOff} active={camEnabled} onClick={toggleCamera} title="Toggle camera" />
-              <Control icon={MessageSquare} onClick={() => setTab("chat")} active={tab === "chat"} title="Chat" />
-              <Control icon={Users} onClick={() => setTab("people")} active={tab === "people"} title="People" />
-              <Control icon={LogOut} danger onClick={handleLeave} title="Leave" />
-            </div>
+          </div>
+
+          <div style={styles.bottomBar}>
+            <Control icon={micEnabled ? Mic : MicOff} active={micEnabled} onClick={toggleMic} title="Toggle mic" />
+            <Control icon={camEnabled ? Video : VideoOff} active={camEnabled} onClick={toggleCamera} title="Toggle camera" />
+            <Control icon={MessageSquare} onClick={() => setTab("chat")} active={tab === "chat"} title="Chat" />
+            <Control icon={Users} onClick={() => setTab("people")} active={tab === "people"} title="People" />
+            <Control icon={LogOut} danger onClick={handleLeave} title="Leave" />
           </div>
         </div>
 
@@ -436,7 +442,7 @@ const styles = {
     boxShadow: "0 8px 20px rgba(74,90,133,0.08)",
     display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
   },
-  roomHeaderName: { margin: 0, fontSize: 15, fontWeight: 700, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+  roomHeaderName: { margin: 0, fontSize: 15, fontWeight: 700, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
   topicPill: {
     fontSize: 11, fontWeight: 600, color: "#6f3bd6", background: "#f3e8ff",
     padding: "3px 10px", borderRadius: 999, flexShrink: 0,
@@ -470,7 +476,7 @@ const styles = {
     borderRadius: 6, background: "rgba(0,0,0,0.55)", color: "#fff", fontSize: 11,
   },
   stage: {
-    width: "100%", minHeight: 360, height: "100%", borderRadius: 24,
+    width: "100%", minHeight: 360, flex: 1, borderRadius: 24,
     border: "1px solid rgba(238,242,255,0.8)", background: "#05070b",
     overflow: "hidden", display: "flex", alignItems: "stretch", justifyContent: "stretch",
     position: "relative", boxShadow: "0 16px 32px rgba(15,23,42,0.14)",
@@ -542,10 +548,10 @@ const styles = {
   statPillValue: { margin: "0 0 2px", fontSize: 15, fontWeight: 700, color: "#e2e8f0" },
   statPillLabel: { margin: 0, fontSize: 10, color: "#94A3B8", textTransform: "uppercase", letterSpacing: 0.4 },
   bottomBar: {
-    position: "absolute", left: "50%", bottom: 14, transform: "translateX(-50%)",
-    width: "fit-content", maxWidth: "100%", display: "flex", gap: 8, flexWrap: "wrap",
-    justifyContent: "center", padding: "8px 14px", background: "var(--card-bg)",
-    borderRadius: 20, boxShadow: "0 8px 20px rgba(0,0,0,0.16)", zIndex: 30,
+    marginTop: 10, alignSelf: "center", width: "fit-content", maxWidth: "100%",
+    display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center",
+    padding: "8px 14px", background: "var(--card-bg)", borderRadius: 20,
+    boxShadow: "0 8px 20px rgba(0,0,0,0.16)", flexShrink: 0,
   },
   sidePanel: (m) => ({
     display: "flex", flexDirection: "column",
