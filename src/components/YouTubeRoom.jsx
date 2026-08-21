@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import YouTube from "react-youtube";
 import { useRoomContext, useLocalParticipant, useParticipants } from "@livekit/components-react";
-import { fetchRoomVideoState, saveRoomVideoState } from "../services/api";
+import { fetchRoomVideoState, saveRoomVideoState, markVideoWatched } from "../services/api";
 
 // ── Sync protocol ────────────────────────────────────────────────────────────
 // All events sent via LiveKit data channel (same as Pomodoro + chat).
@@ -36,6 +36,7 @@ export default function YouTubeRoom({
   const heartbeatRef = useRef(null);
   const savedStateRef = useRef(null);   // persisted playback memory for this room
   const receivedSyncRef = useRef(false); // a live participant has synced us this session
+  const watchedRef = useRef(new Set());  // videoIds this client already marked watched
 
   // Current video's title + channel, for creator attribution. Read live from
   // the player so it stays correct as the playlist advances.
@@ -115,6 +116,14 @@ export default function YouTubeRoom({
       positionSec: Math.round(player.getCurrentTime?.() || 0),
       playing: player.getPlayerState?.() === 1,
     }).catch(() => {});
+  }, [roomId]);
+
+  // Record (once) that THIS user finished a video — feeds per-member cohort
+  // progress. Server no-ops for non-cohort rooms / non-members.
+  const markWatched = useCallback((vid) => {
+    if (!roomId || !vid || watchedRef.current.has(vid)) return;
+    watchedRef.current.add(vid);
+    markVideoWatched(roomId, vid).catch(() => {});
   }, [roomId]);
 
   // ── Apply incoming sync (with drift correction) ───────────────────────────
@@ -255,9 +264,13 @@ export default function YouTubeRoom({
       const state = player.getPlayerState?.();
       if (state === 1) broadcastState("PLAY"); // only host-style broadcast when playing
       if (isHost()) persistState(); // one writer keeps the room's memory fresh
+      // Count a video as watched for THIS user once ~90% is seen.
+      const dur = player.getDuration?.() || 0;
+      const cur = player.getCurrentTime?.() || 0;
+      if (dur > 0 && cur / dur >= 0.9) markWatched(player.getVideoData?.()?.video_id);
     }, HEARTBEAT_MS);
     return () => clearInterval(heartbeatRef.current);
-  }, [broadcastState, isHost, persistState]);
+  }, [broadcastState, isHost, persistState, markWatched]);
 
   // ── YouTube player event handlers ─────────────────────────────────────────
 
@@ -312,8 +325,9 @@ export default function YouTubeRoom({
     if (e.data === YT_ENDED) {
       broadcastState("PAUSE");
       persistState();
+      markWatched(e.target.getVideoData?.()?.video_id);
     }
-  }, [broadcastState, captureVideoMeta, isHost, persistState]);
+  }, [broadcastState, captureVideoMeta, isHost, persistState, markWatched]);
 
   // Manual seek detection — YouTube API doesn't fire a "seeked" event,
   // but PAUSE immediately followed by PLAY with a time jump signals a seek.

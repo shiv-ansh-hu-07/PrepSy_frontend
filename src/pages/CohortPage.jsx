@@ -899,6 +899,9 @@ export default function CohortPage() {
                         {progress.me.avgCheckpointScore != null && (
                           <span style={pill("var(--accent)")}>🎯 {progress.me.avgCheckpointScore}% avg checkpoint</span>
                         )}
+                        {progress.totalVideos > 0 && (
+                          <span style={pill("#6f3bd6")}>▶ {progress.me.videosWatched}/{progress.totalVideos} videos watched</span>
+                        )}
                       </div>
                     </div>
                   )}

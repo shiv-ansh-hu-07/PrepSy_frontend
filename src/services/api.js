@@ -98,4 +98,11 @@ export async function saveRoomVideoState(roomId, state) {
   return data;
 }
 
+// Record that the caller finished a video (per-member cohort progress).
+// No-ops server-side for non-cohort rooms / non-members.
+export async function markVideoWatched(roomId, videoId) {
+  const { data } = await api.post(`/cohorts/by-room/${roomId}/video-complete`, { videoId });
+  return data;
+}
+
 export default api;
