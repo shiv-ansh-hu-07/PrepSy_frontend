@@ -90,10 +90,13 @@ export default function YouTubeRoom({
   const broadcastState = useCallback((action, extra = {}) => {
     const player = playerRef.current;
     if (!player) return;
+    // Report the video actually playing now (the playlist may have advanced),
+    // not the static `videoId` prop — which is null in cohort/playlist mode.
+    const nowPlaying = player.getVideoData?.()?.video_id;
     broadcast({
       type: SYNC_TYPE,
       action,
-      videoId,
+      videoId: nowPlaying || videoId || null,
       currentTime: player.getCurrentTime?.() ?? 0,
       ts: Date.now(),
       ...extra,
@@ -138,6 +141,33 @@ export default function YouTubeRoom({
 
     isSyncingRef.current = true;
 
+    // If the host is on a DIFFERENT video than us (the classic "I joined and it
+    // started from video 1 while everyone's on video 2" case), switch to the
+    // host's video first — otherwise we'd only seek within the wrong video.
+    const localVideoId = player.getVideoData?.()?.video_id;
+    if (msg.videoId && msg.videoId !== localVideoId) {
+      const list =
+        player.getPlaylist?.() || restrictRef.current?.restrictVideoIds || null;
+      const idx = Array.isArray(list) ? list.indexOf(msg.videoId) : -1;
+      if (idx >= 0) {
+        // Keep the day's playlist intact so later videos still queue up.
+        player.loadPlaylist?.({ playlist: list, index: idx, startSeconds: targetTime });
+      } else {
+        player.loadVideoById?.({ videoId: msg.videoId, startSeconds: targetTime });
+      }
+      // load*() auto-plays; enforce the host's play/pause state (and the lock).
+      if (lockedRef.current || msg.action === "PAUSE") {
+        player.pauseVideo?.();
+      } else {
+        player.playVideo?.();
+      }
+      captureVideoMeta(player);
+      // A video load takes longer to settle than a seek — hold the lock a bit
+      // longer so the resulting state changes don't echo back as new commands.
+      setTimeout(() => { isSyncingRef.current = false; }, 1000);
+      return;
+    }
+
     if (msg.action === "PAUSE") {
       player.seekTo(msg.currentTime, true);
       player.pauseVideo();
@@ -160,16 +190,21 @@ export default function YouTubeRoom({
 
     // Release sync lock after player has processed the command
     setTimeout(() => { isSyncingRef.current = false; }, 300);
-  }, []);
+  }, [captureVideoMeta]);
 
   // ── Respond to new-joiner sync request ────────────────────────────────────
 
-  const handleSyncRequest = useCallback(() => {
+  const handleSyncRequest = useCallback((requesterIdentity) => {
     const player = playerRef.current;
     if (!player) return;
-    // Only the participant with the lexicographically first identity responds
-    // to avoid everyone replying at once
-    const sorted = [...participants].sort((a, b) =>
+    // Elect a single responder to avoid everyone replying at once: the
+    // lexicographically-first identity *excluding the requester*. Excluding the
+    // requester matters — otherwise a new joiner whose identity sorts first
+    // would be "elected" and nobody already in the room would answer it.
+    const responders = participants.filter(
+      (p) => p.identity !== requesterIdentity
+    );
+    const sorted = responders.sort((a, b) =>
       a.identity.localeCompare(b.identity)
     );
     if (sorted[0]?.identity !== localParticipant?.identity) return;
@@ -190,7 +225,7 @@ export default function YouTubeRoom({
       try { msg = JSON.parse(new TextDecoder().decode(payload)); } catch { return; }
 
       if (msg.type === SYNC_TYPE) applySync(msg);
-      if (msg.type === REQUEST_TYPE) handleSyncRequest();
+      if (msg.type === REQUEST_TYPE) handleSyncRequest(participant?.identity);
     };
 
     room.on("dataReceived", handler);
