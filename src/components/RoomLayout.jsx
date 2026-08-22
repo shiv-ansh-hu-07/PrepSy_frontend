@@ -7,10 +7,16 @@ import {
   MessageSquare,
   LogOut,
   Copy,
+  CloudRain,
+  Sparkles,
+  Sunset,
+  ChevronDown,
 } from "lucide-react";
 import useMediaControls from "../hooks/useMediaControl";
 import useFocusMonitor from "../hooks/useFocusMonitor";
 import { useNavigate } from "react-router-dom";
+import AmbientBackground from "./AmbientBackground";
+import { SCENE_LIST } from "./ambientScenes";
 import PomodoroTimer from "./PomodoroTimer";
 import { useParticipants } from "@livekit/components-react";
 import { useEffect, useState } from "react";
@@ -64,6 +70,19 @@ export default function RoomLayout({
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth < 980 : false
   );
+
+  // Ambient stage wallpaper — remembered across sessions.
+  const [scene, setScene] = useState(() => {
+    if (typeof window === "undefined") return "rainy-night";
+    return localStorage.getItem("roomScene") || "rainy-night";
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("roomScene", scene);
+    } catch {
+      /* ignore storage errors */
+    }
+  }, [scene]);
 
   useEffect(() => {
     if (!shareStatus) return undefined;
@@ -146,23 +165,26 @@ export default function RoomLayout({
     }
   };
 
-  const controls = (
+  const buildControls = (onDark) => (
     <>
-      <Control icon={micEnabled ? Mic : MicOff} active={micEnabled} onClick={toggleMic} />
-      <Control icon={camEnabled ? Video : VideoOff} active={camEnabled} onClick={toggleCamera} />
+      <Control icon={micEnabled ? Mic : MicOff} active={micEnabled} onClick={toggleMic} onDark={onDark} />
+      <Control icon={camEnabled ? Video : VideoOff} active={camEnabled} onClick={toggleCamera} onDark={onDark} />
       <Control
         icon={ScreenShare}
         active={screenEnabled}
         title="Share screen"
         onClick={handleScreenShare}
+        onDark={onDark}
       />
       <Control
         icon={MessageSquare}
         onClick={onToggleChat}
         alert={hasUnreadMessages}
         title={hasUnreadMessages ? "New messages" : "Open chat"}
+        onDark={onDark}
       />
-      <Control icon={LogOut} danger onClick={handleLeave} />
+      <span style={onDark ? styles.dockDivider : styles.barDivider} />
+      <Control icon={LogOut} danger onClick={handleLeave} onDark={onDark} />
     </>
   );
 
@@ -201,6 +223,7 @@ export default function RoomLayout({
           )}
 
           <div style={styles.stage} data-room-stage>
+            <AmbientBackground scene={scene} />
             {!isMobile && (
               <div style={styles.sessionBadgeDesktop}>
                 <span style={styles.liveDot} />
@@ -209,11 +232,12 @@ export default function RoomLayout({
                 Focus session
               </div>
             )}
-            {children}
+            <SceneChip scene={scene} onChange={setScene} />
+            <div style={styles.stageContent}>{children}</div>
+            {!isMobile && <div style={styles.stageDock}>{buildControls(true)}</div>}
           </div>
 
-          {!isMobile && <div style={styles.bottomBarDesktop}>{controls}</div>}
-          {isMobile && <div style={styles.mobileControls}>{controls}</div>}
+          {isMobile && <div style={styles.mobileControls}>{buildControls(false)}</div>}
         </div>
 
         <div style={styles.sidePanel(isMobile)}>
@@ -499,8 +523,49 @@ function StatBox({ label, value }) {
 
 // ── Control button ───────────────────────────────────────────────────────────
 
-function Control({ icon, danger, active, onClick, disabled, title, alert }) {
+function Control({ icon, danger, active, onClick, disabled, title, alert, onDark }) {
   const IconComponent = icon;
+
+  // `onDark` = the floating glass dock over the ambient stage; otherwise the
+  // light bar (used on mobile / non-ambient surfaces).
+  const background = onDark
+    ? disabled
+      ? "rgba(255,255,255,0.04)"
+      : danger
+        ? "#F87171"
+        : active
+          ? "linear-gradient(135deg,#7c3aed,#8a9bd6)"
+          : "rgba(255,255,255,0.06)"
+    : disabled
+      ? "var(--card-bg)"
+      : danger
+        ? "#F87171"
+        : active
+          ? "var(--accent)"
+          : "var(--card-bg)";
+
+  const boxShadow = onDark
+    ? active
+      ? "0 6px 16px rgba(124,58,237,0.45)"
+      : danger
+        ? "0 6px 16px rgba(248,113,113,0.4)"
+        : "none"
+    : active
+      ? "0 6px 18px rgba(138,155,214,0.45)"
+      : "0 4px 12px rgba(0,0,0,0.08)";
+
+  const iconColor = onDark
+    ? disabled
+      ? "#64748B"
+      : danger || active
+        ? "#FFFFFF"
+        : "#E2E8F0"
+    : disabled
+      ? "#94A3B8"
+      : danger
+        ? "#FFFFFF"
+        : "var(--text-secondary)";
+
   return (
     <button
       onClick={onClick}
@@ -510,22 +575,73 @@ function Control({ icon, danger, active, onClick, disabled, title, alert }) {
         width: 48,
         height: 48,
         borderRadius: 14,
-        border: "1px solid var(--card-border)",
-        background: disabled ? "var(--card-bg)" : danger ? "#F87171" : active ? "var(--accent)" : "var(--card-bg)",
+        border: onDark ? "1px solid rgba(255,255,255,0.10)" : "1px solid var(--card-border)",
+        background,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         cursor: disabled ? "not-allowed" : "pointer",
-        boxShadow: active ? "0 6px 18px rgba(138,155,214,0.45)" : "0 4px 12px rgba(0,0,0,0.08)",
+        boxShadow,
         transform: active ? "translateY(-1px)" : "none",
         transition: "all 0.2s ease",
         opacity: disabled ? 0.6 : 1,
         position: "relative",
       }}
     >
-      <IconComponent size={20} color={disabled ? "#94A3B8" : danger ? "#FFFFFF" : "var(--text-secondary)"} />
+      <IconComponent size={20} color={iconColor} />
       {alert && !disabled && <span style={styles.alertDot} />}
     </button>
+  );
+}
+
+// ── Scene picker (ambient wallpaper) ─────────────────────────────────────────
+
+const SCENE_ICONS = { rain: CloudRain, stars: Sparkles, dusk: Sunset };
+
+function SceneChip({ scene, onChange }) {
+  const [open, setOpen] = useState(false);
+  const current = SCENE_LIST.find((s) => s.id === scene) || SCENE_LIST[0];
+  const CurrentIcon = SCENE_ICONS[current.icon] || CloudRain;
+
+  return (
+    <div style={styles.sceneWrap}>
+      <button
+        type="button"
+        style={styles.sceneChip}
+        onClick={() => setOpen((v) => !v)}
+        title="Change room scene"
+      >
+        <CurrentIcon size={15} color="#a5b4fc" />
+        <span>{current.label}</span>
+        <ChevronDown
+          size={13}
+          color="#94a3b8"
+          style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}
+        />
+      </button>
+      {open && (
+        <div style={styles.sceneMenu}>
+          {SCENE_LIST.map((s) => {
+            const Icon = SCENE_ICONS[s.icon] || CloudRain;
+            const isActive = s.id === scene;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                style={{ ...styles.sceneItem, ...(isActive ? styles.sceneItemActive : null) }}
+                onClick={() => {
+                  onChange(s.id);
+                  setOpen(false);
+                }}
+              >
+                <Icon size={15} color={isActive ? "#c4b5fd" : "#94a3b8"} />
+                <span>{s.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -652,6 +768,12 @@ const styles = {
     overflow: "hidden", display: "flex", alignItems: "stretch", justifyContent: "stretch",
     position: "relative", boxShadow: "0 16px 32px rgba(15,23,42,0.14)",
   },
+  // Sits above <AmbientBackground /> (zIndex 0) so the participant / screen
+  // content renders over the wallpaper, not behind it.
+  stageContent: {
+    position: "relative", zIndex: 1, flex: 1, minWidth: 0,
+    display: "flex", alignItems: "stretch", justifyContent: "stretch",
+  },
   bottomBarDesktop: {
     marginTop: 10, alignSelf: "center", width: "fit-content", maxWidth: "100%",
     display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center",
@@ -663,6 +785,35 @@ const styles = {
     padding: "8px 12px", background: "var(--card-bg)", borderRadius: 16,
     boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
   },
+  // Floating glass control dock overlaid on the stage (desktop).
+  stageDock: {
+    position: "absolute", bottom: 18, left: "50%", transform: "translateX(-50%)", zIndex: 30,
+    display: "flex", alignItems: "center", gap: 9, padding: "9px 13px", borderRadius: 20,
+    background: "rgba(12,16,28,0.68)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+    border: "1px solid rgba(255,255,255,0.10)", boxShadow: "0 12px 34px rgba(0,0,0,0.5)",
+    maxWidth: "calc(100% - 32px)", flexWrap: "wrap", justifyContent: "center",
+  },
+  dockDivider: { width: 1, height: 28, background: "rgba(255,255,255,0.12)", margin: "0 2px" },
+  barDivider: { width: 1, height: 28, background: "rgba(0,0,0,0.10)", margin: "0 2px" },
+  sceneWrap: { position: "absolute", top: 14, right: 14, zIndex: 30 },
+  sceneChip: {
+    display: "inline-flex", alignItems: "center", gap: 8, padding: "7px 12px", borderRadius: 999,
+    background: "rgba(10,14,26,0.55)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
+    border: "1px solid rgba(255,255,255,0.10)", color: "#cbd5e1", fontSize: 12, fontWeight: 500,
+    cursor: "pointer",
+  },
+  sceneMenu: {
+    position: "absolute", top: "calc(100% + 8px)", right: 0, display: "flex", flexDirection: "column",
+    gap: 2, padding: 6, minWidth: 168, borderRadius: 14, background: "rgba(12,16,28,0.92)",
+    backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
+    border: "1px solid rgba(255,255,255,0.10)", boxShadow: "0 16px 40px rgba(0,0,0,0.5)",
+  },
+  sceneItem: {
+    display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 10px",
+    borderRadius: 10, background: "transparent", color: "#cbd5e1", fontSize: 13, fontWeight: 500,
+    cursor: "pointer", textAlign: "left",
+  },
+  sceneItemActive: { background: "rgba(124,58,237,0.18)", color: "#e9ddff" },
   sidePanel: (m) => ({
     display: "flex", flexDirection: "column", gap: 14,
     maxWidth: m ? "100%" : 380, width: "100%", justifySelf: "end",

@@ -1,7 +1,17 @@
 import { VideoTrack } from "@livekit/components-react";
+import { MicOff } from "lucide-react";
 import AvatarTile from "./AvatarTile";
 import { useParticipants } from "@livekit/components-react";
 import { useEffect, useState } from "react";
+
+function getInitials(name) {
+  const words = (name || "Guest").trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "G";
+  return words
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() || "")
+    .join("");
+}
 
 export default function StageManager({ tracks = [] }) {
   const participants = useParticipants();
@@ -31,9 +41,6 @@ export default function StageManager({ tracks = [] }) {
   );
   const cameraTracks = tracks.filter((track) => track.source === "camera");
   const count = participants.length;
-
-  const columns =
-    count <= 1 ? 1 : count === 2 ? 2 : count <= 4 ? 2 : 3;
 
   const toggleFullscreen = async (event) => {
     const stage = event.currentTarget.closest("[data-room-stage]");
@@ -149,11 +156,21 @@ export default function StageManager({ tracks = [] }) {
     );
   }
 
+  // Multiple participants: small round "presence" avatars floating over the
+  // ambient wallpaper — camera-on shows a round-cropped video, camera-off shows
+  // initials. Sizes and gaps scale with the viewport (clamp + vmin) so it holds
+  // from phones to large monitors; a very full room wraps and scrolls rather
+  // than shrinking the avatars away. The Pomodoro / AI / Notes rail is a
+  // separate column in RoomLayout, so it stays visible no matter the count.
+  const maxAvatar = count <= 4 ? 92 : count <= 9 ? 76 : count <= 16 ? 62 : 50;
+  const sizeCss = `clamp(44px, 9vmin, ${maxAvatar}px)`;
+  const manyPeople = count > 12;
+
   return (
     <div
       style={{
-        ...styles.grid,
-        gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+        ...styles.presenceWrap,
+        alignContent: manyPeople ? "flex-start" : "center",
       }}
     >
       {participants.map((participant) => {
@@ -162,20 +179,46 @@ export default function StageManager({ tracks = [] }) {
         );
         const hasCamera = hasEnabledTrack(cam, participant.isCameraEnabled);
 
-        return hasCamera ? (
-          <div key={participant.identity} style={styles.gridItem}>
-            <VideoTrack trackRef={cam} style={styles.gridVideo} />
-            <NameTag name={participant.name} />
-          </div>
-        ) : (
-          <div key={participant.identity} style={styles.gridItem}>
-            <AvatarTile
-              name={participant.name || "Guest"}
-              micMuted={!participant.isMicrophoneEnabled}
-            />
-          </div>
+        return (
+          <PresenceAvatar
+            key={participant.identity}
+            participant={participant}
+            cam={cam}
+            hasCamera={hasCamera}
+            sizeCss={sizeCss}
+          />
         );
       })}
+    </div>
+  );
+}
+
+function PresenceAvatar({ participant, cam, hasCamera, sizeCss }) {
+  const name = participant.name || "Guest";
+  const micMuted = !participant.isMicrophoneEnabled;
+
+  return (
+    <div style={styles.presenceItem}>
+      <div style={{ position: "relative", width: sizeCss, height: sizeCss, flexShrink: 0 }}>
+        <div
+          style={{
+            ...styles.presenceCircle,
+            ...(hasCamera ? styles.presenceCircleOn : styles.presenceCircleOff),
+          }}
+        >
+          {hasCamera ? (
+            <VideoTrack trackRef={cam} style={styles.presenceVideo} />
+          ) : (
+            <span style={styles.presenceInitials}>{getInitials(name)}</span>
+          )}
+        </div>
+        {micMuted && (
+          <div style={styles.presenceMic}>
+            <MicOff size={13} color="#fff" />
+          </div>
+        )}
+      </div>
+      <div style={styles.presenceName}>{name}</div>
     </div>
   );
 }
@@ -223,19 +266,28 @@ const styles = {
     width: "100%",
     height: "100%",
     position: "relative",
-    background: "#05070b",
+    // Transparent so the room's <AmbientBackground /> wallpaper shows through.
+    background: "transparent",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
   },
 
+  // A glassy tile that floats over the ambient wallpaper instead of a bare
+  // block on black, so an empty room still feels like a place.
   cameraOffPlaceholder: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     gap: 12,
-    padding: "40px 24px",
+    padding: "32px 30px",
     textAlign: "center",
+    background: "rgba(10,14,26,0.5)",
+    backdropFilter: "blur(14px)",
+    WebkitBackdropFilter: "blur(14px)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    borderRadius: 24,
+    boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
   },
 
   cameraOffRing: {
@@ -304,34 +356,90 @@ const styles = {
     objectFit: "cover",
   },
 
-  grid: {
+  // ── Presence avatars (multi-participant) ──────────────────────────────────
+  presenceWrap: {
     width: "100%",
     height: "100%",
-    display: "grid",
-    gap: 16,
-    alignItems: "stretch",
-    justifyItems: "stretch",
-    padding: 12,
+    display: "flex",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "clamp(12px, 2.2vmin, 30px)",
+    padding: "clamp(52px, 9vmin, 66px) 16px clamp(78px, 12vmin, 98px)",
+    overflowY: "auto",
     boxSizing: "border-box",
   },
 
-  gridItem: {
+  presenceItem: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 9,
+    minWidth: 0,
+  },
+
+  presenceCircle: {
     width: "100%",
     height: "100%",
-    minHeight: 220,
+    borderRadius: "50%",
     position: "relative",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 18,
     overflow: "hidden",
-    background: "#0f172a",
   },
 
-  gridVideo: {
+  presenceCircleOff: {
+    background: "rgba(10,14,26,0.5)",
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)",
+    border: "1px solid rgba(255,255,255,0.14)",
+    boxShadow: "0 16px 36px rgba(0,0,0,0.45)",
+  },
+
+  presenceCircleOn: {
+    background: "#0f172a",
+    border: "2px solid #34d399",
+    boxShadow: "0 0 0 4px rgba(52,211,153,0.14), 0 16px 36px rgba(0,0,0,0.45)",
+  },
+
+  presenceVideo: {
     width: "100%",
     height: "100%",
     objectFit: "cover",
+  },
+
+  presenceInitials: {
+    color: "#e2e8f0",
+    fontWeight: 700,
+    letterSpacing: "0.06em",
+    fontSize: "clamp(18px, 4vmin, 28px)",
+    userSelect: "none",
+  },
+
+  presenceMic: {
+    position: "absolute",
+    bottom: -2,
+    right: -2,
+    width: 24,
+    height: 24,
+    borderRadius: "50%",
+    background: "#dc2626",
+    border: "2px solid #0a0f1c",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  presenceName: {
+    fontSize: "clamp(11px, 2.4vmin, 13px)",
+    fontWeight: 500,
+    color: "#cbd5e1",
+    maxWidth: 108,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    textAlign: "center",
   },
 
   nameTag: {
