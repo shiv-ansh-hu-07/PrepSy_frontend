@@ -14,7 +14,7 @@ export default function RoomsTabs({ maxWidth = 1100 }) {
   const navigate = useNavigate();
   return (
     <div style={{ maxWidth, margin: "0 auto 22px", width: "100%" }}>
-      <div style={{ display: "flex", gap: 6, borderBottom: "1px solid var(--card-border)", overflowX: "auto" }}>
+      <div style={{ display: "flex", gap: 6, borderBottom: "1px solid var(--card-border)", overflowX: "auto", overflowY: "hidden", scrollbarWidth: "none", msOverflowStyle: "none" }}>
         {TABS.map((t) => {
           const active = location.pathname === t.path;
           const Icon = t.icon;

@@ -116,6 +116,26 @@ export default function JoinRoom() {
     return rooms.filter((r) => !getRoomStatus(r, now).ended);
   }, [searchResults, allRooms, now]);
 
+  // The "Recommended for you" section only renders in the default (non-search)
+  // view. When it does, keep those rooms OUT of the main grid so no room is
+  // shown — or counted — twice.
+  const recommendedShown = searchResults === null && recommended.length > 0;
+  const recommendedIds = useMemo(
+    () => new Set(recommended.map((r) => r.roomId)),
+    [recommended]
+  );
+  const gridRooms = useMemo(
+    () =>
+      recommendedShown
+        ? displayRooms.filter((r) => !recommendedIds.has(r.roomId))
+        : displayRooms,
+    [recommendedShown, displayRooms, recommendedIds]
+  );
+
+  // Count the distinct rooms actually on screen: recommended cards (when shown)
+  // plus the de-duplicated grid.
+  const availableCount = (recommendedShown ? recommended.length : 0) + gridRooms.length;
+
   return (
     <div style={{ minHeight: "100vh", background: BG, padding: isMobile ? "24px 16px 48px" : "40px 24px 64px", fontFamily: "'Inter', system-ui, sans-serif" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
@@ -232,7 +252,7 @@ export default function JoinRoom() {
         {/* Results header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <p style={{ margin: 0, fontSize: 13, color: "#7b88b8" }}>
-            {loading || searching ? "Loading rooms..." : `${displayRooms.length} room${displayRooms.length !== 1 ? "s" : ""} available`}
+            {loading || searching ? "Loading rooms..." : `${availableCount} room${availableCount !== 1 ? "s" : ""} available`}
           </p>
         </div>
 
@@ -255,11 +275,15 @@ export default function JoinRoom() {
               <div key={i} style={{ background: "var(--card-bg)", borderRadius: 18, border: "1px solid var(--card-border)", height: 150, opacity: 0.5 }} />
             ))}
           </div>
-        ) : displayRooms.length === 0 ? (
-          <EmptyRoomsState onClear={() => { setSearchResults(null); setActiveTab(""); setTagQuery(""); }} />
+        ) : gridRooms.length === 0 ? (
+          // Don't show the big "no rooms" state when recommended cards are
+          // already filling the page.
+          recommendedShown ? null : (
+            <EmptyRoomsState onClear={() => { setSearchResults(null); setActiveTab(""); setTagQuery(""); }} />
+          )
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: isMobile ? 12 : 16 }}>
-            {displayRooms.map((room) => (
+            {gridRooms.map((room) => (
               <RoomCard key={room.roomId} room={room} now={now} isMobile={isMobile} onJoin={() => navigate(`/room/${room.roomId}`)} />
             ))}
           </div>
