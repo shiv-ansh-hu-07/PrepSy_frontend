@@ -98,6 +98,71 @@ function Mist({ tint, bottom = "24%" }) {
   );
 }
 
+// Falling rain as many individual droplet streaks (bright at the head) that
+// fall and repeat, plus splash ripples where they land — reads like real rain
+// rather than a sliding gradient. Positions/timings randomised once at load.
+const RAIN_DROPS = Array.from({ length: 80 }, () => {
+  const dur = 0.7 + Math.random() * 0.6;
+  return {
+    left: Math.random() * 100,
+    h: 12 + Math.random() * 18,
+    dur,
+    delay: -(Math.random() * dur),
+    op: 0.28 + Math.random() * 0.42,
+  };
+});
+
+const RAIN_SPLASHES = Array.from({ length: 12 }, () => {
+  const dur = 0.9 + Math.random() * 0.7;
+  return {
+    left: Math.random() * 100,
+    top: 80 + Math.random() * 16,
+    dur,
+    delay: -(Math.random() * dur),
+  };
+});
+
+function RainDrops() {
+  return (
+    <div style={styles.rainField}>
+      {RAIN_DROPS.map((d, i) => (
+        <div
+          key={i}
+          className="ambient-drop"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: `${d.left}%`,
+            width: 1.6,
+            height: d.h,
+            borderRadius: 2,
+            background: "linear-gradient(to bottom, rgba(200,218,255,0), rgba(205,222,255,0.85))",
+            opacity: d.op,
+            animation: `rainDrop ${d.dur}s linear ${d.delay}s infinite`,
+          }}
+        />
+      ))}
+      {RAIN_SPLASHES.map((s, i) => (
+        <div
+          key={`s${i}`}
+          className="ambient-splash"
+          style={{
+            position: "absolute",
+            left: `${s.left}%`,
+            top: `${s.top}%`,
+            width: 4,
+            height: 4,
+            borderRadius: "50%",
+            border: "1px solid rgba(200,218,255,0.45)",
+            opacity: 0,
+            animation: `rainSplash ${s.dur}s ease-out ${s.delay}s infinite`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 // ── Scenes ───────────────────────────────────────────────────────────────────
 
 function RainyNight() {
@@ -109,9 +174,7 @@ function RainyNight() {
       <Cloud className="ambient-cloud-2" top="26%" left="52%" w={340} h={100} tint="rgba(170,180,215,0.08)" />
       <Mist tint="rgba(150,170,220,0.12)" bottom="30%" />
       <Skyline />
-      <div className="ambient-rain ambient-rain-2" style={styles.rain} />
-      <div className="ambient-rain ambient-rain-1" style={styles.rain} />
-      <div className="ambient-rain ambient-rain-3" style={styles.rain} />
+      <RainDrops />
       <div style={styles.vignette} />
     </>
   );
@@ -212,8 +275,8 @@ const FIREFLIES = [
 ];
 
 const keyframes = `
-@keyframes ambientRainFall { to { transform: translateY(42px); } }
-@keyframes ambientRainFallFast { to { transform: translateY(64px); } }
+@keyframes rainDrop { 0% { transform: translateY(-140px); } 100% { transform: translateY(1200px); } }
+@keyframes rainSplash { 0% { transform: scale(0.2); opacity: 0; } 18% { opacity: 0.6; } 100% { transform: scale(3.6); opacity: 0; } }
 @keyframes ambientMist { 0% { transform: translateX(-12%); } 100% { transform: translateX(12%); } }
 @keyframes ambientTwinkle { 0%,100% { opacity: 0.9; } 50% { opacity: 0.25; } }
 @keyframes ambientMoon { 0%,100% { opacity: 0.82; } 50% { opacity: 1; } }
@@ -223,18 +286,6 @@ const keyframes = `
 @keyframes ambientShoot { 0% { opacity: 0; transform: translate(0,0) rotate(18deg); } 3% { opacity: 0.9; } 9% { opacity: 0; transform: translate(260px,110px) rotate(18deg); } 100% { opacity: 0; } }
 @keyframes ambientFly { 0% { opacity: 0; transform: translate(0,0); } 20% { opacity: 1; } 70% { opacity: 0.85; } 100% { opacity: 0; transform: translate(22px,-95px); } }
 @keyframes ambientFlyStatic { 0%,100% { opacity: 0; } 50% { opacity: 0.9; } }
-.ambient-rain-1 {
-  background-image: repeating-linear-gradient(101deg, rgba(255,255,255,0) 0 6px, rgba(200,215,255,0.10) 6px 7px);
-  animation: ambientRainFall 0.6s linear infinite;
-}
-.ambient-rain-2 {
-  background-image: repeating-linear-gradient(99deg, rgba(255,255,255,0) 0 10px, rgba(190,205,255,0.06) 10px 11px);
-  animation: ambientRainFall 0.9s linear infinite;
-}
-.ambient-rain-3 {
-  background-image: repeating-linear-gradient(103deg, rgba(255,255,255,0) 0 5px, rgba(215,225,255,0.11) 5px 7px);
-  animation: ambientRainFallFast 0.5s linear infinite;
-}
 .ambient-mist { animation: ambientMist 34s ease-in-out infinite alternate; }
 .ambient-star { animation: ambientTwinkle 3.2s ease-in-out infinite; }
 .ambient-moon { animation: ambientMoon 7s ease-in-out infinite; }
@@ -247,9 +298,10 @@ const keyframes = `
 /* Reduce motion: drop travelling/repetitive motion, but keep gentle opacity
    life so the scene never goes fully static. */
 @media (prefers-reduced-motion: reduce) {
-  .ambient-rain-1, .ambient-rain-2, .ambient-rain-3, .ambient-mist,
+  .ambient-drop, .ambient-splash, .ambient-mist,
   .ambient-cloud-1, .ambient-cloud-2 { animation: none; }
-  .ambient-shoot-1, .ambient-shoot-2 { animation: none; opacity: 0; }
+  .ambient-drop, .ambient-splash, .ambient-shoot-1, .ambient-shoot-2 { opacity: 0; }
+  .ambient-shoot-1, .ambient-shoot-2 { animation: none; }
   .ambient-sun { animation: ambientMoon 7s ease-in-out infinite; }
   .ambient-fly { animation: ambientFlyStatic 4.5s ease-in-out infinite; }
 }
@@ -317,7 +369,7 @@ const styles = {
     height: "34%",
     minHeight: 160,
   },
-  rain: { position: "absolute", inset: "-30%", pointerEvents: "none" },
+  rainField: { position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" },
   mist: {
     position: "absolute",
     left: "-20%",
