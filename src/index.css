@@ -30,6 +30,9 @@ body,
   --accent-soft: rgba(138, 155, 214, 0.14);
   /* Consistent primary-button fill: purple -> lavender (uses --accent per theme). */
   --accent-gradient: linear-gradient(135deg, #7c3aed 0%, var(--accent) 100%);
+  /* Brand violet used for label/accent TEXT — lightens in dark for contrast. */
+  --violet-text: #6f3bd6;
+  --violet-soft-text: #9b77e0;
 }
 
 :root[data-theme="dark"] {
@@ -46,6 +49,8 @@ body,
   --input-bg: rgba(30, 35, 55, 0.9);
   --input-border: rgba(120, 135, 200, 0.35);
   --accent-soft: rgba(157, 171, 228, 0.16);
+  --violet-text: #c4b5fd;
+  --violet-soft-text: #b3a1ef;
 }
 
 /* -----------------------------
