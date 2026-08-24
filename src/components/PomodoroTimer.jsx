@@ -6,9 +6,9 @@ import {
 
 const BREAK_DURATION = 5 * 60;
 const SETTLE_DURATION = 60;
-const RADIUS = 70;
-const STROKE = 10;
-const ARC_LENGTH = Math.PI * RADIUS;
+const RING_R = 88;
+const RING_STROKE = 12;
+const RING_C = 2 * Math.PI * RING_R;
 
 function calcPomodoro(roomDurationMinutes) {
   const D = Math.max(15, roomDurationMinutes || 90);
@@ -52,6 +52,7 @@ export default function PomodoroTimer({ onLeaveRoom, roomDurationMinutes = 90 })
 
   useEffect(() => {
     if (!isRunning && !phaseStartedAt && !showBreakPrompt && !showNextSessionPrompt) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTotalSessions(autoSessions);
     }
   }, [autoSessions]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -263,30 +264,33 @@ export default function PomodoroTimer({ onLeaveRoom, roomDurationMinutes = 90 })
 
   return (
     <div style={styles.wrapper}>
-      <p style={styles.title}>Pomodoro Timer</p>
-
-      <div style={{ width: 180, margin: "0 auto" }}>
-        <svg width="180" height="90" viewBox="0 0 180 90">
-          <path
-            d="M 20 90 A 70 70 0 0 1 160 90"
+      <div style={{ position: "relative", width: 208, height: 208, margin: "0 auto" }}>
+        <svg width="208" height="208" viewBox="0 0 208 208">
+          <circle
+            cx="104"
+            cy="104"
+            r={RING_R}
             fill="none"
             stroke="var(--card-border)"
-            strokeWidth={STROKE}
+            strokeWidth={RING_STROKE}
           />
-          <path
-            d="M 20 90 A 70 70 0 0 1 160 90"
+          <circle
+            cx="104"
+            cy="104"
+            r={RING_R}
             fill="none"
             stroke={isUrgent ? "#fb7185" : "var(--accent)"}
-            strokeWidth={STROKE}
-            strokeDasharray={ARC_LENGTH}
-            strokeDashoffset={
-              ARC_LENGTH -
-              ((SESSION_DURATION - timeLeft) / SESSION_DURATION) * ARC_LENGTH
-            }
+            strokeWidth={RING_STROKE}
+            strokeLinecap="round"
+            strokeDasharray={RING_C}
+            strokeDashoffset={RING_C * (1 - (SESSION_DURATION - timeLeft) / SESSION_DURATION)}
+            transform="rotate(-90 104 104)"
           />
         </svg>
-
-        <div style={styles.time}>{formatTime(timeLeft)}</div>
+        <div style={styles.ringCenter}>
+          <div style={styles.time}>{formatTime(timeLeft)}</div>
+          <div style={styles.ringSub}>{isRunning ? "focus time" : "ready"}</div>
+        </div>
       </div>
 
       {statusMessage ? <div style={styles.status}>{statusMessage}</div> : null}
@@ -376,23 +380,31 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "flex-start",
-    gap: 8,
+    justifyContent: "center",
+    gap: 16,
     fontFamily: "Inter, system-ui",
     color: "var(--text-secondary)",
     position: "relative",
   },
-  title: {
-    textAlign: "center",
-    fontSize: 16,
-    fontWeight: 600,
-    margin: 0,
+  ringCenter: {
+    position: "absolute",
+    inset: 0,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
   },
   time: {
     textAlign: "center",
-    marginTop: -6,
-    fontSize: 22,
-    fontWeight: 600,
+    fontSize: 44,
+    fontWeight: 800,
+    letterSpacing: 1,
+    color: "var(--text-primary)",
+  },
+  ringSub: {
+    fontSize: 12,
+    color: "var(--text-muted)",
   },
   status: {
     textAlign: "center",
@@ -427,8 +439,8 @@ const styles = {
     color: "var(--text-secondary)",
   },
   runningButton: {
-    background: "#E5EAFB",
-    color: "var(--text-secondary)",
+    background: "var(--input-bg)",
+    color: "var(--text-muted)",
     cursor: "default",
     boxShadow: "none",
   },
@@ -465,18 +477,18 @@ const styles = {
     width: "100%",
     maxWidth: 290,
     background:
-      "radial-gradient(circle at top, rgba(138,155,214,0.18), transparent 70%), #FFFFFF",
+      "radial-gradient(circle at top, rgba(138,155,214,0.18), transparent 70%), var(--card-bg)",
     border: "1px solid var(--card-border)",
     borderRadius: 22,
     padding: "18px 18px 16px",
-    boxShadow: "0 16px 34px rgba(74, 90, 133, 0.16)",
+    boxShadow: "0 16px 34px rgba(0,0,0,0.28)",
     textAlign: "center",
   },
   promptTitle: {
     margin: 0,
     fontSize: 18,
     fontWeight: 700,
-    color: "#33406b",
+    color: "var(--text-primary)",
   },
   promptText: {
     margin: "10px 0 16px",

@@ -11,6 +11,9 @@ import {
   Sparkles,
   Sunset,
   ChevronDown,
+  Brain,
+  Download,
+  Upload,
 } from "lucide-react";
 import useMediaControls from "../hooks/useMediaControl";
 import useFocusMonitor from "../hooks/useFocusMonitor";
@@ -19,7 +22,7 @@ import AmbientBackground from "./AmbientBackground";
 import { SCENE_LIST } from "./ambientScenes";
 import PomodoroTimer from "./PomodoroTimer";
 import { useParticipants } from "@livekit/components-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import api, { fetchMyProfile, saveFocusSession } from "../services/api";
 
 export default function RoomLayout({
@@ -62,6 +65,7 @@ export default function RoomLayout({
   const participantCount = participants.length;
 
   const [notes, setNotes] = useState("");
+  const [railTab, setRailTab] = useState("pomodoro"); // "pomodoro" | "notes"
   const [shareStatus, setShareStatus] = useState("");
   const [leaving, setLeaving] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
@@ -155,6 +159,16 @@ export default function RoomLayout({
     doc.save("prepsy-notes.pdf");
   };
 
+  // Upload a plain-text notes file — replaces the current editor contents.
+  const handleUploadNotes = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setNotes(String(reader.result || ""));
+    reader.readAsText(file);
+    e.target.value = ""; // let the same file be re-selected later
+  };
+
   const copyRoomId = async () => {
     if (!roomId) return;
     try {
@@ -201,16 +215,34 @@ export default function RoomLayout({
           {screenShareError}
         </div>
       )}
+      {consentMsg && (
+        <div style={{
+          position: "fixed", top: 80, left: "50%", transform: "translateX(-50%)",
+          background: "#1e293b", color: "#f8fafc", fontSize: 13, fontWeight: 500,
+          padding: "10px 18px", borderRadius: 12, zIndex: 9999,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.3)", maxWidth: "90vw", textAlign: "center",
+        }}>
+          {consentMsg}
+        </div>
+      )}
       <div style={styles.centerWrap(isMobile)}>
         <div style={styles.stageWrap}>
           <div style={styles.roomHeaderBar}>
             <div style={styles.roomHeaderTextWrap}>
               <p style={styles.roomHeaderName}>{roomName || "Study Room"}</p>
             </div>
-            <button type="button" style={styles.roomHeaderButton} onClick={copyRoomId}>
-              <Copy size={15} />
-              {shareStatus || "Share"}
-            </button>
+            <div style={styles.roomHeaderActions}>
+              <AiFocusChip
+                enabled={aiMonitorEnabled}
+                hasConsent={hasConsent}
+                monitor={focusMonitor}
+                onToggle={handleToggleAiMonitor}
+              />
+              <button type="button" style={styles.roomHeaderButton} onClick={copyRoomId}>
+                <Copy size={15} />
+                {shareStatus || "Share"}
+              </button>
+            </div>
           </div>
 
           {isMobile && (
@@ -241,32 +273,37 @@ export default function RoomLayout({
         </div>
 
         <div style={styles.sidePanel(isMobile)}>
-          <div style={{ ...styles.card, minHeight: isMobile ? 210 : 224, overflow: "visible", display: "grid", gridTemplateRows: "auto minmax(0, 1fr) auto" }}>
-            <PomodoroTimer onLeaveRoom={handleLeave} roomDurationMinutes={roomDurationMinutes} />
-          </div>
+          <div style={styles.railPanel(isMobile)}>
+            <div style={styles.railTabs}>
+              <button
+                type="button"
+                onClick={() => setRailTab("pomodoro")}
+                style={{ ...styles.railTab, ...(railTab === "pomodoro" ? styles.railTabActive : null) }}
+              >
+                Pomodoro
+              </button>
+              <button
+                type="button"
+                onClick={() => setRailTab("notes")}
+                style={{ ...styles.railTab, ...(railTab === "notes" ? styles.railTabActive : null) }}
+              >
+                Notes
+              </button>
+            </div>
 
-          <div style={{ ...styles.card, minHeight: isMobile ? 210 : 248 }}>
-            <h3 style={styles.cardTitle}>Notes</h3>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Save your notes here..."
-              style={styles.notesBox}
-            />
-            <button style={styles.saveBtn} onClick={downloadNotesAsPDF}>
-              Download Notes (PDF)
-            </button>
+            <div style={styles.railBody}>
+              {railTab === "pomodoro" ? (
+                <PomodoroTimer onLeaveRoom={handleLeave} roomDurationMinutes={roomDurationMinutes} />
+              ) : (
+                <NotesPanel
+                  notes={notes}
+                  onChange={setNotes}
+                  onDownload={downloadNotesAsPDF}
+                  onUpload={handleUploadNotes}
+                />
+              )}
+            </div>
           </div>
-
-          <FocusMonitorCard
-            monitor={focusMonitor}
-            camEnabled={camEnabled}
-            aiMonitorEnabled={aiMonitorEnabled}
-            onToggleAiMonitor={handleToggleAiMonitor}
-            hasConsent={hasConsent}
-            consentMsg={consentMsg}
-            isMobile={isMobile}
-          />
         </div>
       </div>
 
@@ -282,121 +319,76 @@ export default function RoomLayout({
   );
 }
 
-// ── AI Focus Monitor sidebar card ────────────────────────────────────────────
+// ── AI Focus chip (header) ───────────────────────────────────────────────────
 
-function FocusMonitorCard({ monitor, camEnabled, aiMonitorEnabled, onToggleAiMonitor, hasConsent, consentMsg, isMobile }) {
-  const { status, currentLevel, sampleCount } = monitor;
+function AiFocusChip({ enabled, hasConsent, monitor, onToggle }) {
+  const level = monitor.currentLevel;
+  const isLive = enabled && monitor.status === "active";
+  const showScore = isLive && level && typeof level.score === "number";
+  const scoreColor = level?.color || "#22c55e";
 
-  const statusLine = () => {
-    if (!hasConsent) return { text: "Enable “AI Focus Analysis Consent” in your Profile to use focus monitoring.", muted: true };
-    if (!aiMonitorEnabled) return { text: "Face analysis disabled for this session. Toggle to enable.", muted: true };
-    if (!camEnabled) return { text: "Camera off — turn on camera to monitor focus", muted: true };
-    if (status === "loading") return { text: "Loading AI models…", muted: true };
-    if (status === "error") return { text: "Focus monitoring unavailable", muted: true };
-    if (status === "no-camera") return { text: "Waiting for camera stream…", muted: true };
-    if (status === "active") return { text: `Live · ${sampleCount} sample${sampleCount === 1 ? "" : "s"}`, muted: false };
-    return { text: "Turn on camera to start", muted: true };
-  };
-
-  const info = statusLine();
-  const isLive = aiMonitorEnabled && status === "active";
+  const title = !hasConsent
+    ? "Enable “AI Focus Analysis Consent” in your Profile first"
+    : enabled
+      ? "AI focus analysis on — tap to turn off"
+      : "Tap to turn on AI focus analysis";
 
   return (
-    <div style={{ ...styles.card, minHeight: isMobile ? 210 : 250 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <h3 style={styles.cardTitle}>AI Focus Monitor</h3>
-        <span style={{ fontSize: 11, color: isLive ? "#22c55e" : "#b0b8d8", fontWeight: 600 }}>
-          {isLive ? "● Live" : "○ Off"}
+    <div style={styles.aiChip} title={title}>
+      <Brain size={15} color="var(--violet-text)" />
+      <span style={styles.aiChipLabel}>AI Focus</span>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-pressed={enabled}
+        style={{
+          ...styles.aiChipToggle,
+          background: enabled ? "#7c3aed" : "var(--card-border)",
+          cursor: hasConsent ? "pointer" : "not-allowed",
+          opacity: hasConsent ? 1 : 0.6,
+        }}
+      >
+        <span style={{ ...styles.aiChipKnob, left: enabled ? 17 : 2 }} />
+      </button>
+      {showScore ? (
+        <span style={{ ...styles.aiChipScore, color: scoreColor }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: scoreColor }} />
+          {level.score}
         </span>
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Face analysis</span>
-        <button
-          type="button"
-          onClick={onToggleAiMonitor}
-          style={{
-            width: 38, height: 20, borderRadius: 10, border: "none",
-            cursor: hasConsent ? "pointer" : "not-allowed",
-            background: aiMonitorEnabled ? "#7c3aed" : "#d1d5db",
-            position: "relative", transition: "background 0.2s", flexShrink: 0,
-            padding: 0, opacity: hasConsent ? 1 : 0.55,
-          }}
-          title={!hasConsent ? "Provide AI Focus Analysis Consent in your Profile first" : aiMonitorEnabled ? "Disable face analysis for this session" : "Enable face analysis for this session"}
-        >
-          <div style={{
-            position: "absolute", top: 2, left: aiMonitorEnabled ? 20 : 2,
-            width: 16, height: 16, borderRadius: "50%", background: "var(--card-bg)",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.2)", transition: "left 0.2s",
-          }} />
-        </button>
-      </div>
-
-      {consentMsg && (
-        <p style={{ margin: "0 0 10px", fontSize: 11, color: "#e65100", lineHeight: 1.5 }}>
-          {consentMsg}
-        </p>
-      )}
-
-      <p style={{ margin: "0 0 12px", fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5 }}>
-        {info.text}
-      </p>
-
-      {currentLevel ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{
-            width: 56,
-            height: 56,
-            borderRadius: "50%",
-            background: currentLevel.color + "18",
-            border: `2.5px solid ${currentLevel.color}`,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}>
-            <span style={{ fontSize: 16, fontWeight: 800, color: currentLevel.color, lineHeight: 1 }}>
-              {currentLevel.score}
-            </span>
-            <span style={{ fontSize: 9, color: currentLevel.color, fontWeight: 600, opacity: 0.8, marginTop: 1 }}>
-              /100
-            </span>
-          </div>
-          <div>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
-              {currentLevel.label}
-            </p>
-            <p style={{ margin: "3px 0 0", fontSize: 11, color: "var(--text-muted)" }}>
-              Updated every 5s
-            </p>
-          </div>
-        </div>
-      ) : status === "loading" ? (
-        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-          <div style={styles.loadingDot(0)} />
-          <div style={styles.loadingDot(120)} />
-          <div style={styles.loadingDot(240)} />
-          <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: 4 }}>Loading models…</span>
-        </div>
-      ) : null}
-
-      {status === "active" && sampleCount >= 3 && (
-        <FocusMiniBar sampleCount={sampleCount} />
+      ) : (
+        <span style={styles.aiChipOff}>Off</span>
       )}
     </div>
   );
 }
 
-function FocusMiniBar({ sampleCount }) {
+// ── Notes panel (rail) ───────────────────────────────────────────────────────
+
+function NotesPanel({ notes, onChange, onDownload, onUpload }) {
+  const inputRef = useRef(null);
   return (
-    <div style={{ marginTop: 12, padding: "8px 10px", background: "var(--card-bg)", borderRadius: 10 }}>
-      <p style={{ margin: "0 0 4px", fontSize: 10, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 0.5 }}>
-        This session
-      </p>
-      <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)" }}>
-        {sampleCount} readings captured · scores saved on exit
-      </p>
+    <div style={styles.notesPanel}>
+      <textarea
+        value={notes}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Save your notes here…"
+        style={styles.notesArea}
+      />
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".txt,.md,text/plain,text/markdown"
+        onChange={onUpload}
+        style={{ display: "none" }}
+      />
+      <div style={styles.notesActions}>
+        <button type="button" style={styles.notesDownloadBtn} onClick={onDownload}>
+          <Download size={16} /> Download PDF
+        </button>
+        <button type="button" style={styles.notesUploadBtn} onClick={() => inputRef.current?.click()}>
+          <Upload size={16} /> Upload
+        </button>
+      </div>
     </div>
   );
 }
@@ -818,6 +810,64 @@ const styles = {
     display: "flex", flexDirection: "column", gap: 14,
     maxWidth: m ? "100%" : 380, width: "100%", justifySelf: "end",
   }),
+  roomHeaderActions: { display: "flex", alignItems: "center", gap: 10, flexShrink: 0 },
+  aiChip: {
+    display: "inline-flex", alignItems: "center", gap: 8, height: 32, padding: "0 12px",
+    borderRadius: 999, background: "var(--input-bg)", border: "1px solid var(--input-border)",
+  },
+  aiChipLabel: { fontSize: 12, fontWeight: 600, color: "var(--violet-text)", whiteSpace: "nowrap" },
+  aiChipToggle: {
+    width: 34, height: 19, borderRadius: 10, border: "none", position: "relative",
+    transition: "background 0.2s", flexShrink: 0, padding: 0,
+  },
+  aiChipKnob: {
+    position: "absolute", top: 2, width: 15, height: 15, borderRadius: "50%",
+    background: "#fff", boxShadow: "0 1px 2px rgba(0,0,0,0.25)", transition: "left 0.2s",
+  },
+  aiChipScore: { display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 800, minWidth: 22 },
+  aiChipOff: { fontSize: 12, fontWeight: 600, color: "var(--text-muted)" },
+  railPanel: (m) => ({
+    background: "radial-gradient(circle at 50% 0%, rgba(138,155,214,0.14), transparent 62%), var(--card-bg)",
+    borderRadius: 22, border: "1px solid var(--accent-soft)",
+    boxShadow: "0 10px 22px rgba(0,0,0,0.06)",
+    display: "flex", flexDirection: "column", padding: 16, gap: 12,
+    ...(m ? { minHeight: 460 } : { flex: 1, minHeight: 0 }),
+  }),
+  railTabs: {
+    display: "flex", gap: 4, padding: 5, borderRadius: 14,
+    background: "var(--input-bg)", flexShrink: 0,
+  },
+  railTab: {
+    flex: 1, textAlign: "center", padding: "10px 0", borderRadius: 10,
+    border: "none", background: "transparent", cursor: "pointer",
+    fontSize: 13, fontWeight: 600, color: "var(--text-secondary)",
+    fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif",
+  },
+  railTabActive: {
+    background: "var(--accent-gradient)", color: "#fff",
+    boxShadow: "0 6px 14px rgba(124,58,237,0.28)",
+  },
+  railBody: { flex: 1, minHeight: 0, position: "relative", display: "flex" },
+  notesPanel: { flex: 1, minHeight: 0, width: "100%", display: "flex", flexDirection: "column" },
+  notesArea: {
+    flex: 1, minHeight: 120, width: "100%", borderRadius: 14, border: "1px solid var(--card-border)",
+    padding: 12, fontSize: 13, color: "var(--text-primary)", background: "var(--input-bg)",
+    fontFamily: "'Inter', system-ui, -apple-system", resize: "none", outline: "none",
+    lineHeight: 1.6, boxSizing: "border-box",
+  },
+  notesActions: { display: "flex", gap: 10, marginTop: 12, flexShrink: 0 },
+  notesDownloadBtn: {
+    flex: 1, height: 44, borderRadius: 13, border: "none", background: "var(--accent-gradient)",
+    color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer",
+    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+    boxShadow: "0 8px 20px rgba(124,58,237,0.3)",
+  },
+  notesUploadBtn: {
+    flex: 1, height: 44, borderRadius: 13, cursor: "pointer",
+    border: "1px solid rgba(124,58,237,0.4)", background: "rgba(124,58,237,0.10)",
+    color: "var(--violet-text)", fontWeight: 600, fontSize: 13,
+    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+  },
   card: {
     background: "radial-gradient(circle at center, rgba(138,155,214,0.14), transparent 65%), var(--card-bg)",
     borderRadius: 22, padding: 18, border: "1px solid var(--accent-soft)",
