@@ -83,6 +83,21 @@ function Cloud({ className, top, left, w, h, tint }) {
   );
 }
 
+// A soft horizontal fog band that slowly drifts side to side — adds gentle,
+// visible movement across the whole scene.
+function Mist({ tint, bottom = "24%" }) {
+  return (
+    <div
+      className="ambient-mist"
+      style={{
+        ...styles.mist,
+        bottom,
+        background: `linear-gradient(90deg, transparent, ${tint} 45%, transparent)`,
+      }}
+    />
+  );
+}
+
 // ── Scenes ───────────────────────────────────────────────────────────────────
 
 function RainyNight() {
@@ -92,9 +107,11 @@ function RainyNight() {
       <div className="ambient-moon" style={styles.moon} />
       <Cloud className="ambient-cloud-1" top="14%" left="8%" w={280} h={90} tint="rgba(180,190,225,0.10)" />
       <Cloud className="ambient-cloud-2" top="26%" left="52%" w={340} h={100} tint="rgba(170,180,215,0.08)" />
+      <Mist tint="rgba(150,170,220,0.12)" bottom="30%" />
       <Skyline />
       <div className="ambient-rain ambient-rain-2" style={styles.rain} />
       <div className="ambient-rain ambient-rain-1" style={styles.rain} />
+      <div className="ambient-rain ambient-rain-3" style={styles.rain} />
       <div style={styles.vignette} />
     </>
   );
@@ -121,6 +138,7 @@ function StarryNight() {
       </svg>
       <div className="ambient-shoot ambient-shoot-1" style={styles.shoot} />
       <div className="ambient-shoot ambient-shoot-2" style={{ ...styles.shoot, top: "26%", left: "8%" }} />
+      <Mist tint="rgba(150,165,220,0.07)" bottom="28%" />
       <Skyline />
       <div style={styles.vignette} />
     </>
@@ -134,6 +152,7 @@ function LofiDusk() {
       <div className="ambient-sun" style={styles.duskSun} />
       <Cloud className="ambient-cloud-1" top="20%" left="6%" w={300} h={80} tint="rgba(255,190,150,0.14)" />
       <Cloud className="ambient-cloud-2" top="34%" left="56%" w={360} h={90} tint="rgba(220,160,170,0.12)" />
+      <Mist tint="rgba(255,190,150,0.10)" bottom="32%" />
       <svg viewBox="0 0 1280 260" preserveAspectRatio="xMidYMax slice" style={styles.skyline}>
         <path d="M0 150 Q 320 90 640 140 T 1280 120 L1280 260 L0 260 Z" fill="#241a3a" opacity="0.85" />
         <path d="M0 200 Q 360 150 720 190 T 1280 180 L1280 260 L0 260 Z" fill="#140e26" />
@@ -194,6 +213,8 @@ const FIREFLIES = [
 
 const keyframes = `
 @keyframes ambientRainFall { to { transform: translateY(42px); } }
+@keyframes ambientRainFallFast { to { transform: translateY(64px); } }
+@keyframes ambientMist { 0% { transform: translateX(-12%); } 100% { transform: translateX(12%); } }
 @keyframes ambientTwinkle { 0%,100% { opacity: 0.9; } 50% { opacity: 0.25; } }
 @keyframes ambientMoon { 0%,100% { opacity: 0.82; } 50% { opacity: 1; } }
 @keyframes ambientSun { 0%,100% { opacity: 0.82; transform: translateX(-50%) scale(1); } 50% { opacity: 1; transform: translateX(-50%) scale(1.1); } }
@@ -203,13 +224,18 @@ const keyframes = `
 @keyframes ambientFly { 0% { opacity: 0; transform: translate(0,0); } 20% { opacity: 1; } 70% { opacity: 0.85; } 100% { opacity: 0; transform: translate(22px,-95px); } }
 @keyframes ambientFlyStatic { 0%,100% { opacity: 0; } 50% { opacity: 0.9; } }
 .ambient-rain-1 {
-  background-image: repeating-linear-gradient(101deg, rgba(255,255,255,0) 0 6px, rgba(200,215,255,0.06) 6px 7px);
-  animation: ambientRainFall 0.65s linear infinite;
+  background-image: repeating-linear-gradient(101deg, rgba(255,255,255,0) 0 6px, rgba(200,215,255,0.10) 6px 7px);
+  animation: ambientRainFall 0.6s linear infinite;
 }
 .ambient-rain-2 {
-  background-image: repeating-linear-gradient(99deg, rgba(255,255,255,0) 0 10px, rgba(190,205,255,0.04) 10px 11px);
-  animation: ambientRainFall 0.95s linear infinite;
+  background-image: repeating-linear-gradient(99deg, rgba(255,255,255,0) 0 10px, rgba(190,205,255,0.06) 10px 11px);
+  animation: ambientRainFall 0.9s linear infinite;
 }
+.ambient-rain-3 {
+  background-image: repeating-linear-gradient(103deg, rgba(255,255,255,0) 0 5px, rgba(215,225,255,0.11) 5px 7px);
+  animation: ambientRainFallFast 0.5s linear infinite;
+}
+.ambient-mist { animation: ambientMist 34s ease-in-out infinite alternate; }
 .ambient-star { animation: ambientTwinkle 3.2s ease-in-out infinite; }
 .ambient-moon { animation: ambientMoon 7s ease-in-out infinite; }
 .ambient-sun { animation: ambientSun 8s ease-in-out infinite; }
@@ -221,7 +247,8 @@ const keyframes = `
 /* Reduce motion: drop travelling/repetitive motion, but keep gentle opacity
    life so the scene never goes fully static. */
 @media (prefers-reduced-motion: reduce) {
-  .ambient-rain-1, .ambient-rain-2, .ambient-cloud-1, .ambient-cloud-2 { animation: none; }
+  .ambient-rain-1, .ambient-rain-2, .ambient-rain-3, .ambient-mist,
+  .ambient-cloud-1, .ambient-cloud-2 { animation: none; }
   .ambient-shoot-1, .ambient-shoot-2 { animation: none; opacity: 0; }
   .ambient-sun { animation: ambientMoon 7s ease-in-out infinite; }
   .ambient-fly { animation: ambientFlyStatic 4.5s ease-in-out infinite; }
@@ -291,6 +318,15 @@ const styles = {
     minHeight: 160,
   },
   rain: { position: "absolute", inset: "-30%", pointerEvents: "none" },
+  mist: {
+    position: "absolute",
+    left: "-20%",
+    width: "140%",
+    height: 190,
+    borderRadius: "50%",
+    filter: "blur(42px)",
+    pointerEvents: "none",
+  },
   shoot: {
     position: "absolute",
     top: "16%",

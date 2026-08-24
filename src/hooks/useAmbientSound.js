@@ -147,15 +147,16 @@ function buildScene(ctx, master, buf, scene) {
     });
 
     const lfo = track(ctx.createOscillator());
-    lfo.frequency.value = 0.06;
+    lfo.frequency.value = 0.035; // slow, calm tremolo
     const lfoGain = track(ctx.createGain());
-    lfoGain.gain.value = level * 0.4;
+    lfoGain.gain.value = level * 0.45;
     lfo.connect(lfoGain);
     lfoGain.connect(padGain.gain);
     lfo.start();
   };
 
-  // Gentle filtered-noise bed (rain / breeze) with a slow filter sweep.
+  // Gentle filtered-noise bed (rain / breeze) that slowly swells like a soft
+  // breeze — a slow filter sweep (changing colour) plus a slow amplitude gust.
   const addBreeze = (cutoff, level, sweep) => {
     const src = track(makeNoise(ctx, buf));
     const lp = track(ctx.createBiquadFilter());
@@ -168,13 +169,23 @@ function buildScene(ctx, master, buf, scene) {
     g.connect(master);
     src.start();
 
-    const lfo = track(ctx.createOscillator());
-    lfo.frequency.value = 0.05;
-    const lfoGain = track(ctx.createGain());
-    lfoGain.gain.value = sweep;
-    lfo.connect(lfoGain);
-    lfoGain.connect(lp.frequency);
-    lfo.start();
+    // Slow colour sweep.
+    const fLfo = track(ctx.createOscillator());
+    fLfo.frequency.value = 0.025;
+    const fLfoGain = track(ctx.createGain());
+    fLfoGain.gain.value = sweep;
+    fLfo.connect(fLfoGain);
+    fLfoGain.connect(lp.frequency);
+    fLfo.start();
+
+    // Slow gusts — the breeze gently rises and falls.
+    const aLfo = track(ctx.createOscillator());
+    aLfo.frequency.value = 0.04;
+    const aLfoGain = track(ctx.createGain());
+    aLfoGain.gain.value = level * 0.45;
+    aLfo.connect(aLfoGain);
+    aLfoGain.connect(g.gain);
+    aLfo.start();
   };
 
   if (scene === "rainy-night") {
