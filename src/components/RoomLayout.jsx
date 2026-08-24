@@ -836,6 +836,9 @@ const styles = {
     gap: 2, padding: 6, minWidth: 168, borderRadius: 14, background: "rgba(12,16,28,0.92)",
     backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
     border: "1px solid rgba(255,255,255,0.10)", boxShadow: "0 16px 40px rgba(0,0,0,0.5)",
+    // Clip the active row's fill to the menu's rounded corners so the purple
+    // highlight can't peek out past the rounding.
+    overflow: "hidden",
   },
   sceneItem: {
     display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 10px",
