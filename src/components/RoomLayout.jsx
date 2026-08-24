@@ -303,17 +303,20 @@ export default function RoomLayout({
               </button>
             </div>
 
+            {/* Both panes stay MOUNTED — only visibility toggles — so switching
+                tabs never resets the running Pomodoro timer. */}
             <div style={styles.railBody}>
-              {railTab === "pomodoro" ? (
+              <div style={{ ...styles.railPane, display: railTab === "pomodoro" ? "flex" : "none" }}>
                 <PomodoroTimer onLeaveRoom={handleLeave} roomDurationMinutes={roomDurationMinutes} />
-              ) : (
+              </div>
+              <div style={{ ...styles.railPane, display: railTab === "notes" ? "flex" : "none" }}>
                 <NotesPanel
                   notes={notes}
                   onChange={setNotes}
                   onDownload={downloadNotesAsPDF}
                   onUpload={handleUploadNotes}
                 />
-              )}
+              </div>
             </div>
           </div>
         </div>
@@ -882,6 +885,7 @@ const styles = {
     boxShadow: "0 6px 14px rgba(124,58,237,0.28)",
   },
   railBody: { flex: 1, minHeight: 0, position: "relative", display: "flex" },
+  railPane: { flex: 1, minWidth: 0, minHeight: 0, width: "100%" },
   notesPanel: { flex: 1, minHeight: 0, width: "100%", display: "flex", flexDirection: "column" },
   notesArea: {
     flex: 1, minHeight: 120, width: "100%", borderRadius: 14, border: "1px solid var(--card-border)",

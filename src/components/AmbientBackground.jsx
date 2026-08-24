@@ -181,22 +181,27 @@ const STARS = [
 ];
 
 const FIREFLIES = [
-  { left: "22%", top: "62%", d: 0 },
-  { left: "38%", top: "70%", d: 2.5 },
-  { left: "54%", top: "58%", d: 1.2 },
-  { left: "68%", top: "72%", d: 3.4 },
-  { left: "80%", top: "64%", d: 4.6 },
+  { left: "16%", top: "60%", d: 0 },
+  { left: "27%", top: "72%", d: 2.4 },
+  { left: "36%", top: "52%", d: 4.1 },
+  { left: "45%", top: "68%", d: 1.2 },
+  { left: "54%", top: "58%", d: 3.3 },
+  { left: "63%", top: "74%", d: 5.0 },
+  { left: "72%", top: "54%", d: 0.8 },
+  { left: "81%", top: "66%", d: 2.9 },
+  { left: "88%", top: "60%", d: 4.5 },
 ];
 
 const keyframes = `
 @keyframes ambientRainFall { to { transform: translateY(42px); } }
 @keyframes ambientTwinkle { 0%,100% { opacity: 0.9; } 50% { opacity: 0.25; } }
 @keyframes ambientMoon { 0%,100% { opacity: 0.82; } 50% { opacity: 1; } }
-@keyframes ambientSun { 0%,100% { opacity: 0.9; transform: translateX(-50%) scale(1); } 50% { opacity: 1; transform: translateX(-50%) scale(1.06); } }
-@keyframes ambientDriftA { 0% { transform: translateX(-6%); } 100% { transform: translateX(7%); } }
-@keyframes ambientDriftB { 0% { transform: translateX(6%); } 100% { transform: translateX(-7%); } }
+@keyframes ambientSun { 0%,100% { opacity: 0.82; transform: translateX(-50%) scale(1); } 50% { opacity: 1; transform: translateX(-50%) scale(1.1); } }
+@keyframes ambientDriftA { 0% { transform: translateX(-9%); } 100% { transform: translateX(10%); } }
+@keyframes ambientDriftB { 0% { transform: translateX(9%); } 100% { transform: translateX(-10%); } }
 @keyframes ambientShoot { 0% { opacity: 0; transform: translate(0,0) rotate(18deg); } 3% { opacity: 0.9; } 9% { opacity: 0; transform: translate(260px,110px) rotate(18deg); } 100% { opacity: 0; } }
-@keyframes ambientFly { 0% { opacity: 0; transform: translate(0,0); } 25% { opacity: 1; } 75% { opacity: 0.7; } 100% { opacity: 0; transform: translate(18px,-70px); } }
+@keyframes ambientFly { 0% { opacity: 0; transform: translate(0,0); } 20% { opacity: 1; } 70% { opacity: 0.85; } 100% { opacity: 0; transform: translate(22px,-95px); } }
+@keyframes ambientFlyStatic { 0%,100% { opacity: 0; } 50% { opacity: 0.9; } }
 .ambient-rain-1 {
   background-image: repeating-linear-gradient(101deg, rgba(255,255,255,0) 0 6px, rgba(200,215,255,0.06) 6px 7px);
   animation: ambientRainFall 0.65s linear infinite;
@@ -208,17 +213,18 @@ const keyframes = `
 .ambient-star { animation: ambientTwinkle 3.2s ease-in-out infinite; }
 .ambient-moon { animation: ambientMoon 7s ease-in-out infinite; }
 .ambient-sun { animation: ambientSun 8s ease-in-out infinite; }
-.ambient-cloud-1 { animation: ambientDriftA 70s ease-in-out infinite alternate; }
-.ambient-cloud-2 { animation: ambientDriftB 90s ease-in-out infinite alternate; }
-.ambient-shoot-1 { animation: ambientShoot 13s linear infinite; animation-delay: 4s; }
-.ambient-shoot-2 { animation: ambientShoot 17s linear infinite; animation-delay: 11s; }
-.ambient-fly { animation: ambientFly 9s ease-in-out infinite; }
+.ambient-cloud-1 { animation: ambientDriftA 48s ease-in-out infinite alternate; }
+.ambient-cloud-2 { animation: ambientDriftB 62s ease-in-out infinite alternate; }
+.ambient-shoot-1 { animation: ambientShoot 9s linear infinite; animation-delay: 3s; }
+.ambient-shoot-2 { animation: ambientShoot 12s linear infinite; animation-delay: 7s; }
+.ambient-fly { animation: ambientFly 7s ease-in-out infinite; }
+/* Reduce motion: drop travelling/repetitive motion, but keep gentle opacity
+   life so the scene never goes fully static. */
 @media (prefers-reduced-motion: reduce) {
-  .ambient-rain-1, .ambient-rain-2, .ambient-star, .ambient-moon, .ambient-sun,
-  .ambient-cloud-1, .ambient-cloud-2, .ambient-shoot-1, .ambient-shoot-2, .ambient-fly {
-    animation: none;
-  }
-  .ambient-shoot-1, .ambient-shoot-2, .ambient-fly { opacity: 0; }
+  .ambient-rain-1, .ambient-rain-2, .ambient-cloud-1, .ambient-cloud-2 { animation: none; }
+  .ambient-shoot-1, .ambient-shoot-2 { animation: none; opacity: 0; }
+  .ambient-sun { animation: ambientMoon 7s ease-in-out infinite; }
+  .ambient-fly { animation: ambientFlyStatic 4.5s ease-in-out infinite; }
 }
 `;
 
@@ -298,11 +304,11 @@ const styles = {
   },
   firefly: {
     position: "absolute",
-    width: 4,
-    height: 4,
+    width: 6,
+    height: 6,
     borderRadius: "50%",
-    background: "radial-gradient(circle, rgba(255,224,150,0.95), transparent 70%)",
-    filter: "blur(0.5px)",
+    background: "radial-gradient(circle, rgba(255,228,150,1), rgba(255,210,120,0.5) 45%, transparent 72%)",
+    boxShadow: "0 0 8px rgba(255,214,140,0.8)",
     pointerEvents: "none",
     opacity: 0,
   },
