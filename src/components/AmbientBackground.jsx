@@ -5,9 +5,10 @@
  * room feels like a *place* instead of a black void. Rendered absolutely inside
  * `RoomLayout`'s stage; it is decorative only (`aria-hidden`, no pointer events).
  *
- * `scene` selects a wallpaper (see SCENES / SCENE_LIST). Static SVG/CSS today;
- * Phase 3 will add animated / video backgrounds and ambient sound behind the
- * same prop. All motion honours `prefers-reduced-motion`.
+ * `scene` selects a wallpaper (see SCENES / SCENE_LIST in ./ambientScenes.js).
+ * Motion is gentle and calm (drifting clouds, a pulsing moon/sun, the odd
+ * shooting star, fireflies) and every animation honours prefers-reduced-motion.
+ * Ambient SOUND is handled separately by ../hooks/useAmbientSound.
  */
 
 // Scene id → component. Ids must match SCENE_LIST in ./ambientScenes.js
@@ -63,13 +64,34 @@ function Skyline() {
   );
 }
 
+function Cloud({ className, top, left, w, h, tint }) {
+  return (
+    <div
+      className={className}
+      style={{
+        position: "absolute",
+        top,
+        left,
+        width: w,
+        height: h,
+        borderRadius: "50%",
+        background: `radial-gradient(circle, ${tint}, transparent 70%)`,
+        filter: "blur(22px)",
+        pointerEvents: "none",
+      }}
+    />
+  );
+}
+
 // ── Scenes ───────────────────────────────────────────────────────────────────
 
 function RainyNight() {
   return (
     <>
       <div style={styles.rainySky} />
-      <div style={styles.moon} />
+      <div className="ambient-moon" style={styles.moon} />
+      <Cloud className="ambient-cloud-1" top="14%" left="8%" w={280} h={90} tint="rgba(180,190,225,0.10)" />
+      <Cloud className="ambient-cloud-2" top="26%" left="52%" w={340} h={100} tint="rgba(170,180,215,0.08)" />
       <Skyline />
       <div className="ambient-rain ambient-rain-2" style={styles.rain} />
       <div className="ambient-rain ambient-rain-1" style={styles.rain} />
@@ -82,7 +104,7 @@ function StarryNight() {
   return (
     <>
       <div style={styles.starrySky} />
-      <div style={{ ...styles.moon, top: "12%", right: "14%", width: 92 }} />
+      <div className="ambient-moon" style={{ ...styles.moon, top: "12%", right: "14%", width: 92 }} />
       <svg viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice" style={styles.fill}>
         {STARS.map((s, i) => (
           <circle
@@ -97,6 +119,8 @@ function StarryNight() {
           />
         ))}
       </svg>
+      <div className="ambient-shoot ambient-shoot-1" style={styles.shoot} />
+      <div className="ambient-shoot ambient-shoot-2" style={{ ...styles.shoot, top: "26%", left: "8%" }} />
       <Skyline />
       <div style={styles.vignette} />
     </>
@@ -107,11 +131,20 @@ function LofiDusk() {
   return (
     <>
       <div style={styles.duskSky} />
-      <div style={styles.duskSun} />
+      <div className="ambient-sun" style={styles.duskSun} />
+      <Cloud className="ambient-cloud-1" top="20%" left="6%" w={300} h={80} tint="rgba(255,190,150,0.14)" />
+      <Cloud className="ambient-cloud-2" top="34%" left="56%" w={360} h={90} tint="rgba(220,160,170,0.12)" />
       <svg viewBox="0 0 1280 260" preserveAspectRatio="xMidYMax slice" style={styles.skyline}>
         <path d="M0 150 Q 320 90 640 140 T 1280 120 L1280 260 L0 260 Z" fill="#241a3a" opacity="0.85" />
         <path d="M0 200 Q 360 150 720 190 T 1280 180 L1280 260 L0 260 Z" fill="#140e26" />
       </svg>
+      {FIREFLIES.map((f, i) => (
+        <div
+          key={i}
+          className="ambient-fly"
+          style={{ ...styles.firefly, left: f.left, top: f.top, animationDelay: `${f.d}s` }}
+        />
+      ))}
       <div style={styles.vignetteWarm} />
     </>
   );
@@ -147,9 +180,23 @@ const STARS = [
   { x: 880, y: 340, r: 1.1, o: 0.7, tw: true, d: 0.5 },
 ];
 
+const FIREFLIES = [
+  { left: "22%", top: "62%", d: 0 },
+  { left: "38%", top: "70%", d: 2.5 },
+  { left: "54%", top: "58%", d: 1.2 },
+  { left: "68%", top: "72%", d: 3.4 },
+  { left: "80%", top: "64%", d: 4.6 },
+];
+
 const keyframes = `
 @keyframes ambientRainFall { to { transform: translateY(42px); } }
 @keyframes ambientTwinkle { 0%,100% { opacity: 0.9; } 50% { opacity: 0.25; } }
+@keyframes ambientMoon { 0%,100% { opacity: 0.82; } 50% { opacity: 1; } }
+@keyframes ambientSun { 0%,100% { opacity: 0.9; transform: translateX(-50%) scale(1); } 50% { opacity: 1; transform: translateX(-50%) scale(1.06); } }
+@keyframes ambientDriftA { 0% { transform: translateX(-6%); } 100% { transform: translateX(7%); } }
+@keyframes ambientDriftB { 0% { transform: translateX(6%); } 100% { transform: translateX(-7%); } }
+@keyframes ambientShoot { 0% { opacity: 0; transform: translate(0,0) rotate(18deg); } 3% { opacity: 0.9; } 9% { opacity: 0; transform: translate(260px,110px) rotate(18deg); } 100% { opacity: 0; } }
+@keyframes ambientFly { 0% { opacity: 0; transform: translate(0,0); } 25% { opacity: 1; } 75% { opacity: 0.7; } 100% { opacity: 0; transform: translate(18px,-70px); } }
 .ambient-rain-1 {
   background-image: repeating-linear-gradient(101deg, rgba(255,255,255,0) 0 6px, rgba(200,215,255,0.06) 6px 7px);
   animation: ambientRainFall 0.65s linear infinite;
@@ -159,8 +206,19 @@ const keyframes = `
   animation: ambientRainFall 0.95s linear infinite;
 }
 .ambient-star { animation: ambientTwinkle 3.2s ease-in-out infinite; }
+.ambient-moon { animation: ambientMoon 7s ease-in-out infinite; }
+.ambient-sun { animation: ambientSun 8s ease-in-out infinite; }
+.ambient-cloud-1 { animation: ambientDriftA 70s ease-in-out infinite alternate; }
+.ambient-cloud-2 { animation: ambientDriftB 90s ease-in-out infinite alternate; }
+.ambient-shoot-1 { animation: ambientShoot 13s linear infinite; animation-delay: 4s; }
+.ambient-shoot-2 { animation: ambientShoot 17s linear infinite; animation-delay: 11s; }
+.ambient-fly { animation: ambientFly 9s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .ambient-rain-1, .ambient-rain-2, .ambient-star { animation: none; }
+  .ambient-rain-1, .ambient-rain-2, .ambient-star, .ambient-moon, .ambient-sun,
+  .ambient-cloud-1, .ambient-cloud-2, .ambient-shoot-1, .ambient-shoot-2, .ambient-fly {
+    animation: none;
+  }
+  .ambient-shoot-1, .ambient-shoot-2, .ambient-fly { opacity: 0; }
 }
 `;
 
@@ -227,6 +285,27 @@ const styles = {
     minHeight: 160,
   },
   rain: { position: "absolute", inset: "-30%", pointerEvents: "none" },
+  shoot: {
+    position: "absolute",
+    top: "16%",
+    left: "62%",
+    width: 120,
+    height: 2,
+    borderRadius: 2,
+    background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.9))",
+    pointerEvents: "none",
+    opacity: 0,
+  },
+  firefly: {
+    position: "absolute",
+    width: 4,
+    height: 4,
+    borderRadius: "50%",
+    background: "radial-gradient(circle, rgba(255,224,150,0.95), transparent 70%)",
+    filter: "blur(0.5px)",
+    pointerEvents: "none",
+    opacity: 0,
+  },
   vignette: {
     position: "absolute",
     inset: 0,

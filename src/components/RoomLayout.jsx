@@ -14,9 +14,12 @@ import {
   Brain,
   Download,
   Upload,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import useMediaControls from "../hooks/useMediaControl";
 import useFocusMonitor from "../hooks/useFocusMonitor";
+import useAmbientSound from "../hooks/useAmbientSound";
 import { useNavigate } from "react-router-dom";
 import AmbientBackground from "./AmbientBackground";
 import { SCENE_LIST } from "./ambientScenes";
@@ -87,6 +90,12 @@ export default function RoomLayout({
       /* ignore storage errors */
     }
   }, [scene]);
+
+  // Ambient nature sound for the current scene — off until the user enables it
+  // (browser autoplay policies need a gesture). Not persisted on by default so
+  // nobody gets surprise audio on join.
+  const [soundOn, setSoundOn] = useState(false);
+  useAmbientSound(scene, soundOn);
 
   useEffect(() => {
     if (!shareStatus) return undefined;
@@ -264,7 +273,10 @@ export default function RoomLayout({
                 Focus session
               </div>
             )}
-            <SceneChip scene={scene} onChange={setScene} />
+            <div style={styles.stageTopRight}>
+              <SoundToggle on={soundOn} onToggle={() => setSoundOn((v) => !v)} />
+              <SceneChip scene={scene} onChange={setScene} />
+            </div>
             <div style={styles.stageContent}>{children}</div>
             {!isMobile && <div style={styles.stageDock}>{buildControls(true)}</div>}
           </div>
@@ -590,6 +602,21 @@ function Control({ icon, danger, active, onClick, disabled, title, alert, onDark
 
 const SCENE_ICONS = { rain: CloudRain, stars: Sparkles, dusk: Sunset };
 
+function SoundToggle({ on, onToggle }) {
+  return (
+    <button
+      type="button"
+      style={styles.soundBtn}
+      onClick={onToggle}
+      title={on ? "Mute ambient sound" : "Play ambient sound"}
+      aria-label={on ? "Mute ambient sound" : "Play ambient sound"}
+      aria-pressed={on}
+    >
+      {on ? <Volume2 size={16} color="#c4b5fd" /> : <VolumeX size={16} color="#94a3b8" />}
+    </button>
+  );
+}
+
 function SceneChip({ scene, onChange }) {
   const [open, setOpen] = useState(false);
   const current = SCENE_LIST.find((s) => s.id === scene) || SCENE_LIST[0];
@@ -787,7 +814,14 @@ const styles = {
   },
   dockDivider: { width: 1, height: 28, background: "rgba(255,255,255,0.12)", margin: "0 2px" },
   barDivider: { width: 1, height: 28, background: "rgba(0,0,0,0.10)", margin: "0 2px" },
-  sceneWrap: { position: "absolute", top: 14, right: 14, zIndex: 30 },
+  stageTopRight: { position: "absolute", top: 14, right: 14, zIndex: 30, display: "flex", alignItems: "flex-start", gap: 8 },
+  soundBtn: {
+    display: "inline-flex", alignItems: "center", justifyContent: "center",
+    width: 34, height: 34, borderRadius: "50%", cursor: "pointer",
+    background: "rgba(10,14,26,0.55)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
+    border: "1px solid rgba(255,255,255,0.10)",
+  },
+  sceneWrap: { position: "relative" },
   sceneChip: {
     display: "inline-flex", alignItems: "center", gap: 8, padding: "7px 12px", borderRadius: 999,
     background: "rgba(10,14,26,0.55)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
