@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, Flame } from "lucide-react";
+import { ChevronDown, Flame, Moon, Sun } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 import { useGuardedNavigate } from "../context/NavGuardContext";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useGuardedNavigate();
   const location = useLocation();
 
@@ -25,6 +27,9 @@ export default function Navbar() {
 
   const isCompact = windowWidth < 760;
   const isMobileNav = windowWidth < 920;
+  // Below the dashboard sidebar breakpoint the side nav (which holds the theme
+  // toggle) is hidden, so surface a toggle in the top bar for small screens.
+  const showThemeToggle = windowWidth < 1024;
   const isHomePage = location.pathname === "/";
   const isFeaturePage = location.pathname === "/feature";
   const isLoginPage = location.pathname === "/login";
@@ -142,16 +147,19 @@ export default function Navbar() {
           </div>
 
           {isMobileNav ? (
-            <button
-              type="button"
-              onClick={() => setMenuOpen((current) => !current)}
-              aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
-              style={mobileToggleStyle}
-            >
-              <span style={mobileToggleLineStyle(menuOpen, "top")} />
-              <span style={mobileToggleLineStyle(menuOpen, "middle")} />
-              <span style={mobileToggleLineStyle(menuOpen, "bottom")} />
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <ThemeToggle theme={theme} onClick={toggleTheme} />
+              <button
+                type="button"
+                onClick={() => setMenuOpen((current) => !current)}
+                aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+                style={mobileToggleStyle}
+              >
+                <span style={mobileToggleLineStyle(menuOpen, "top")} />
+                <span style={mobileToggleLineStyle(menuOpen, "middle")} />
+                <span style={mobileToggleLineStyle(menuOpen, "bottom")} />
+              </button>
+            </div>
           ) : (
             <nav
               style={{
@@ -161,6 +169,9 @@ export default function Navbar() {
                 minWidth: 0,
               }}
             >
+              {showThemeToggle && (
+                <ThemeToggle theme={theme} onClick={toggleTheme} />
+              )}
               {desktopLinks.map((item) => (
                 <Link
                   key={item.path}
@@ -306,6 +317,35 @@ export default function Navbar() {
         ) : null}
       </div>
     </header>
+  );
+}
+
+// Compact light/dark toggle for the top bar — the only theme control on small
+// screens, where the dashboard side nav (which also has one) is hidden.
+function ThemeToggle({ theme, onClick }) {
+  const isDark = theme === "dark";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={isDark ? "Light mode" : "Dark mode"}
+      style={{
+        width: 38,
+        height: 38,
+        borderRadius: 12,
+        border: "1px solid var(--card-border)",
+        background: "var(--card-bg)",
+        color: "var(--text-secondary)",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+        flexShrink: 0,
+      }}
+    >
+      {isDark ? <Sun size={18} /> : <Moon size={18} />}
+    </button>
   );
 }
 
