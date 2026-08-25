@@ -27,6 +27,7 @@ import {
   fetchMyProfile,
   updateMyProfile,
   uploadAvatar,
+  setEmailNotifications,
 } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -166,6 +167,7 @@ const emptyProfile = {
   dailyStudyGoalMinutes: 0,
   portfolioUrl: "", linkedinUrl: "", githubUrl: "", isDiscoverable: true,
   aiMonitorConsent: false,
+  emailNotifications: true,
 };
 
 /* ─── Main component ─────────────────────────────────────────────────────── */
@@ -184,6 +186,8 @@ export default function Profile() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
+  const [savingNotifs, setSavingNotifs] = useState(false);
+  const [highlightNotifs, setHighlightNotifs] = useState(false);
   const width = useWindowWidth();
   const isNarrow = width < 1024;
 
@@ -212,6 +216,18 @@ export default function Profile() {
         setAnalytics(analyticsResp.analytics);
         setEditMode(!isComplete);
         setCanCancel(false);
+        // Deep link from an email's "unsubscribe" → open the editable view and
+        // reveal + highlight the notifications toggle.
+        if (window.location.hash === "#notifications") {
+          setEditMode(true);
+          window.setTimeout(() => {
+            document
+              .getElementById("notifications")
+              ?.scrollIntoView({ behavior: "smooth", block: "center" });
+            setHighlightNotifs(true);
+            window.setTimeout(() => setHighlightNotifs(false), 2600);
+          }, 350);
+        }
       } catch (err) {
         if (!cancelled) {
           const fallback = normalizeProfile({
@@ -292,6 +308,26 @@ export default function Profile() {
 
   function updateField(field, value) {
     setProfile((current) => ({ ...current, [field]: value }));
+  }
+
+  // Email reminders persist immediately via their own endpoint (independent of
+  // the full profile save), and stay out of the "unsaved changes" dirty check.
+  async function toggleEmailNotifications() {
+    if (savingNotifs) return;
+    const next = !profile.emailNotifications;
+    setProfile((p) => ({ ...p, emailNotifications: next }));
+    setSavedProfile((p) => ({ ...p, emailNotifications: next }));
+    setSavingNotifs(true);
+    try {
+      await setEmailNotifications(next);
+      setToast(next ? "Email reminders on" : "Email reminders off");
+    } catch (err) {
+      setProfile((p) => ({ ...p, emailNotifications: !next }));
+      setSavedProfile((p) => ({ ...p, emailNotifications: !next }));
+      setError(err?.response?.data?.message || "Could not update notifications.");
+    } finally {
+      setSavingNotifs(false);
+    }
   }
 
   function handleStartEdit() {
@@ -597,6 +633,57 @@ export default function Profile() {
                       >
                         <div style={{
                           position: "absolute", top: 3, left: profile.aiMonitorConsent ? 23 : 3,
+                          width: 18, height: 18, borderRadius: "50%", background: "var(--card-bg)",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s",
+                        }} />
+                      </div>
+                    </label>
+                  </div>
+
+                  {/* Email notifications — persists on its own endpoint, and is
+                      the target of the "unsubscribe" link in reminder emails. */}
+                  <div id="notifications" style={{
+                    borderRadius: 14,
+                    background: profile.emailNotifications ? "linear-gradient(135deg,#f3f0ff 0%,var(--accent-soft) 100%)" : "var(--card-bg)",
+                    border: `1.5px solid ${highlightNotifs ? "#7c3aed" : profile.emailNotifications ? "#c4b5fd" : "var(--card-border)"}`,
+                    boxShadow: highlightNotifs ? "0 0 0 3px rgba(124,58,237,0.25)" : "none",
+                    padding: "16px 18px",
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 14,
+                    marginTop: 12,
+                    transition: "all 0.2s",
+                  }}>
+                    <div style={{ flex: 1, display: "grid", gap: 6 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 16 }}>✉️</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
+                          Email notifications
+                        </span>
+                        <span style={{
+                          fontSize: 10, fontWeight: 600,
+                          color: profile.emailNotifications ? "#5b21b6" : "#92400e",
+                          background: profile.emailNotifications ? "var(--accent-soft)" : "#fef3c7",
+                          border: `1px solid ${profile.emailNotifications ? "#c4b5fd" : "#fcd34d"}`,
+                          borderRadius: 6, padding: "1px 6px",
+                        }}>{profile.emailNotifications ? "ON" : "OFF"}</span>
+                      </div>
+                      <p style={{ fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.55, margin: 0 }}>
+                        Session reminders with your streak, weekly study time, and a one-tap link to join the room. Turn off to stop all reminder emails.
+                      </p>
+                    </div>
+                    <label style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, cursor: "pointer", flexShrink: 0 }}>
+                      <div
+                        onClick={toggleEmailNotifications}
+                        style={{
+                          width: 44, height: 24, borderRadius: 12, cursor: savingNotifs ? "wait" : "pointer",
+                          background: profile.emailNotifications ? "#7c3aed" : "#d1d5db",
+                          position: "relative", transition: "background 0.2s",
+                          flexShrink: 0, opacity: savingNotifs ? 0.7 : 1,
+                        }}
+                      >
+                        <div style={{
+                          position: "absolute", top: 3, left: profile.emailNotifications ? 23 : 3,
                           width: 18, height: 18, borderRadius: "50%", background: "var(--card-bg)",
                           boxShadow: "0 1px 3px rgba(0,0,0,0.2)", transition: "left 0.2s",
                         }} />

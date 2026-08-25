@@ -75,6 +75,12 @@ export async function updateMyProfile(profile) {
   return data;
 }
 
+// Toggle email reminders on/off (independent of the full profile save).
+export async function setEmailNotifications(enabled) {
+  const { data } = await api.put("/profiles/me/notifications", { enabled });
+  return data;
+}
+
 export async function uploadAvatar(formData) {
   const { data } = await api.post("/profiles/avatar", formData, {
     headers: { "Content-Type": "multipart/form-data" },
