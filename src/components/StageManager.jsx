@@ -156,14 +156,17 @@ export default function StageManager({ tracks = [] }) {
     );
   }
 
-  // Multiple participants: small round "presence" avatars floating over the
-  // ambient wallpaper — camera-on shows a round-cropped video, camera-off shows
-  // initials. Sizes and gaps scale with the viewport (clamp + vmin) so it holds
-  // from phones to large monitors; a very full room wraps and scrolls rather
-  // than shrinking the avatars away. The Pomodoro / AI / Notes rail is a
-  // separate column in RoomLayout, so it stays visible no matter the count.
+  // Multiple participants: "presence" tiles floating over the ambient wallpaper.
+  // Camera-OFF stays a small round avatar (minimal, keeps the scene breathing);
+  // camera-ON becomes a larger 16:9 video tile so people can actually see each
+  // other. Both scale with the viewport (clamp + vmin) so it holds from phones
+  // to large monitors; a very full room wraps and scrolls rather than shrinking
+  // away. The Pomodoro / AI / Notes rail is a separate RoomLayout column, so it
+  // stays visible no matter the count.
   const maxAvatar = count <= 4 ? 92 : count <= 9 ? 76 : count <= 16 ? 62 : 50;
   const sizeCss = `clamp(44px, 9vmin, ${maxAvatar}px)`;
+  const camMax = count <= 4 ? 300 : count <= 9 ? 230 : count <= 16 ? 168 : 128;
+  const camWidthCss = `clamp(150px, 26vmin, ${camMax}px)`;
   const manyPeople = count > 12;
 
   return (
@@ -186,6 +189,7 @@ export default function StageManager({ tracks = [] }) {
             cam={cam}
             hasCamera={hasCamera}
             sizeCss={sizeCss}
+            camWidthCss={camWidthCss}
           />
         );
       })}
@@ -193,18 +197,25 @@ export default function StageManager({ tracks = [] }) {
   );
 }
 
-function PresenceAvatar({ participant, cam, hasCamera, sizeCss }) {
+function PresenceAvatar({ participant, cam, hasCamera, sizeCss, camWidthCss }) {
   const name = participant.name || "Guest";
   const micMuted = !participant.isMicrophoneEnabled;
 
+  // Camera on → a wider 16:9 tile you can actually see a face in; off → a small
+  // round avatar.
+  const boxStyle = hasCamera
+    ? { position: "relative", width: camWidthCss, aspectRatio: "16 / 9", flexShrink: 0 }
+    : { position: "relative", width: sizeCss, height: sizeCss, flexShrink: 0 };
+
   return (
     <div style={styles.presenceItem}>
-      <div style={{ position: "relative", width: sizeCss, height: sizeCss, flexShrink: 0 }}>
+      <div style={boxStyle}>
         <div
-          style={{
-            ...styles.presenceCircle,
-            ...(hasCamera ? styles.presenceCircleOn : styles.presenceCircleOff),
-          }}
+          style={
+            hasCamera
+              ? styles.presenceTileOn
+              : { ...styles.presenceCircle, ...styles.presenceCircleOff }
+          }
         >
           {hasCamera ? (
             <VideoTrack trackRef={cam} style={styles.presenceVideo} />
@@ -218,7 +229,7 @@ function PresenceAvatar({ participant, cam, hasCamera, sizeCss }) {
           </div>
         )}
       </div>
-      <div style={styles.presenceName}>{name}</div>
+      <div style={{ ...styles.presenceName, maxWidth: hasCamera ? 220 : 108 }}>{name}</div>
     </div>
   );
 }
@@ -401,6 +412,20 @@ const styles = {
     background: "#0f172a",
     border: "2px solid #34d399",
     boxShadow: "0 0 0 4px rgba(52,211,153,0.14), 0 16px 36px rgba(0,0,0,0.45)",
+  },
+  // Camera-on: a larger rounded 16:9 video tile so faces are clearly visible.
+  presenceTileOn: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 16,
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    background: "#0f172a",
+    border: "2px solid #34d399",
+    boxShadow: "0 0 0 3px rgba(52,211,153,0.14), 0 16px 40px rgba(0,0,0,0.5)",
   },
 
   presenceVideo: {
