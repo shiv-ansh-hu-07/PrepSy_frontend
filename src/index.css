@@ -52,6 +52,10 @@ body,
   /* Brand violet used for label/accent TEXT — lightens in dark for contrast. */
   --violet-text: #6f3bd6;
   --violet-soft-text: #9b77e0;
+  /* Solid (opaque) surfaces for overlays like the onboarding tour, which sit over
+     page content and must not be see-through the way the glass --card-bg is. */
+  --tour-surface: #ffffff;
+  --tour-surface-2: #f4f5fb;
 }
 
 :root[data-theme="dark"] {
@@ -70,6 +74,8 @@ body,
   --accent-soft: rgba(157, 171, 228, 0.16);
   --violet-text: #c4b5fd;
   --violet-soft-text: #b3a1ef;
+  --tour-surface: #20233a;
+  --tour-surface-2: #191c2e;
 }
 
 /* -----------------------------

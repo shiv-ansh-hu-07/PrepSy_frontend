@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import ProductWalkthrough from "./ProductWalkthrough";
 
 const PURPLE = "#7c3aed";
 
@@ -151,7 +152,7 @@ function WalkthroughAnimation() {
 
       {/* Caption + progress */}
       <div style={{
-        padding: "10px 14px", background: "var(--card-bg)", borderTop: "1px solid var(--card-border)",
+        padding: "10px 14px", background: "var(--tour-surface)", borderTop: "1px solid var(--card-border)",
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <span style={{ fontSize: 12, fontWeight: 700, color: scene.tint }}>{scene.label}</span>
@@ -186,6 +187,7 @@ export default function OnboardingTour({ autoStart = false, onSeen }) {
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState(null); // spotlight target rect, or null (centered)
   const [showLauncher, setShowLauncher] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
   const startedRef = useRef(false);
 
   const begin = useCallback(() => {
@@ -260,23 +262,41 @@ export default function OnboardingTour({ autoStart = false, onSeen }) {
   const s = STEPS[step];
   const isLast = step === STEPS.length - 1;
 
-  // ── Launcher pill (when tour isn't running) ──
+  // ── Launcher pills (when tour isn't running): replay tour + watch walkthrough ──
   const launcher = showLauncher && !running ? (
-    <button
-      className="tour-launch"
-      onClick={begin}
-      style={{
-        position: "fixed", right: 20, bottom: 20, zIndex: 9990,
-        display: "inline-flex", alignItems: "center", gap: 8,
-        padding: "10px 16px", borderRadius: 999, border: "none",
-        background: PURPLE, color: "#fff", fontWeight: 700, fontSize: 13,
-        cursor: "pointer", boxShadow: "0 8px 24px rgba(124,58,237,0.34)",
-        animation: "tour-launch-in 0.4s ease both",
-      }}
-      title="Replay the product tour"
-    >
-      <span style={{ fontSize: 15 }}>🧭</span> Take a tour
-    </button>
+    <div style={{
+      position: "fixed", right: 20, bottom: 20, zIndex: 9990,
+      display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10,
+      animation: "tour-launch-in 0.4s ease both",
+    }}>
+      <button
+        className="tour-launch"
+        onClick={() => setShowVideo(true)}
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 8,
+          padding: "9px 15px", borderRadius: 999,
+          border: `1px solid ${PURPLE}33`, background: "var(--tour-surface)",
+          color: PURPLE, fontWeight: 700, fontSize: 13, cursor: "pointer",
+          boxShadow: "0 6px 18px rgba(17,19,45,0.16)",
+        }}
+        title="Watch the product walkthrough"
+      >
+        <span style={{ fontSize: 13 }}>▶</span> Walkthrough
+      </button>
+      <button
+        className="tour-launch"
+        onClick={begin}
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 8,
+          padding: "10px 16px", borderRadius: 999, border: "none",
+          background: PURPLE, color: "#fff", fontWeight: 700, fontSize: 13,
+          cursor: "pointer", boxShadow: "0 8px 24px rgba(124,58,237,0.34)",
+        }}
+        title="Replay the product tour"
+      >
+        <span style={{ fontSize: 15 }}>🧭</span> Take a tour
+      </button>
+    </div>
   ) : null;
 
   // ── Tooltip position ──
@@ -301,7 +321,7 @@ export default function OnboardingTour({ autoStart = false, onSeen }) {
   const overlay = running ? (
     <div style={{ position: "fixed", inset: 0, zIndex: 9998, animation: "tour-fade 0.25s ease both" }}>
       {/* Click catcher / dim (used when no target) */}
-      {centered && <div style={{ position: "absolute", inset: 0, background: "rgba(17,19,45,0.62)", backdropFilter: "blur(2px)" }} />}
+      {centered && <div style={{ position: "absolute", inset: 0, background: "rgba(17,19,45,0.7)", backdropFilter: "blur(2px)" }} />}
 
       {/* Spotlight cutout (dims everything except the target via a huge box-shadow) */}
       {!centered && (
@@ -311,7 +331,7 @@ export default function OnboardingTour({ autoStart = false, onSeen }) {
             position: "fixed",
             top: rect.top - 8, left: rect.left - 8,
             width: rect.width + 16, height: rect.height + 16,
-            borderRadius: 14, boxShadow: "0 0 0 9999px rgba(17,19,45,0.62)",
+            borderRadius: 14, boxShadow: "0 0 0 9999px rgba(17,19,45,0.7)",
             border: `2px solid ${PURPLE}`, pointerEvents: "none",
             animation: "tour-ring 1.8s ease-out infinite",
             transition: "top 0.28s ease, left 0.28s ease, width 0.28s ease, height 0.28s ease",
@@ -322,12 +342,24 @@ export default function OnboardingTour({ autoStart = false, onSeen }) {
       {/* Tooltip card */}
       <div style={{
         ...tipStyle,
-        background: "var(--card-bg)", borderRadius: 18, padding: 20,
-        border: "1px solid var(--card-border)", boxShadow: "0 24px 60px rgba(17,19,45,0.28)",
+        background: "var(--tour-surface)", borderRadius: 18, padding: 20,
+        border: "1px solid var(--card-border)", boxShadow: "0 24px 60px rgba(17,19,45,0.4)",
       }}>
         {s.welcome && (
           <div style={{ marginBottom: 16 }}>
             <WalkthroughAnimation />
+            <button
+              className="tour-btn"
+              onClick={() => setShowVideo(true)}
+              style={{
+                marginTop: 10, width: "100%", padding: "9px 0", borderRadius: 10,
+                border: `1px solid ${PURPLE}33`, background: "rgba(124,58,237,0.08)",
+                color: PURPLE, fontWeight: 700, fontSize: 13, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+              }}
+            >
+              <span style={{ fontSize: 14 }}>▶</span> Watch the full walkthrough (60s)
+            </button>
           </div>
         )}
 
@@ -392,6 +424,7 @@ export default function OnboardingTour({ autoStart = false, onSeen }) {
       <style>{CSS}</style>
       {launcher}
       {overlay}
+      <ProductWalkthrough open={showVideo} onClose={() => setShowVideo(false)} />
     </>,
     document.body
   );
