@@ -178,7 +178,7 @@ export default function Dashboard() {
               <button onClick={() => navigate("/join-room")} style={viewAllBtn}>View all →</button>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 2, minHeight: 132 }}>
+            <div className="dash-sessions-scroll" style={{ display: "flex", flexDirection: "column", gap: 2, minHeight: 132, maxHeight: 440, overflowY: "auto", overflowX: "hidden", paddingRight: 4 }}>
               {!roomsLoaded ? (
                 <div style={{ minHeight: 120, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: 13 }}>
                   Loading sessions…
