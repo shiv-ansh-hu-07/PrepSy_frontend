@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import ProductWalkthrough from "./ProductWalkthrough";
 import HowToWalkthrough from "./HowToWalkthrough";
 
 const PURPLE = "#7c3aed";
@@ -188,7 +187,6 @@ export default function OnboardingTour({ autoStart = false, onSeen }) {
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState(null); // spotlight target rect, or null (centered)
   const [showLauncher, setShowLauncher] = useState(false);
-  const [showVideo, setShowVideo] = useState(false);
   const [showHowTo, setShowHowTo] = useState(false);
   const startedRef = useRef(false);
 
@@ -287,20 +285,6 @@ export default function OnboardingTour({ autoStart = false, onSeen }) {
       </button>
       <button
         className="tour-launch"
-        onClick={() => setShowVideo(true)}
-        style={{
-          display: "inline-flex", alignItems: "center", gap: 8,
-          padding: "9px 15px", borderRadius: 999,
-          border: `1px solid ${PURPLE}33`, background: "var(--tour-surface)",
-          color: PURPLE, fontWeight: 700, fontSize: 13, cursor: "pointer",
-          boxShadow: "0 6px 18px rgba(17,19,45,0.16)",
-        }}
-        title="Watch the feature overview"
-      >
-        <span style={{ fontSize: 13 }}>▶</span> Feature overview
-      </button>
-      <button
-        className="tour-launch"
         onClick={begin}
         style={{
           display: "inline-flex", alignItems: "center", gap: 8,
@@ -371,32 +355,18 @@ export default function OnboardingTour({ autoStart = false, onSeen }) {
           {s.welcome && (
             <div style={{ marginBottom: 16 }}>
               <WalkthroughAnimation />
-              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                <button
-                  className="tour-btn"
-                  onClick={() => setShowVideo(true)}
-                  style={{
-                    flex: 1, padding: "9px 0", borderRadius: 10,
-                    border: `1px solid ${PURPLE}33`, background: "rgba(124,58,237,0.08)",
-                    color: PURPLE, fontWeight: 700, fontSize: 12.5, cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                  }}
-                >
-                  <span style={{ fontSize: 13 }}>▶</span> Feature overview
-                </button>
-                <button
-                  className="tour-btn"
-                  onClick={() => setShowHowTo(true)}
-                  style={{
-                    flex: 1, padding: "9px 0", borderRadius: 10, border: "none",
-                    background: PURPLE, color: "#fff", fontWeight: 700, fontSize: 12.5,
-                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                    boxShadow: "0 6px 16px rgba(124,58,237,0.3)",
-                  }}
-                >
-                  <span style={{ fontSize: 13 }}>▶</span> How to use it
-                </button>
-              </div>
+              <button
+                className="tour-btn"
+                onClick={() => setShowHowTo(true)}
+                style={{
+                  marginTop: 10, width: "100%", padding: "9px 0", borderRadius: 10, border: "none",
+                  background: PURPLE, color: "#fff", fontWeight: 700, fontSize: 13,
+                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                  boxShadow: "0 6px 16px rgba(124,58,237,0.3)",
+                }}
+              >
+                <span style={{ fontSize: 14 }}>▶</span> See how to use it
+              </button>
             </div>
           )}
 
@@ -466,7 +436,6 @@ export default function OnboardingTour({ autoStart = false, onSeen }) {
       <style>{CSS}</style>
       {launcher}
       {overlay}
-      <ProductWalkthrough open={showVideo} onClose={() => setShowVideo(false)} />
       <HowToWalkthrough open={showHowTo} onClose={() => setShowHowTo(false)} />
     </>,
     document.body
