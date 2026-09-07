@@ -3,230 +3,198 @@ import { createPortal } from "react-dom";
 
 // A self-playing, video-style walkthrough of the whole product. Not a recorded
 // clip — an animated "player" that auto-advances through feature scenes with
-// play/pause, seek, and replay. Used in-app (modal) and mirrors the shareable
-// Artifact version.
+// play/pause, seek, and replay. Each feature scene names AND explains every
+// feature in that area (kept in sync with the /feature page).
 
 const PURPLE = "#7c3aed";
 
 const SCENES = [
-  { key: "intro", ms: 3200, tint: "#7c3aed", title: "Welcome to PrepSy", sub: "Study with people. Stay focused. See yourself improve — a 60-second tour." },
-  { key: "rooms", ms: 4800, tint: "#7c3aed", title: "Live study rooms", sub: "Join peers on camera, audio-only, or just observe. The quiet accountability of a real study hall." },
-  { key: "focus", ms: 4800, tint: "#10b981", title: "On-device AI focus monitor", sub: "Reads your attention every 5s — note-taking vs. distraction — and scores each session. Nothing leaves your browser." },
-  { key: "pomodoro", ms: 4200, tint: "#f59e0b", title: "Synced Pomodoro + notes", sub: "One shared timer keeps the whole room in rhythm. Chat, share your screen, export notes as PDF." },
-  { key: "cohorts", ms: 4800, tint: "#f43f5e", title: "YouTube co-learning cohorts", sub: "Watch a playlist together on a daily schedule, with an AI checkpoint quiz at every stop." },
-  { key: "analytics", ms: 4800, tint: "#6366f1", title: "Analytics that prove it", sub: "Streak, focus score trend, peak-hour heatmap, and AI coaching — all in one place." },
-  { key: "community", ms: 4200, tint: "#0ea5e9", title: "A community + leaderboard", sub: "Post wins, share resources, add friends, and climb the study-time board together." },
-  { key: "outro", ms: 3600, tint: "#7c3aed", title: "Your first session is a minute away", sub: "Jump into a live room now — bring a friend and study together tonight." },
+  {
+    key: "intro", ms: 3400, tint: "#7c3aed", kind: "cinematic",
+    title: "Welcome to PrepSy", sub: "Study with people. Stay focused. See yourself improve — a tour of everything inside.",
+  },
+  {
+    key: "rooms", ms: 8200, tint: "#7c3aed", visual: "rooms",
+    title: "Live study rooms", sub: "The quiet accountability of a real study hall, online.",
+    features: [
+      { icon: "🎥", name: "Live video rooms", desc: "Join on camera, audio-only, or just observe." },
+      { icon: "🤝", name: "Collaboration styles", desc: "Quiet Focus, Pair Study, Interview Practice & more." },
+      { icon: "📺", name: "Screen share + audio", desc: "Share your IDE, slides, or a video with system sound." },
+      { icon: "👩", name: "Female-only rooms", desc: "Verified, access-controlled at the room level." },
+      { icon: "🌌", name: "Ambient study stage", desc: "Calm animated scenes + gentle nature sound." },
+      { icon: "💬", name: "In-room chat & notes", desc: "Chat, share links, export notes as a PDF." },
+      { icon: "🎯", name: "Goal-based discovery", desc: "DSA, System Design, HR… plus smart recommendations." },
+    ],
+  },
+  {
+    key: "focus", ms: 6600, tint: "#10b981", visual: "focus",
+    title: "Focus & AI", sub: "On-device AI reads your attention — no frame ever leaves your browser.",
+    features: [
+      { icon: "🧠", name: "AI Focus Monitor", desc: "Gaze, phone & drowsiness detected every 5 seconds." },
+      { icon: "✨", name: "AI Focus Coach", desc: "Turns your numbers into one concrete next-session tip." },
+      { icon: "📊", name: "Session breakdown", desc: "0–100 score with note-taking / phone / look-away split." },
+      { icon: "⏱️", name: "Synced Pomodoro", desc: "One shared timer keeps the whole room in rhythm." },
+    ],
+  },
+  {
+    key: "cohorts", ms: 7800, tint: "#f43f5e", visual: "cohorts",
+    title: "YouTube co-learning cohorts", sub: "Turn a playlist into a daily cohort that learns together.",
+    features: [
+      { icon: "▶️", name: "Synced watch parties", desc: "Up to 6 people watch in perfect sync." },
+      { icon: "📅", name: "Daily schedule", desc: "A day-by-day plan built from the playlist." },
+      { icon: "🎯", name: "Checkpoint quizzes", desc: "An AI quiz scoped to each day's topic." },
+      { icon: "🗣️", name: "Checkpoint discussions", desc: "Per-day threads to clear doubts in context." },
+      { icon: "🏅", name: "Progress & leaderboard", desc: "% complete, streaks, on-track vs behind." },
+      { icon: "🔁", name: "Resume anytime", desc: "Picks up at your next unwatched video." },
+    ],
+  },
+  {
+    key: "analytics", ms: 6600, tint: "#6366f1", visual: "analytics",
+    title: "Progress & accountability", sub: "The numbers that prove you're actually improving.",
+    features: [
+      { icon: "📈", name: "Analytics dashboard", desc: "Streak, focus heatmap, AI score trend, distractions." },
+      { icon: "🔥", name: "Streaks + rescue email", desc: "A gentle nudge before you lose your streak." },
+      { icon: "🏆", name: "Leaderboards", desc: "Rank by real study time — friends and global." },
+      { icon: "🧩", name: "Concept mastery", desc: "See what you've mastered vs. what needs review." },
+    ],
+  },
+  {
+    key: "community", ms: 5600, tint: "#0ea5e9", visual: "community",
+    title: "Community", sub: "Real peers, real momentum — the people who keep you coming back.",
+    features: [
+      { icon: "👥", name: "Community feed", desc: "Post wins, share resources, ask questions." },
+      { icon: "✉️", name: "Friends & messaging", desc: "Add friends and DM them in real time." },
+      { icon: "🧭", name: "Find your people", desc: "Matched to peers & rooms by your goals." },
+    ],
+  },
+  {
+    key: "outro", ms: 3800, tint: "#7c3aed", kind: "cinematic",
+    title: "That's PrepSy — end to end", sub: "Your first focused session is a minute away. Bring a friend and start tonight.",
+  },
 ];
 
 const CSS = `
   @keyframes pw-fade { from { opacity: 0; } to { opacity: 1; } }
   @keyframes pw-pop { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
-  @keyframes pw-scan { 0% { top: 14%; opacity: 0.9; } 85% { top: 78%; opacity: 0.55; } 100% { top: 14%; opacity: 0; } }
+  @keyframes pw-scan { 0% { top: 12%; opacity: 0.9; } 85% { top: 76%; opacity: 0.55; } 100% { top: 12%; opacity: 0; } }
   @keyframes pw-blink { 0%,100% { opacity: 1; } 50% { opacity: 0.28; } }
   @keyframes pw-rise { from { transform: scaleY(0.15); opacity: 0.4; } to { transform: scaleY(1); opacity: 1; } }
   @keyframes pw-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  @keyframes pw-item { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
   .pw-ctrl { transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease; }
   .pw-ctrl:hover { transform: translateY(-1px); }
   .pw-bar { transform-origin: bottom; animation: pw-rise 0.6s ease both; }
+  .pw-feat { animation: pw-item 0.5s ease both; }
 `;
 
-// ── Scene visuals ────────────────────────────────────────────────────────────
-function Screen({ children, bg }) {
-  return (
-    <div style={{
-      position: "relative", width: "100%", aspectRatio: "16 / 9", borderRadius: 14,
-      overflow: "hidden", background: bg || "linear-gradient(160deg, #ede9fe 0%, #eef2ff 100%)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-    }}>
-      {children}
-    </div>
-  );
-}
-
-function SceneVisual({ scene }) {
-  switch (scene) {
-    case "intro":
-      return (
-        <Screen bg="linear-gradient(140deg, #2e2350 0%, #4a3882 55%, #7c3aed 100%)">
-          <div style={{ textAlign: "center", color: "#fff", animation: "pw-pop 0.6s ease both" }}>
-            <div style={{
-              width: 66, height: 66, borderRadius: 20, margin: "0 auto 14px",
-              background: "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.3)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 28, fontWeight: 800, fontFamily: "Georgia, serif", animation: "pw-float 3s ease-in-out infinite",
-            }}>PS</div>
-            <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "Georgia, serif" }}>PrepSy</div>
-            <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>Study right, not just more.</div>
-          </div>
-        </Screen>
-      );
+// ── Compact per-category visuals ─────────────────────────────────────────────
+function Visual({ kind }) {
+  const box = { width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12, overflow: "hidden" };
+  switch (kind) {
     case "rooms":
       return (
-        <Screen>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", justifyContent: "center" }}>
-            <div style={{
-              width: 120, height: 74, borderRadius: 12, background: "#1f2440",
-              border: `2px solid ${PURPLE}`, position: "relative", display: "flex",
-              alignItems: "center", justifyContent: "center", fontSize: 30,
-              boxShadow: "0 8px 20px rgba(124,58,237,0.28)",
-            }}>
-              🧑‍💻
-              <span style={{ position: "absolute", bottom: 5, left: 6, fontSize: 9, color: "#c7d2fe", background: "rgba(0,0,0,0.4)", padding: "1px 6px", borderRadius: 6 }}>You</span>
-            </div>
+        <div style={{ ...box, background: "linear-gradient(160deg,#ede9fe,#eef2ff)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div style={{ width: 74, height: 48, borderRadius: 9, background: "#1f2440", border: `2px solid ${PURPLE}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>🧑‍💻</div>
             {["👩‍💻", "👨‍💻", "🧑‍🎓"].map((e, k) => (
-              <div key={k} style={{
-                width: 52, height: 52, borderRadius: "50%", background: "#fff", border: "2px solid #c7b6f5",
-                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
-                animation: `pw-float ${2.6 + k * 0.4}s ease-in-out infinite`,
-              }}>{e}</div>
+              <div key={k} style={{ width: 40, height: 40, borderRadius: "50%", background: "#fff", border: "2px solid #c7b6f5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, animation: `pw-float ${2.4 + k * 0.4}s ease-in-out infinite` }}>{e}</div>
             ))}
           </div>
-        </Screen>
+        </div>
       );
     case "focus":
       return (
-        <Screen bg="linear-gradient(160deg, #06251c 0%, #0b3b2b 100%)">
-          <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
-            <div style={{ position: "relative", width: 96, height: 108 }}>
-              <div style={{
-                position: "absolute", inset: 0, margin: "auto", width: 72, height: 90,
-                border: "2px solid rgba(34,197,94,0.8)", borderRadius: "50% 50% 44% 44%",
-                boxShadow: "0 0 16px rgba(34,197,94,0.3)",
-              }} />
-              <div style={{ position: "absolute", left: 0, right: 0, height: 2, background: "linear-gradient(90deg,transparent,rgba(34,197,94,0.9),transparent)", animation: "pw-scan 2.4s ease-in-out infinite" }} />
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <div style={{
-                width: 70, height: 70, borderRadius: "50%", margin: "0 auto",
-                background: "conic-gradient(#22c55e 0% 86%, rgba(255,255,255,0.15) 86% 100%)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <div style={{ width: 54, height: 54, borderRadius: "50%", background: "#06251c", color: "#4ade80", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 800 }}>86</div>
-              </div>
-              <div style={{ fontSize: 11, color: "#86efac", marginTop: 7, fontWeight: 700 }}>Focused · Note-taking ✓</div>
-            </div>
+        <div style={{ ...box, background: "linear-gradient(160deg,#06251c,#0b3b2b)", position: "relative" }}>
+          <div style={{ position: "relative", width: 70, height: 84 }}>
+            <div style={{ position: "absolute", inset: 0, margin: "auto", width: 54, height: 68, border: "2px solid rgba(34,197,94,0.8)", borderRadius: "50% 50% 44% 44%", boxShadow: "0 0 14px rgba(34,197,94,0.3)" }} />
+            <div style={{ position: "absolute", left: 0, right: 0, height: 2, background: "linear-gradient(90deg,transparent,rgba(34,197,94,0.9),transparent)", animation: "pw-scan 2.4s ease-in-out infinite" }} />
           </div>
-        </Screen>
-      );
-    case "pomodoro":
-      return (
-        <Screen>
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-            <div style={{
-              width: 84, height: 84, borderRadius: "50%", border: "7px solid #fde7c2",
-              borderTopColor: "#f59e0b", borderRightColor: "#f59e0b",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 17, fontWeight: 800, color: "#b45309",
-            }}>24:12</div>
-            <div style={{
-              width: 120, height: 74, borderRadius: 10, background: "#fff", border: "1px solid #e6e2f5",
-              padding: 10, boxShadow: "0 6px 16px rgba(100,116,180,0.14)",
-            }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#7c3aed", marginBottom: 6 }}>📝 Session notes</div>
-              {[92, 74, 84, 60].map((w, k) => (
-                <div key={k} style={{ height: 5, width: `${w}%`, background: "#ece8fb", borderRadius: 3, marginBottom: 5 }} />
-              ))}
-            </div>
+          <div style={{ marginLeft: 12, width: 56, height: 56, borderRadius: "50%", background: "conic-gradient(#22c55e 0% 86%, rgba(255,255,255,0.15) 86% 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#06251c", color: "#4ade80", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800 }}>86</div>
           </div>
-        </Screen>
+        </div>
       );
     case "cohorts":
       return (
-        <Screen bg="linear-gradient(160deg, #2a0f1a 0%, #4a1526 100%)">
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div style={{ width: 128, height: 74, borderRadius: 10, background: "#111", border: "1px solid rgba(244,63,94,0.5)", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ width: 0, height: 0, borderTop: "11px solid transparent", borderBottom: "11px solid transparent", borderLeft: "18px solid #f43f5e", marginLeft: 4 }} />
-              <span style={{ position: "absolute", bottom: 5, right: 6, fontSize: 9, color: "#fecdd3", background: "rgba(0,0,0,0.5)", padding: "1px 6px", borderRadius: 6 }}>▶ synced · 4/6</span>
-            </div>
-            <div style={{ background: "rgba(255,255,255,0.95)", borderRadius: 10, padding: "10px 12px", width: 128 }}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: "#e11d48", marginBottom: 6 }}>🎯 Checkpoint quiz</div>
-              {["Q1 ✓", "Q2 ✓", "Q3 …"].map((q, k) => (
-                <div key={k} style={{ fontSize: 10, color: "#475569", marginBottom: 4 }}>{q}</div>
-              ))}
-            </div>
+        <div style={{ ...box, background: "linear-gradient(160deg,#2a0f1a,#4a1526)" }}>
+          <div style={{ width: 96, height: 58, borderRadius: 9, background: "#111", border: "1px solid rgba(244,63,94,0.5)", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 0, height: 0, borderTop: "9px solid transparent", borderBottom: "9px solid transparent", borderLeft: "15px solid #f43f5e", marginLeft: 4 }} />
+            <span style={{ position: "absolute", bottom: 4, right: 5, fontSize: 8, color: "#fecdd3", background: "rgba(0,0,0,0.5)", padding: "1px 5px", borderRadius: 5 }}>▶ 4/6</span>
           </div>
-        </Screen>
+        </div>
       );
     case "analytics":
       return (
-        <Screen>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 18 }}>
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 84 }}>
-              {[40, 55, 48, 70, 62, 82, 96].map((h, k) => (
-                <div key={k} className="pw-bar" style={{ width: 12, height: `${h}%`, borderRadius: 4, background: "linear-gradient(#8b5cf6,#6366f1)", animationDelay: `${k * 70}ms` }} />
-              ))}
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <div style={{ background: "#fff", borderRadius: 10, padding: "8px 12px", boxShadow: "0 4px 12px rgba(100,116,180,0.12)" }}>
-                <span style={{ fontSize: 18 }}>🔥</span> <b style={{ color: "#b45309", fontSize: 16 }}>12</b>
-                <div style={{ fontSize: 9, color: "#92400e" }}>day streak</div>
-              </div>
-              <div style={{ background: "#fff", borderRadius: 10, padding: "8px 12px", boxShadow: "0 4px 12px rgba(100,116,180,0.12)" }}>
-                <b style={{ color: "#059669", fontSize: 16 }}>84</b>
-                <div style={{ fontSize: 9, color: "#047857" }}>avg focus ↑</div>
-              </div>
-            </div>
+        <div style={{ ...box, background: "linear-gradient(160deg,#ede9fe,#eef2ff)" }}>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 72 }}>
+            {[40, 55, 48, 70, 62, 82, 96].map((h, k) => (
+              <div key={k} className="pw-bar" style={{ width: 10, height: `${h}%`, borderRadius: 3, background: "linear-gradient(#8b5cf6,#6366f1)", animationDelay: `${k * 70}ms` }} />
+            ))}
           </div>
-        </Screen>
+          <div style={{ marginLeft: 10, textAlign: "center" }}>
+            <div style={{ fontSize: 22 }}>🔥</div>
+            <b style={{ color: "#b45309", fontSize: 15 }}>12</b>
+          </div>
+        </div>
       );
     case "community":
       return (
-        <Screen>
-          <div style={{ display: "flex", flexDirection: "column", gap: 7, width: "78%" }}>
-            {[
-              { e: "🎉", t: "Got the Flipkart SDE-1 offer!" },
-              { e: "💡", t: "Sharing my DP sheet resources" },
-              { e: "🏆", t: "You're #3 on the weekly board" },
-            ].map((p, k) => (
-              <div key={k} style={{
-                background: "#fff", borderRadius: 10, padding: "8px 12px", fontSize: 11.5, color: "#475569",
-                boxShadow: "0 3px 10px rgba(100,116,180,0.1)", display: "flex", alignItems: "center", gap: 8,
-                animation: `pw-pop 0.5s ease both`, animationDelay: `${k * 140}ms`,
-              }}>
-                <span style={{ fontSize: 15 }}>{p.e}</span> {p.t}
-              </div>
-            ))}
-          </div>
-        </Screen>
-      );
-    case "outro":
-      return (
-        <Screen bg="linear-gradient(140deg, #2e2350 0%, #7c3aed 100%)">
-          <div style={{ textAlign: "center", color: "#fff", animation: "pw-pop 0.6s ease both" }}>
-            <div style={{ fontSize: 30, marginBottom: 8 }}>🚀</div>
-            <div style={{ fontSize: 19, fontWeight: 800, fontFamily: "Georgia, serif" }}>Ready to prep smarter?</div>
-            <div style={{
-              display: "inline-block", marginTop: 12, background: "#fff", color: PURPLE,
-              padding: "8px 20px", borderRadius: 999, fontSize: 12, fontWeight: 800,
-              boxShadow: "0 8px 20px rgba(0,0,0,0.2)",
-            }}>Start Prepping Free →</div>
-          </div>
-        </Screen>
+        <div style={{ ...box, background: "linear-gradient(160deg,#ede9fe,#eef2ff)", flexDirection: "column", gap: 6, padding: 10 }}>
+          {["🎉", "💡", "🏆"].map((e, k) => (
+            <div key={k} className="pw-feat" style={{ animationDelay: `${k * 150}ms`, width: "100%", background: "#fff", borderRadius: 8, padding: "6px 9px", fontSize: 11, color: "#475569", boxShadow: "0 3px 9px rgba(100,116,180,0.1)" }}>
+              <span style={{ fontSize: 13 }}>{e}</span> {["Got the offer!", "Shared DP sheet", "#3 this week"][k]}
+            </div>
+          ))}
+        </div>
       );
     default:
-      return <Screen />;
+      return <div style={{ ...box, background: "linear-gradient(160deg,#ede9fe,#eef2ff)" }} />;
   }
+}
+
+function Cinematic({ scene }) {
+  const intro = scene.key === "intro";
+  return (
+    <div style={{
+      width: "100%", aspectRatio: "16 / 9", borderRadius: 14, overflow: "hidden",
+      background: intro ? "linear-gradient(140deg,#2e2350,#4a3882 55%,#7c3aed)" : "linear-gradient(140deg,#2e2350,#7c3aed)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      <div style={{ textAlign: "center", color: "#fff", animation: "pw-pop 0.6s ease both" }}>
+        {intro ? (
+          <>
+            <div style={{ width: 62, height: 62, borderRadius: 18, margin: "0 auto 12px", background: "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, fontWeight: 800, fontFamily: "Georgia, serif", animation: "pw-float 3s ease-in-out infinite" }}>PS</div>
+            <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "Georgia, serif" }}>PrepSy</div>
+            <div style={{ fontSize: 12, opacity: 0.82, marginTop: 4 }}>Study right, not just more.</div>
+          </>
+        ) : (
+          <>
+            <div style={{ fontSize: 30, marginBottom: 8 }}>🚀</div>
+            <div style={{ fontSize: 19, fontWeight: 800, fontFamily: "Georgia, serif" }}>Ready to prep smarter?</div>
+            <div style={{ display: "inline-block", marginTop: 12, background: "#fff", color: PURPLE, padding: "8px 20px", borderRadius: 999, fontSize: 12, fontWeight: 800, boxShadow: "0 8px 20px rgba(0,0,0,0.2)" }}>Start Prepping Free →</div>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ── Player ─────────────────────────────────────────────────────────────────────
 export default function ProductWalkthrough({ open, onClose }) {
   const [i, setI] = useState(0);
   const [playing, setPlaying] = useState(true);
-  const [progress, setProgress] = useState(0); // 0..1 of current scene
+  const [progress, setProgress] = useState(0);
   const [ended, setEnded] = useState(false);
   const raf = useRef(0);
   const startRef = useRef(0);
-  const baseRef = useRef(0); // progress already elapsed (for pause/resume)
+  const baseRef = useRef(0);
 
   const scene = SCENES[i];
 
-  // Reset when opened.
   useEffect(() => {
     if (open) { setI(0); setPlaying(true); setProgress(0); setEnded(false); baseRef.current = 0; }
   }, [open]);
 
-  // Drive the current scene's progress + auto-advance.
   useEffect(() => {
     if (!open || !playing || ended) return undefined;
     startRef.current = performance.now();
@@ -248,20 +216,15 @@ export default function ProductWalkthrough({ open, onClose }) {
   }, [open, playing, i, ended]);
 
   const goto = useCallback((idx) => {
-    baseRef.current = 0;
-    setEnded(false);
-    setProgress(0);
-    setI(Math.max(0, Math.min(idx, SCENES.length - 1)));
-    setPlaying(true);
+    baseRef.current = 0; setEnded(false); setProgress(0);
+    setI(Math.max(0, Math.min(idx, SCENES.length - 1))); setPlaying(true);
   }, []);
 
   const togglePlay = () => {
     if (ended) { goto(0); return; }
-    if (playing) { baseRef.current = progress; setPlaying(false); }
-    else { setPlaying(true); }
+    if (playing) { baseRef.current = progress; setPlaying(false); } else { setPlaying(true); }
   };
 
-  // Esc to close.
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
@@ -270,6 +233,8 @@ export default function ProductWalkthrough({ open, onClose }) {
   }, [open, onClose]);
 
   if (!open || typeof document === "undefined") return null;
+
+  const cinematic = scene.kind === "cinematic";
 
   return createPortal(
     <div
@@ -282,45 +247,54 @@ export default function ProductWalkthrough({ open, onClose }) {
     >
       <style>{CSS}</style>
       <div style={{
-        width: "min(600px, 100%)", background: "var(--tour-surface)", borderRadius: 20,
+        width: "min(640px, 100%)", maxHeight: "92vh", overflowY: "auto",
+        background: "var(--tour-surface)", borderRadius: 20,
         border: "1px solid var(--card-border)", boxShadow: "0 30px 80px rgba(0,0,0,0.5)",
-        overflow: "hidden", animation: "pw-pop 0.3s ease both",
+        animation: "pw-pop 0.3s ease both",
       }}>
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "1px solid var(--card-border)" }}>
+        <div style={{ position: "sticky", top: 0, zIndex: 2, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "1px solid var(--card-border)", background: "var(--tour-surface)" }}>
           <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", animation: "pw-blink 1.8s ease-in-out infinite" }} />
             Product walkthrough
           </span>
-          <button className="pw-ctrl" onClick={onClose} aria-label="Close" style={{
-            background: "transparent", border: "none", color: "var(--text-muted)", fontSize: 20, cursor: "pointer", lineHeight: 1, padding: 4,
-          }}>×</button>
+          <button className="pw-ctrl" onClick={onClose} aria-label="Close" style={{ background: "transparent", border: "none", color: "var(--text-muted)", fontSize: 20, cursor: "pointer", lineHeight: 1, padding: 4 }}>×</button>
         </div>
 
-        {/* Screen */}
         <div style={{ padding: 16 }}>
-          <SceneVisual key={scene.key} scene={scene.key} />
-
-          {/* Caption */}
-          <div style={{ marginTop: 14, minHeight: 58 }}>
-            <h3 style={{ margin: "0 0 5px", fontSize: 17, fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.25 }}>
-              {scene.title}
-            </h3>
-            <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.55 }}>{scene.sub}</p>
+          {/* Scene title */}
+          <div key={`h-${scene.key}`} style={{ animation: "pw-pop 0.4s ease both", marginBottom: 12 }}>
+            <h3 style={{ margin: "0 0 4px", fontSize: 18, fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.25 }}>{scene.title}</h3>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>{scene.sub}</p>
           </div>
 
+          {/* Stage */}
+          {cinematic ? (
+            <div key={scene.key}><Cinematic scene={scene} /></div>
+          ) : (
+            <div key={scene.key} style={{ display: "flex", gap: 16, alignItems: "stretch", flexWrap: "wrap" }}>
+              <div style={{ flex: "0 0 168px", minWidth: 140, minHeight: 150 }}>
+                <Visual kind={scene.visual} />
+              </div>
+              <ul style={{ flex: 1, minWidth: 210, listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 9 }}>
+                {scene.features.map((f, k) => (
+                  <li key={f.name} className="pw-feat" style={{ animationDelay: `${120 + k * 130}ms`, display: "flex", gap: 9, alignItems: "flex-start" }}>
+                    <span style={{ width: 26, height: 26, borderRadius: 8, flexShrink: 0, background: `${scene.tint}16`, border: `1px solid ${scene.tint}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>{f.icon}</span>
+                    <span style={{ minWidth: 0 }}>
+                      <b style={{ fontSize: 12.5, color: "var(--text-primary)", fontWeight: 700 }}>{f.name}</b>
+                      <span style={{ display: "block", fontSize: 11.5, color: "var(--text-secondary)", lineHeight: 1.4 }}>{f.desc}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Segmented progress bar (click to seek) */}
-          <div style={{ display: "flex", gap: 4, marginTop: 14 }}>
+          <div style={{ display: "flex", gap: 4, marginTop: 16 }}>
             {SCENES.map((s, k) => (
-              <button key={s.key} onClick={() => goto(k)} title={s.title} style={{
-                flex: 1, height: 5, borderRadius: 999, border: "none", padding: 0, cursor: "pointer",
-                background: "var(--card-border)", position: "relative", overflow: "hidden",
-              }}>
-                <span style={{
-                  position: "absolute", inset: 0, transformOrigin: "left",
-                  transform: `scaleX(${k < i ? 1 : k === i ? progress : 0})`,
-                  background: scene.tint, transition: k === i ? "none" : "transform 0.2s ease",
-                }} />
+              <button key={s.key} onClick={() => goto(k)} title={s.title} style={{ flex: 1, height: 5, borderRadius: 999, border: "none", padding: 0, cursor: "pointer", background: "var(--card-border)", position: "relative", overflow: "hidden" }}>
+                <span style={{ position: "absolute", inset: 0, transformOrigin: "left", transform: `scaleX(${k < i ? 1 : k === i ? progress : 0})`, background: scene.tint, transition: k === i ? "none" : "transform 0.2s ease" }} />
               </button>
             ))}
           </div>

@@ -358,7 +358,7 @@ export default function OnboardingTour({ autoStart = false, onSeen }) {
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
               }}
             >
-              <span style={{ fontSize: 14 }}>▶</span> Watch the full walkthrough (60s)
+              <span style={{ fontSize: 14 }}>▶</span> Watch the full feature walkthrough
             </button>
           </div>
         )}
