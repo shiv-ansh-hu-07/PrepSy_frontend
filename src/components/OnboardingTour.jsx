@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import ProductWalkthrough from "./ProductWalkthrough";
+import HowToWalkthrough from "./HowToWalkthrough";
 
 const PURPLE = "#7c3aed";
 
@@ -188,6 +189,7 @@ export default function OnboardingTour({ autoStart = false, onSeen }) {
   const [rect, setRect] = useState(null); // spotlight target rect, or null (centered)
   const [showLauncher, setShowLauncher] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
+  const [showHowTo, setShowHowTo] = useState(false);
   const startedRef = useRef(false);
 
   const begin = useCallback(() => {
@@ -271,6 +273,20 @@ export default function OnboardingTour({ autoStart = false, onSeen }) {
     }}>
       <button
         className="tour-launch"
+        onClick={() => setShowHowTo(true)}
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 8,
+          padding: "9px 15px", borderRadius: 999,
+          border: `1px solid ${PURPLE}33`, background: "var(--tour-surface)",
+          color: PURPLE, fontWeight: 700, fontSize: 13, cursor: "pointer",
+          boxShadow: "0 6px 18px rgba(17,19,45,0.16)",
+        }}
+        title="See how to use PrepSy, step by step"
+      >
+        <span style={{ fontSize: 13 }}>▶</span> How to use it
+      </button>
+      <button
+        className="tour-launch"
         onClick={() => setShowVideo(true)}
         style={{
           display: "inline-flex", alignItems: "center", gap: 8,
@@ -279,9 +295,9 @@ export default function OnboardingTour({ autoStart = false, onSeen }) {
           color: PURPLE, fontWeight: 700, fontSize: 13, cursor: "pointer",
           boxShadow: "0 6px 18px rgba(17,19,45,0.16)",
         }}
-        title="Watch the product walkthrough"
+        title="Watch the feature overview"
       >
-        <span style={{ fontSize: 13 }}>▶</span> Walkthrough
+        <span style={{ fontSize: 13 }}>▶</span> Feature overview
       </button>
       <button
         className="tour-launch"
@@ -301,8 +317,11 @@ export default function OnboardingTour({ autoStart = false, onSeen }) {
 
   // ── Tooltip position ──
   let tipStyle = {
+    // Opacity-only entrance — the card uses `transform` for positioning
+    // (translate centering / translateY(-100%) above a target), so the entrance
+    // animation must NOT touch transform or it clobbers the placement.
     position: "fixed", zIndex: 10002, width: "min(340px, calc(100vw - 32px))",
-    animation: "tour-pop 0.28s ease both",
+    animation: "tour-fade 0.28s ease both",
   };
   const centered = !rect;
   if (centered) {
@@ -339,57 +358,80 @@ export default function OnboardingTour({ autoStart = false, onSeen }) {
         </>
       )}
 
-      {/* Tooltip card */}
+      {/* Tooltip card — flex column so the action row stays pinned while the
+          (possibly tall) welcome content scrolls; capped to the viewport. */}
       <div style={{
         ...tipStyle,
-        background: "var(--tour-surface)", borderRadius: 18, padding: 20,
+        background: "var(--tour-surface)", borderRadius: 18, padding: 0,
         border: "1px solid var(--card-border)", boxShadow: "0 24px 60px rgba(17,19,45,0.4)",
+        display: "flex", flexDirection: "column", maxHeight: "calc(100vh - 24px)",
       }}>
-        {s.welcome && (
-          <div style={{ marginBottom: 16 }}>
-            <WalkthroughAnimation />
-            <button
-              className="tour-btn"
-              onClick={() => setShowVideo(true)}
-              style={{
-                marginTop: 10, width: "100%", padding: "9px 0", borderRadius: 10,
-                border: `1px solid ${PURPLE}33`, background: "rgba(124,58,237,0.08)",
-                color: PURPLE, fontWeight: 700, fontSize: 13, cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
-              }}
-            >
-              <span style={{ fontSize: 14 }}>▶</span> Watch the full feature walkthrough
-            </button>
+        {/* Scrollable content */}
+        <div style={{ overflowY: "auto", padding: "20px 20px 6px" }}>
+          {s.welcome && (
+            <div style={{ marginBottom: 16 }}>
+              <WalkthroughAnimation />
+              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                <button
+                  className="tour-btn"
+                  onClick={() => setShowVideo(true)}
+                  style={{
+                    flex: 1, padding: "9px 0", borderRadius: 10,
+                    border: `1px solid ${PURPLE}33`, background: "rgba(124,58,237,0.08)",
+                    color: PURPLE, fontWeight: 700, fontSize: 12.5, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  }}
+                >
+                  <span style={{ fontSize: 13 }}>▶</span> Feature overview
+                </button>
+                <button
+                  className="tour-btn"
+                  onClick={() => setShowHowTo(true)}
+                  style={{
+                    flex: 1, padding: "9px 0", borderRadius: 10, border: "none",
+                    background: PURPLE, color: "#fff", fontWeight: 700, fontSize: 12.5,
+                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                    boxShadow: "0 6px 16px rgba(124,58,237,0.3)",
+                  }}
+                >
+                  <span style={{ fontSize: 13 }}>▶</span> How to use it
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <span style={{
+              fontSize: 11, fontWeight: 700, color: PURPLE, background: "rgba(124,58,237,0.1)",
+              border: "1px solid rgba(124,58,237,0.22)", padding: "2px 9px", borderRadius: 999,
+            }}>
+              {step + 1} / {STEPS.length}
+            </span>
           </div>
-        )}
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-          <span style={{
-            fontSize: 11, fontWeight: 700, color: PURPLE, background: "rgba(124,58,237,0.1)",
-            border: "1px solid rgba(124,58,237,0.22)", padding: "2px 9px", borderRadius: 999,
-          }}>
-            {step + 1} / {STEPS.length}
-          </span>
+          <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.25 }}>
+            {s.title}
+          </h3>
+          <p style={{ margin: 0, fontSize: 13.5, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+            {s.body}
+          </p>
+
+          {/* Progress dots */}
+          <div style={{ display: "flex", gap: 6, margin: "16px 0 4px" }}>
+            {STEPS.map((_, k) => (
+              <span key={k} style={{
+                height: 6, borderRadius: 999, flex: k === step ? "0 0 20px" : "0 0 6px",
+                background: k === step ? PURPLE : "var(--card-border)", transition: "all 0.3s ease",
+              }} />
+            ))}
+          </div>
         </div>
 
-        <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.25 }}>
-          {s.title}
-        </h3>
-        <p style={{ margin: 0, fontSize: 13.5, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-          {s.body}
-        </p>
-
-        {/* Progress dots */}
-        <div style={{ display: "flex", gap: 6, margin: "16px 0 14px" }}>
-          {STEPS.map((_, k) => (
-            <span key={k} style={{
-              height: 6, borderRadius: 999, flex: k === step ? "0 0 20px" : "0 0 6px",
-              background: k === step ? PURPLE : "var(--card-border)", transition: "all 0.3s ease",
-            }} />
-          ))}
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+        {/* Pinned action row — always visible even if the content scrolls */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
+          padding: "12px 20px", borderTop: "1px solid var(--card-border)", flexShrink: 0,
+        }}>
           <button className="tour-btn" onClick={finish} style={{
             background: "transparent", border: "none", color: "var(--text-muted)",
             fontSize: 13, fontWeight: 600, cursor: "pointer", padding: "6px 4px",
@@ -425,6 +467,7 @@ export default function OnboardingTour({ autoStart = false, onSeen }) {
       {launcher}
       {overlay}
       <ProductWalkthrough open={showVideo} onClose={() => setShowVideo(false)} />
+      <HowToWalkthrough open={showHowTo} onClose={() => setShowHowTo(false)} />
     </>,
     document.body
   );
