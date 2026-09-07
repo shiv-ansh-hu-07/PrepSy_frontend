@@ -81,6 +81,12 @@ export async function setEmailNotifications(enabled) {
   return data;
 }
 
+// Mark the first-login product tour as seen (account-scoped, follows the user).
+export async function markTourSeen() {
+  const { data } = await api.put("/profiles/me/tour-seen");
+  return data;
+}
+
 export async function uploadAvatar(formData) {
   const { data } = await api.post("/profiles/avatar", formData, {
     headers: { "Content-Type": "multipart/form-data" },

@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
-import api from "../services/api";
+import api, { markTourSeen as apiMarkTourSeen } from "../services/api";
 import { track } from "../services/analytics";
 
 const AuthContext = createContext();
@@ -157,6 +157,18 @@ export const AuthProvider = ({ children }) => {
     persistGuestSession(true);
   }, [persistGuestSession]);
 
+  // Mark the product tour as seen — optimistically flips the local flag so it
+  // won't re-fire this session, then persists to the account (best-effort).
+  const markTourSeen = useCallback(() => {
+    setUser((prev) => {
+      if (!prev || prev.hasSeenTour) return prev;
+      const next = { ...prev, hasSeenTour: true };
+      try { localStorage.setItem(USER_CACHE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+    apiMarkTourSeen().catch(() => { /* non-critical; localStorage still guards this browser */ });
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -168,6 +180,7 @@ export const AuthProvider = ({ children }) => {
         loading,
         guestSessionActive,
         markGuestSessionActive,
+        markTourSeen,
         refreshUser: loadUser,
       }}
     >

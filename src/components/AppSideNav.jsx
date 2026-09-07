@@ -22,10 +22,10 @@ const navItems = [
   { label: "Home", path: "/dashboard", icon: Home },
   { label: "Find your people", path: "/people", icon: Sparkles, requiresUser: true },
   { label: "Leaderboard", path: "/leaderboard", icon: Trophy, requiresUser: true },
-  { label: "YouTube Cohort", path: "/cohorts", icon: Youtube, requiresUser: true },
+  { label: "YouTube Cohort", path: "/cohorts", icon: Youtube, requiresUser: true, tour: "nav-cohort" },
   { label: "Community", path: "/community", icon: MessageCircle },
-  { label: "Rooms", path: "/join-room", icon: DoorOpen, requiresUser: true, match: ["/join-room", "/myRooms", "/create-room"] },
-  { label: "Analytics", path: "/analytics", icon: BarChart3, requiresUser: true },
+  { label: "Rooms", path: "/join-room", icon: DoorOpen, requiresUser: true, match: ["/join-room", "/myRooms", "/create-room"], tour: "nav-rooms" },
+  { label: "Analytics", path: "/analytics", icon: BarChart3, requiresUser: true, tour: "nav-analytics" },
   { label: "Profile", path: "/profile", icon: UserRound, requiresUser: true },
 ];
 
@@ -81,6 +81,7 @@ export default function AppSideNav() {
             <button
               key={item.path}
               type="button"
+              data-tour={item.tour}
               onClick={() => {
                 if (!disabled) navigate(item.path);
               }}
@@ -117,6 +118,7 @@ export default function AppSideNav() {
         </p>
         <button
           type="button"
+          data-tour="start-room"
           onClick={() => navigate(user ? "/create-room" : "/login")}
           style={styles.ctaButton}
         >

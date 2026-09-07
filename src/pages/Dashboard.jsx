@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api, { fetchStats, fetchMyAnalytics, fetchFocusSummary } from "../services/api";
 import AppSideNav from "../components/AppSideNav";
+import OnboardingTour from "../components/OnboardingTour";
 
 const PAGE_BG = "var(--page-bg)";
 
@@ -30,7 +31,7 @@ function roomIconBg(room) {
 }
 
 export default function Dashboard() {
-  const { user, guestSessionActive } = useAuth();
+  const { user, guestSessionActive, markTourSeen } = useAuth();
   const navigate = useNavigate();
   const windowWidth = useWindowWidth();
   const isMobile = windowWidth < 640;
@@ -170,7 +171,7 @@ export default function Dashboard() {
         }}>
 
           {/* Sessions panel */}
-          <div style={panelStyle}>
+          <div data-tour="sessions" style={panelStyle}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
               <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 7 }}>
                 <span style={{ fontSize: 16 }}>📋</span> Active &amp; upcoming sessions
@@ -286,6 +287,10 @@ export default function Dashboard() {
         </div>
       </main>
       </div>
+
+      {/* First-login guided tour (account-scoped: fires once per user, any device)
+          + replayable "Take a tour" launcher */}
+      <OnboardingTour autoStart={!!user && user.hasSeenTour === false} onSeen={markTourSeen} />
     </div>
   );
 }
