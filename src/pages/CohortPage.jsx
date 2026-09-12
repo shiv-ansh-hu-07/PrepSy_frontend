@@ -275,6 +275,27 @@ export default function CohortPage() {
     }
   };
 
+  const [recomputing, setRecomputing] = useState(false);
+  const [recomputeNote, setRecomputeNote] = useState("");
+  const handleRecompute = async () => {
+    setRecomputing(true);
+    setRecomputeNote("");
+    try {
+      const { data } = await api.post(`/cohorts/${id}/recompute-schedule`);
+      const { data: fresh } = await api.get(`/cohorts/${id}/sessions`);
+      setSessions(fresh);
+      setRecomputeNote(
+        data?.changed
+          ? `Schedule updated — ${data.remainingDays} day${data.remainingDays === 1 ? "" : "s"} left${data.removedDays ? `, ${data.removedDays} finished early` : ""}.`
+          : "Already up to date — the cohort isn't ahead of plan yet."
+      );
+    } catch (err) {
+      setRecomputeNote(err?.response?.data?.message || "Couldn't recompute the schedule.");
+    } finally {
+      setRecomputing(false);
+    }
+  };
+
   const handleCatchup = async (sessionId, done) => {
     setCatchingUp((prev) => ({ ...prev, [sessionId]: true }));
     // Optimistic: flip the flag locally so the chip updates immediately.
@@ -939,7 +960,23 @@ export default function CohortPage() {
           {/* Tab: Sessions */}
           {activeTab === "sessions" && (
             <div style={card}>
-              <h3 style={sectionTitle}>📅 Study Sessions</h3>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                <h3 style={{ ...sectionTitle, marginBottom: 0 }}>📅 Study Sessions</h3>
+                {cohort.createdById === user?.id && sessions.length > 0 && (
+                  <button
+                    onClick={handleRecompute}
+                    disabled={recomputing}
+                    title="Drop videos the cohort already watched and re-pack the remaining days so you finish sooner"
+                    style={{ height: 32, padding: "0 14px", fontSize: 12.5, fontWeight: 700, borderRadius: 9, border: "1px solid var(--accent)", background: "var(--accent-soft)", color: "var(--accent)", cursor: recomputing ? "not-allowed" : "pointer" }}
+                  >
+                    {recomputing ? "Recalculating…" : "🔄 Recalculate schedule"}
+                  </button>
+                )}
+              </div>
+              {recomputeNote ? (
+                <p style={{ margin: "10px 0 0", fontSize: 12.5, color: "var(--text-secondary)" }}>{recomputeNote}</p>
+              ) : null}
+              <div style={{ height: 16 }} />
 
               {cohort.createdById === user?.id && sessions.length === 0 && (
                 <div style={{ marginBottom: 20, padding: 16, borderRadius: 14, border: "1px solid var(--accent)", background: "var(--accent-soft)" }}>
