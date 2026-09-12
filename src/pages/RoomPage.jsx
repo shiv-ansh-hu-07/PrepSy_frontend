@@ -6,7 +6,7 @@ import {
 } from "@livekit/components-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import api from "../services/api";
+import api, { fetchRoomPlaylist } from "../services/api";
 import RoomLayout from "../components/RoomLayout";
 import WatchPartyLayout from "../components/WatchPartyLayout";
 import TeamsRoom from "../components/teamsRoom";
@@ -27,6 +27,7 @@ export default function RoomPage() {
   const [startTime, setStartTime] = useState(null);
   const [roomTags, setRoomTags] = useState([]);
   const [cohortPlayback, setCohortPlayback] = useState(null);
+  const [cohortPlaylist, setCohortPlaylist] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [joinError, setJoinError] = useState(null);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
@@ -97,6 +98,23 @@ export default function RoomPage() {
       cancelled = true;
     };
   }, [roomId]);
+
+  // Full playlist (for the in-room Playlist browser + resume). Members only —
+  // guests silently get nothing and the panel just won't render.
+  useEffect(() => {
+    if (!roomId || !user?.id) return undefined;
+    let cancelled = false;
+    fetchRoomPlaylist(roomId)
+      .then((res) => {
+        if (!cancelled) setCohortPlaylist(res || null);
+      })
+      .catch(() => {
+        if (!cancelled) setCohortPlaylist(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [roomId, user?.id]);
 
   useEffect(() => {
     if (!roomId || !user?.id || !token) return;
@@ -274,6 +292,8 @@ export default function RoomPage() {
                 : null
             }
             segmentPart={cohortPlayback?.part || null}
+            playlistVideos={cohortPlaylist?.videos || null}
+            watchedVideoIds={cohortPlaylist?.watchedVideoIds || null}
           />
         ) : (
           <>

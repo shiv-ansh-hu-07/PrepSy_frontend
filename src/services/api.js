@@ -110,6 +110,13 @@ export async function saveRoomVideoState(roomId, state) {
   return data;
 }
 
+// Full playlist + this member's watched set for a cohort room's Playlist panel.
+// Returns null (server) for non-cohort rooms; caller degrades gracefully.
+export async function fetchRoomPlaylist(roomId) {
+  const { data } = await api.get(`/cohorts/by-room/${roomId}/playlist`);
+  return data;
+}
+
 // Record that the caller finished a video (per-member cohort progress).
 // No-ops server-side for non-cohort rooms / non-members.
 export async function markVideoWatched(roomId, videoId) {

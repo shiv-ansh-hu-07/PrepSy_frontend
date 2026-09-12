@@ -21,6 +21,10 @@ export default function YouTubeRoom({
   restrictVideoIds = null,
   segment = null,
   segmentPart = null,
+  playlistVideos = null,   // full cohort playlist [{ ytVideoId, title, ... }]
+  watchedVideoIds = null,  // this member's watched set
+  onRegisterControls = null, // hand up { jumpTo } for the Playlist panel
+  onCurrentVideoId = null,   // report the currently-playing videoId to the parent
 }) {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
@@ -38,6 +42,19 @@ export default function YouTubeRoom({
   const receivedSyncRef = useRef(false); // a live participant has synced us this session
   const watchedRef = useRef(new Set());  // videoIds this client already marked watched
 
+  // The full cohort playlist (ordered ytVideoIds) so any video is reachable in
+  // one shared player, and the member's watched set for choosing a sane default.
+  const fullListRef = useRef(null);
+  useEffect(() => {
+    fullListRef.current = Array.isArray(playlistVideos) && playlistVideos.length
+      ? playlistVideos.map((v) => v.ytVideoId).filter(Boolean)
+      : null;
+  }, [playlistVideos]);
+  const watchedSetRef = useRef(new Set());
+  useEffect(() => {
+    watchedSetRef.current = new Set(Array.isArray(watchedVideoIds) ? watchedVideoIds : []);
+  }, [watchedVideoIds]);
+
   // Current video's title + channel, for creator attribution. Read live from
   // the player so it stays correct as the playlist advances.
   const [videoMeta, setVideoMeta] = useState(null);
@@ -45,8 +62,9 @@ export default function YouTubeRoom({
     const data = player?.getVideoData?.();
     if (data?.video_id) {
       setVideoMeta({ title: data.title, author: data.author, videoId: data.video_id });
+      onCurrentVideoId?.(data.video_id);
     }
-  }, []);
+  }, [onCurrentVideoId]);
 
   // Cohort rooms restrict playback to the day's content. The data can arrive
   // after the player is ready, so keep the latest in a ref and apply it both on
@@ -129,6 +147,34 @@ export default function YouTubeRoom({
     markVideoWatched(roomId, vid).catch(() => {});
   }, [roomId]);
 
+  // ── Jump to any video in the playlist (Playlist panel) ─────────────────────
+  // The room is shared, so a jump loads the video locally and broadcasts it —
+  // everyone in the room follows to the picked video (existing sync protocol).
+  const jumpTo = useCallback((vid) => {
+    const player = playerRef.current;
+    if (!player || !vid) return;
+    isSyncingRef.current = true;
+    const list = player.getPlaylist?.() || fullListRef.current || null;
+    const idx = Array.isArray(list) ? list.indexOf(vid) : -1;
+    if (idx >= 0) {
+      player.loadPlaylist?.({ playlist: list, index: idx, startSeconds: 0 });
+    } else {
+      player.loadVideoById?.({ videoId: vid, startSeconds: 0 });
+    }
+    if (lockedRef.current) player.pauseVideo?.();
+    captureVideoMeta(player);
+    persistState();
+    // Let the load settle, then tell the room to follow this video.
+    setTimeout(() => {
+      isSyncingRef.current = false;
+      broadcastState(lockedRef.current ? "PAUSE" : "PLAY");
+    }, 900);
+  }, [captureVideoMeta, broadcastState, persistState]);
+
+  useEffect(() => {
+    onRegisterControls?.({ jumpTo });
+  }, [onRegisterControls, jumpTo]);
+
   // ── Apply incoming sync (with drift correction) ───────────────────────────
 
   const applySync = useCallback((msg) => {
@@ -147,7 +193,7 @@ export default function YouTubeRoom({
     const localVideoId = player.getVideoData?.()?.video_id;
     if (msg.videoId && msg.videoId !== localVideoId) {
       const list =
-        player.getPlaylist?.() || restrictRef.current?.restrictVideoIds || null;
+        player.getPlaylist?.() || fullListRef.current || restrictRef.current?.restrictVideoIds || null;
       const idx = Array.isArray(list) ? list.indexOf(msg.videoId) : -1;
       if (idx >= 0) {
         // Keep the day's playlist intact so later videos still queue up.
@@ -276,7 +322,7 @@ export default function YouTubeRoom({
       if (!player || !saved || !saved.videoId) return;
 
       isSyncingRef.current = true;
-      const list = restrictRef.current?.restrictVideoIds;
+      const list = fullListRef.current || restrictRef.current?.restrictVideoIds;
       const idx = list?.length ? list.indexOf(saved.videoId) : -1;
       if (idx >= 0) {
         player.loadPlaylist?.({ playlist: list, index: idx, startSeconds: saved.positionSec || 0 });
@@ -311,11 +357,29 @@ export default function YouTubeRoom({
 
   const onReady = useCallback((e) => {
     playerRef.current = e.target;
-    // Cohort rooms restrict to the day's videos/segment; otherwise fall back to
-    // playlist-only mode.
-    const applied = applyRestriction(e.target, restrictRef.current);
-    if (!applied && !videoId && playlistId) {
-      e.target.loadPlaylist({ list: playlistId, listType: "playlist", index: 0 });
+    const full = fullListRef.current;
+    if (full?.length) {
+      // Cohort room: load the WHOLE playlist so any video is reachable in one
+      // shared player. Default start = the day's video, else the first video
+      // this member hasn't watched, else video 1. The resume effect and live
+      // sync override this shortly after if there's saved state / a live peer.
+      const r = restrictRef.current;
+      const dayId = r?.segment?.videoId || r?.restrictVideoIds?.[0] || null;
+      const firstUnwatched = full.find((id) => !watchedSetRef.current.has(id));
+      const startId = dayId || firstUnwatched || full[0];
+      const idx = Math.max(0, full.indexOf(startId));
+      // cue (not load) so nothing plays until the prep lock releases.
+      e.target.cuePlaylist?.({
+        playlist: full,
+        index: idx,
+        startSeconds: r?.segment?.startSec ?? 0,
+      });
+    } else {
+      // Non-cohort: day restriction (single video/segment) or plain playlist.
+      const applied = applyRestriction(e.target, restrictRef.current);
+      if (!applied && !videoId && playlistId) {
+        e.target.loadPlaylist({ list: playlistId, listType: "playlist", index: 0 });
+      }
     }
     // Safety net: some browsers/embeds can start playback right on load
     // despite autoplay:0. Never let that slip past the prep-timer lock.
@@ -326,9 +390,11 @@ export default function YouTubeRoom({
   }, [videoId, playlistId, captureVideoMeta, applyRestriction]);
 
   // Apply (or re-apply) the day's restriction if it arrives / changes after the
-  // player is already up.
+  // player is already up. Skipped for full-playlist cohort rooms — there the
+  // whole list is loaded once and we never want a day change to yank the shared
+  // player out from under people who may have jumped elsewhere.
   useEffect(() => {
-    if (playerRef.current) {
+    if (playerRef.current && !fullListRef.current) {
       applyRestriction(playerRef.current, { restrictVideoIds, segment });
     }
   }, [restrictVideoIds, segment, applyRestriction]);

@@ -1,4 +1,4 @@
-import { Mic, MicOff, Video, VideoOff, MessageSquare, Users, LogOut, Copy, X, Play, Flame, Target, Sparkles, Eye } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, MessageSquare, Users, LogOut, Copy, X, Play, Flame, Target, Sparkles, Eye, ListVideo, Check } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useParticipants, useTracks, VideoTrack } from "@livekit/components-react";
@@ -29,6 +29,8 @@ export default function WatchPartyLayout({
   restrictVideoIds = null,
   segment = null,
   segmentPart = null,
+  playlistVideos = null,
+  watchedVideoIds = null,
 }) {
   const { toggleMic, micEnabled, toggleCamera, camEnabled } = useMediaControls();
   const navigate = useNavigate();
@@ -39,6 +41,10 @@ export default function WatchPartyLayout({
   });
 
   const [tab, setTab] = useState("chat");
+  const ytControlsRef = useRef(null);
+  const [currentVideoId, setCurrentVideoId] = useState(null);
+  const hasPlaylist = Array.isArray(playlistVideos) && playlistVideos.length > 0;
+  const watchedSet = new Set(Array.isArray(watchedVideoIds) ? watchedVideoIds : []);
   const [shareStatus, setShareStatus] = useState("");
   const [leaving, setLeaving] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
@@ -198,6 +204,10 @@ export default function WatchPartyLayout({
               restrictVideoIds={restrictVideoIds}
               segment={segment}
               segmentPart={segmentPart}
+              playlistVideos={playlistVideos}
+              watchedVideoIds={watchedVideoIds}
+              onRegisterControls={(c) => { ytControlsRef.current = c; }}
+              onCurrentVideoId={setCurrentVideoId}
             />
 
             {participants.some((p) => p.isCameraEnabled) && (
@@ -284,6 +294,9 @@ export default function WatchPartyLayout({
             <Control icon={micEnabled ? Mic : MicOff} active={micEnabled} onClick={toggleMic} title="Toggle mic" />
             <Control icon={camEnabled ? Video : VideoOff} active={camEnabled} onClick={toggleCamera} title="Toggle camera" />
             <Control icon={MessageSquare} onClick={() => setTab("chat")} active={tab === "chat"} title="Chat" />
+            {hasPlaylist && (
+              <Control icon={ListVideo} onClick={() => setTab("playlist")} active={tab === "playlist"} title="Playlist" />
+            )}
             <Control icon={Users} onClick={() => setTab("people")} active={tab === "people"} title="People" />
             <Control icon={LogOut} danger onClick={handleLeave} title="Leave" />
           </div>
@@ -298,6 +311,15 @@ export default function WatchPartyLayout({
             >
               Chat
             </button>
+            {hasPlaylist && (
+              <button
+                type="button"
+                style={styles.tabBtn(tab === "playlist")}
+                onClick={() => setTab("playlist")}
+              >
+                Playlist <span style={styles.tabCount}>{playlistVideos.length}</span>
+              </button>
+            )}
             <button
               type="button"
               style={styles.tabBtn(tab === "people")}
@@ -310,6 +332,13 @@ export default function WatchPartyLayout({
           <div style={styles.tabBody}>
             {tab === "chat" ? (
               <ChatDrawer embedded currentUser={currentUser} />
+            ) : tab === "playlist" && hasPlaylist ? (
+              <PlaylistPanel
+                videos={playlistVideos}
+                watchedSet={watchedSet}
+                currentVideoId={currentVideoId}
+                onPick={(vid) => ytControlsRef.current?.jumpTo(vid)}
+              />
             ) : (
               <PeopleList participants={participants} />
             )}
@@ -330,6 +359,35 @@ function StatPill({ icon: Icon, label, value }) {
       {Icon && <Icon size={14} color="#a5b4fc" style={{ marginBottom: 4 }} />}
       <p style={styles.statPillValue}>{value}</p>
       <p style={styles.statPillLabel}>{label}</p>
+    </div>
+  );
+}
+
+function PlaylistPanel({ videos, watchedSet, currentVideoId, onPick }) {
+  return (
+    <div style={styles.playlistPanel}>
+      <p style={styles.playlistHint}>
+        Pick any video — everyone in the room jumps to it together.
+      </p>
+      {videos.map((v, i) => {
+        const isCurrent = v.ytVideoId === currentVideoId;
+        const watched = watchedSet.has(v.ytVideoId);
+        return (
+          <button
+            key={v.ytVideoId || i}
+            type="button"
+            onClick={() => onPick(v.ytVideoId)}
+            style={styles.playlistRow(isCurrent)}
+            title={v.title}
+          >
+            <span style={styles.playlistIndex(isCurrent)}>
+              {isCurrent ? <Play size={12} fill="currentColor" /> : i + 1}
+            </span>
+            <span style={styles.playlistTitle(isCurrent)}>{v.title}</span>
+            {watched && <Check size={14} color="#22c55e" style={{ flexShrink: 0 }} />}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -579,6 +637,28 @@ const styles = {
   },
   tabBody: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column" },
   peopleList: { padding: 12, display: "flex", flexDirection: "column", gap: 8, overflowY: "auto" },
+  playlistPanel: { padding: 12, display: "flex", flexDirection: "column", gap: 6, overflowY: "auto" },
+  playlistHint: {
+    margin: "0 0 6px", fontSize: 11.5, color: "var(--text-muted)", lineHeight: 1.4,
+  },
+  playlistRow: (current) => ({
+    display: "flex", alignItems: "center", gap: 10, padding: "9px 10px",
+    borderRadius: 10, cursor: "pointer", textAlign: "left", width: "100%",
+    border: current ? "1px solid var(--accent)" : "1px solid var(--card-border)",
+    background: current ? "var(--accent-soft)" : "var(--card-bg)",
+  }),
+  playlistIndex: (current) => ({
+    width: 22, height: 22, flexShrink: 0, borderRadius: "50%",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    fontSize: 11, fontWeight: 700,
+    background: current ? "var(--accent)" : "var(--accent-soft)",
+    color: current ? "#fff" : "var(--accent)",
+  }),
+  playlistTitle: (current) => ({
+    flex: 1, minWidth: 0, fontSize: 12.5, lineHeight: 1.35,
+    color: "var(--text-primary)", fontWeight: current ? 700 : 500,
+    display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+  }),
   personRow: {
     display: "flex", alignItems: "center", gap: 10, padding: "8px 10px",
     borderRadius: 12, background: "var(--card-bg)",
