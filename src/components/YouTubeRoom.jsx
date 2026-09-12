@@ -40,6 +40,7 @@ export default function YouTubeRoom({
   const heartbeatRef = useRef(null);
   const savedStateRef = useRef(null);   // persisted playback memory for this room
   const receivedSyncRef = useRef(false); // a live participant has synced us this session
+  const didResumeRef = useRef(false);    // resumed from saved memory this session
   const watchedRef = useRef(new Set());  // videoIds this client already marked watched
 
   // The full cohort playlist (ordered ytVideoIds) so any video is reachable in
@@ -308,33 +309,72 @@ export default function YouTubeRoom({
       .catch(() => {});
   }, [roomId]);
 
-  // ── Resume from saved memory if nobody synced us (empty-room case) ─────────
+  // ── Resume where the cohort left off if nobody synced us (empty-room case) ──
+
+  // Decide the best resume target and load it. Rules (no live peer present):
+  //  • No saved memory → keep the onReady default (today's scheduled session).
+  //  • Saved video is BEFORE today's scheduled session → the cohort has moved
+  //    on; keep today's session (don't drag the room back to a finished day).
+  //  • Saved video is AT/AFTER today's session → resume it at its saved position
+  //    (this is "continue where we left off"). If that video is already fully
+  //    watched, jump to the next unwatched one instead.
+  const resumeFromSaved = useCallback(() => {
+    if (didResumeRef.current || receivedSyncRef.current) return;
+    const player = playerRef.current;
+    const saved = savedStateRef.current;
+    if (!player || !saved?.videoId) return;
+
+    const full = fullListRef.current;
+    const dayId =
+      restrictRef.current?.segment?.videoId ||
+      restrictRef.current?.restrictVideoIds?.[0] ||
+      null;
+    const savedIdx = full ? full.indexOf(saved.videoId) : -1;
+    const dayIdx = dayId && full ? full.indexOf(dayId) : -1;
+
+    // Cohort advanced past the saved point → keep today's session default.
+    if (full && savedIdx >= 0 && dayIdx >= 0 && savedIdx < dayIdx) return;
+
+    let targetVid = saved.videoId;
+    let targetPos = saved.positionSec || 0;
+    if (full && savedIdx >= 0 && watchedSetRef.current.has(saved.videoId)) {
+      const next = full.slice(savedIdx + 1).find((id) => !watchedSetRef.current.has(id));
+      if (next) { targetVid = next; targetPos = 0; }
+    }
+
+    didResumeRef.current = true;
+    isSyncingRef.current = true;
+    const list = full || restrictRef.current?.restrictVideoIds;
+    const li = list?.length ? list.indexOf(targetVid) : -1;
+    if (li >= 0) {
+      player.loadPlaylist?.({ playlist: list, index: li, startSeconds: targetPos });
+    } else {
+      player.loadVideoById?.({ videoId: targetVid, startSeconds: targetPos });
+    }
+    if (lockedRef.current || !saved.playing) player.pauseVideo?.();
+    captureVideoMeta(player);
+    setTimeout(() => { isSyncingRef.current = false; }, 600);
+  }, [captureVideoMeta]);
 
   useEffect(() => {
     if (!room) return undefined;
     // Wait past the 1500ms sync request + a response window. If a live peer
-    // synced us, do nothing (we joined the group's live position). Otherwise
-    // resume the room's last saved video + position instead of restarting.
-    const id = setTimeout(() => {
-      if (receivedSyncRef.current) return;
-      const saved = savedStateRef.current;
-      const player = playerRef.current;
-      if (!player || !saved || !saved.videoId) return;
-
-      isSyncingRef.current = true;
-      const list = fullListRef.current || restrictRef.current?.restrictVideoIds;
-      const idx = list?.length ? list.indexOf(saved.videoId) : -1;
-      if (idx >= 0) {
-        player.loadPlaylist?.({ playlist: list, index: idx, startSeconds: saved.positionSec || 0 });
-      } else {
-        player.loadVideoById?.({ videoId: saved.videoId, startSeconds: saved.positionSec || 0 });
-      }
-      if (lockedRef.current || !saved.playing) player.pauseVideo?.();
-      captureVideoMeta(player);
-      setTimeout(() => { isSyncingRef.current = false; }, 500);
-    }, 2800);
+    // synced us we skip; otherwise resume the room's last saved position.
+    const id = setTimeout(resumeFromSaved, 2800);
     return () => clearTimeout(id);
-  }, [room, captureVideoMeta]);
+  }, [room, resumeFromSaved]);
+
+  // ── Persist the spot when leaving (tab close / navigate / unmount) ────────
+  // Passive watch-party users often just close the tab, so the pause/end
+  // handlers never fire; without this the room's memory misses their progress.
+  useEffect(() => {
+    const save = () => { if (!isSyncingRef.current) persistState(); };
+    window.addEventListener("pagehide", save);
+    return () => {
+      window.removeEventListener("pagehide", save);
+      save();
+    };
+  }, [persistState]);
 
   // ── Periodic heartbeat: sync drift + persist playback memory (host only) ──
 
@@ -417,7 +457,10 @@ export default function YouTubeRoom({
     if (isSyncingRef.current) return; // skip — this change was caused by applySync
     if (e.data === YT_PLAYING) {
       broadcastState("PLAY");
-      if (isHost()) persistState(); // capture a new video / resumed play
+      // Everyone persists on play (not just the elected host) so the room's
+      // last position is captured even if the host closed their tab — this is
+      // what lets a later joiner resume the video the cohort actually left on.
+      persistState();
     }
     if (e.data === YT_PAUSED) {
       broadcastState("PAUSE");

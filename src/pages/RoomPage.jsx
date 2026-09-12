@@ -247,7 +247,10 @@ export default function RoomPage() {
   return (
     <div
       style={{
-        minHeight: "100vh",
+        // The global Navbar is 76px tall and sits ABOVE this route, so a full
+        // 100vh here overflows the viewport by 76px — that was the empty strip
+        // below the room. Fit within the space under the navbar instead.
+        minHeight: "calc(100vh - 76px)",
         overflowY: "auto",
         overflowX: "hidden",
         background: "var(--page-bg)",
