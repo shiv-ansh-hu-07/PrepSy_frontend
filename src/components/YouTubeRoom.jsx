@@ -10,6 +10,8 @@ import { fetchRoomVideoState, saveRoomVideoState, markVideoWatched } from "../se
 
 const SYNC_TYPE = "YT_SYNC";
 const REQUEST_TYPE = "YT_REQUEST_SYNC";
+const HOST_REQUEST_TYPE = "YT_HOST_REQUEST";   // a viewer asks the host for control
+const HOST_HANDOFF_TYPE = "YT_HOST_HANDOFF";   // the host grants control to someone
 const DRIFT_TOLERANCE_S = 2; // only re-seek if drift > 2 seconds
 const HEARTBEAT_MS = 15000;  // periodic sync every 15s to prevent drift
 
@@ -23,8 +25,10 @@ export default function YouTubeRoom({
   segmentPart = null,
   playlistVideos = null,   // full cohort playlist [{ ytVideoId, title, ... }]
   watchedVideoIds = null,  // this member's watched set
-  onRegisterControls = null, // hand up { jumpTo } for the Playlist panel
+  hostUserId = null,       // cohort creator = default host (drives playback)
+  onRegisterControls = null, // hand up { jumpTo, requestControl, giveControl }
   onCurrentVideoId = null,   // report the currently-playing videoId to the parent
+  onHostState = null,        // report { amHost, hostName, pendingRequest }
 }) {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
@@ -42,6 +46,7 @@ export default function YouTubeRoom({
   const receivedSyncRef = useRef(false); // a live participant has synced us this session
   const didResumeRef = useRef(false);    // resumed from saved memory this session
   const watchedRef = useRef(new Set());  // videoIds this client already marked watched
+  const amHostRef = useRef(false);       // is THIS client the current driver?
 
   // The full cohort playlist (ordered ytVideoIds) so any video is reachable in
   // one shared player, and the member's watched set for choosing a sane default.
@@ -55,6 +60,11 @@ export default function YouTubeRoom({
   useEffect(() => {
     watchedSetRef.current = new Set(Array.isArray(watchedVideoIds) ? watchedVideoIds : []);
   }, [watchedVideoIds]);
+
+  // Host role: one driver controls playback; others follow. Default host is the
+  // cohort creator; control can be handed off at runtime via data messages.
+  const [hostOverride, setHostOverride] = useState(null); // identity granted control
+  const [pendingRequest, setPendingRequest] = useState(null); // { identity, name } (host sees)
 
   // Current video's title + channel, for creator attribution. Read live from
   // the player so it stays correct as the playlist advances.
@@ -124,10 +134,31 @@ export default function YouTubeRoom({
 
   // ── Persist playback memory (so an empty room resumes, not restarts) ───────
 
-  const isHost = useCallback(() => {
+  // Who currently drives playback: an explicit handoff target if present in the
+  // room, else the cohort creator if present, else the elected first identity
+  // (keeps plain non-cohort watch parties working, and covers the creator being
+  // absent). Everyone computes the same answer from shared inputs.
+  const hostIdentity = useCallback(() => {
+    const ids = participants.map((p) => p.identity);
+    if (hostOverride && ids.includes(hostOverride)) return hostOverride;
+    if (hostUserId && ids.includes(hostUserId)) return hostUserId;
     const sorted = [...participants].sort((a, b) => a.identity.localeCompare(b.identity));
-    return sorted[0]?.identity === localParticipant?.identity;
-  }, [participants, localParticipant]);
+    return sorted[0]?.identity ?? null;
+  }, [participants, hostUserId, hostOverride]);
+
+  // Keep amHostRef fresh (used to gate broadcasts synchronously) and report host
+  // state to the parent for the controls UI.
+  useEffect(() => {
+    const hid = hostIdentity();
+    const mine = Boolean(hid && hid === localParticipant?.identity);
+    amHostRef.current = mine;
+    const hostP = participants.find((p) => p.identity === hid);
+    onHostState?.({
+      amHost: mine,
+      hostName: hostP?.name || hostP?.identity || null,
+      pendingRequest: mine ? pendingRequest : null,
+    });
+  }, [participants, localParticipant, hostIdentity, pendingRequest, onHostState]);
 
   const persistState = useCallback(() => {
     const player = playerRef.current;
@@ -154,6 +185,7 @@ export default function YouTubeRoom({
   const jumpTo = useCallback((vid) => {
     const player = playerRef.current;
     if (!player || !vid) return;
+    if (!amHostRef.current) return; // only the host changes the room's video
     isSyncingRef.current = true;
     const list = player.getPlaylist?.() || fullListRef.current || null;
     const idx = Array.isArray(list) ? list.indexOf(vid) : -1;
@@ -172,9 +204,29 @@ export default function YouTubeRoom({
     }, 900);
   }, [captureVideoMeta, broadcastState, persistState]);
 
+  // Ask the current host to hand over control.
+  const requestControl = useCallback(() => {
+    if (amHostRef.current) return;
+    broadcast({
+      type: HOST_REQUEST_TYPE,
+      identity: localParticipant?.identity,
+      name: localParticipant?.name || "A viewer",
+    });
+  }, [broadcast, localParticipant]);
+
+  // Host grants control to a requester (or anyone by identity).
+  const giveControl = useCallback((toIdentity) => {
+    if (!amHostRef.current || !toIdentity) return;
+    setHostOverride(toIdentity);
+    setPendingRequest(null);
+    broadcast({ type: HOST_HANDOFF_TYPE, to: toIdentity });
+  }, [broadcast]);
+
+  const dismissRequest = useCallback(() => setPendingRequest(null), []);
+
   useEffect(() => {
-    onRegisterControls?.({ jumpTo });
-  }, [onRegisterControls, jumpTo]);
+    onRegisterControls?.({ jumpTo, requestControl, giveControl, dismissRequest });
+  }, [onRegisterControls, jumpTo, requestControl, giveControl, dismissRequest]);
 
   // ── Apply incoming sync (with drift correction) ───────────────────────────
 
@@ -244,22 +296,24 @@ export default function YouTubeRoom({
   const handleSyncRequest = useCallback((requesterIdentity) => {
     const player = playerRef.current;
     if (!player) return;
-    // Elect a single responder to avoid everyone replying at once: the
-    // lexicographically-first identity *excluding the requester*. Excluding the
-    // requester matters — otherwise a new joiner whose identity sorts first
-    // would be "elected" and nobody already in the room would answer it.
-    const responders = participants.filter(
-      (p) => p.identity !== requesterIdentity
-    );
-    const sorted = responders.sort((a, b) =>
-      a.identity.localeCompare(b.identity)
-    );
-    if (sorted[0]?.identity !== localParticipant?.identity) return;
+    // The host answers new joiners (it's the single source of truth for the
+    // room's position). If the host is the one joining, fall back to the elected
+    // first identity excluding the requester so someone still replies.
+    if (amHostRef.current) {
+      // host replies below
+    } else {
+      const responders = participants.filter((p) => p.identity !== requesterIdentity);
+      const sorted = responders.sort((a, b) => a.identity.localeCompare(b.identity));
+      const hid = hostIdentity();
+      // Only step in if there's effectively no host present to answer.
+      if (hid && participants.some((p) => p.identity === hid)) return;
+      if (sorted[0]?.identity !== localParticipant?.identity) return;
+    }
 
     const state = player.getPlayerState?.();
     const isPlaying = state === 1; // YT.PlayerState.PLAYING
     broadcastState(isPlaying ? "PLAY" : "PAUSE");
-  }, [participants, localParticipant, broadcastState]);
+  }, [participants, localParticipant, broadcastState, hostIdentity]);
 
   // ── Listen for data events ────────────────────────────────────────────────
 
@@ -273,6 +327,15 @@ export default function YouTubeRoom({
 
       if (msg.type === SYNC_TYPE) applySync(msg);
       if (msg.type === REQUEST_TYPE) handleSyncRequest(participant?.identity);
+      // A viewer wants control — only the current host should surface it.
+      if (msg.type === HOST_REQUEST_TYPE && amHostRef.current) {
+        setPendingRequest({ identity: msg.identity, name: msg.name || "A viewer" });
+      }
+      // The host handed control to someone — everyone applies the same override.
+      if (msg.type === HOST_HANDOFF_TYPE && msg.to) {
+        setHostOverride(msg.to);
+        setPendingRequest(null);
+      }
     };
 
     room.on("dataReceived", handler);
@@ -383,15 +446,17 @@ export default function YouTubeRoom({
       const player = playerRef.current;
       if (!player) return;
       const state = player.getPlayerState?.();
-      if (state === 1) broadcastState("PLAY"); // only host-style broadcast when playing
-      if (isHost()) persistState(); // one writer keeps the room's memory fresh
+      if (amHostRef.current) {
+        if (state === 1) broadcastState("PLAY"); // host keeps the room in sync
+        persistState(); // one writer (the host) keeps the room's memory fresh
+      }
       // Count a video as watched for THIS user once ~90% is seen.
       const dur = player.getDuration?.() || 0;
       const cur = player.getCurrentTime?.() || 0;
       if (dur > 0 && cur / dur >= 0.9) markWatched(player.getVideoData?.()?.video_id);
     }, HEARTBEAT_MS);
     return () => clearInterval(heartbeatRef.current);
-  }, [broadcastState, isHost, persistState, markWatched]);
+  }, [broadcastState, persistState, markWatched]);
 
   // ── YouTube player event handlers ─────────────────────────────────────────
 
@@ -455,23 +520,25 @@ export default function YouTubeRoom({
     if (e.data === YT_PLAYING) captureVideoMeta(e.target);
 
     if (isSyncingRef.current) return; // skip — this change was caused by applySync
-    if (e.data === YT_PLAYING) {
+    // Only the host drives the room: non-hosts' play/pause/seek do NOT broadcast,
+    // so one person can't move everyone else. Non-hosts still follow the host's
+    // sync (and get pulled back by the heartbeat if they wander).
+    if (e.data === YT_PLAYING && amHostRef.current) {
       broadcastState("PLAY");
-      // Everyone persists on play (not just the elected host) so the room's
-      // last position is captured even if the host closed their tab — this is
-      // what lets a later joiner resume the video the cohort actually left on.
       persistState();
     }
-    if (e.data === YT_PAUSED) {
+    if (e.data === YT_PAUSED && amHostRef.current) {
       broadcastState("PAUSE");
       persistState(); // remember exactly where we paused
     }
     if (e.data === YT_ENDED) {
-      broadcastState("PAUSE");
-      persistState();
-      markWatched(e.target.getVideoData?.()?.video_id);
+      if (amHostRef.current) {
+        broadcastState("PAUSE");
+        persistState();
+      }
+      markWatched(e.target.getVideoData?.()?.video_id); // per-member, always
     }
-  }, [broadcastState, captureVideoMeta, isHost, persistState, markWatched]);
+  }, [broadcastState, captureVideoMeta, persistState, markWatched]);
 
   // Manual seek detection — YouTube API doesn't fire a "seeked" event,
   // but PAUSE immediately followed by PLAY with a time jump signals a seek.

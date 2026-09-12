@@ -297,6 +297,7 @@ export default function RoomPage() {
             segmentPart={cohortPlayback?.part || null}
             playlistVideos={cohortPlaylist?.videos || null}
             watchedVideoIds={cohortPlaylist?.watchedVideoIds || null}
+            hostUserId={cohortPlaylist?.hostUserId || null}
           />
         ) : (
           <>

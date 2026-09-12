@@ -79,6 +79,18 @@ const pill = (color) => ({
   color,
 });
 
+// Seed the checkpoint discussion so an empty thread isn't a dead end — the
+// discussion is the part of the checkpoint loop that makes learning stick.
+function starterPrompts(topic) {
+  const t = (topic || "today's topic").replace(/^Day\s*\d+:\s*/i, "").trim();
+  const short = t.length > 60 ? `${t.slice(0, 60)}…` : t;
+  return [
+    `The key idea in "${short}" was…`,
+    `One thing in "${short}" that didn't click yet:`,
+    `How I'd explain "${short}" to a friend:`,
+  ];
+}
+
 const TABS = [
   { id: "roadmap", label: "Roadmap", icon: BookOpen },
   { id: "discussions", label: "Discussions", icon: MessageSquare },
@@ -346,6 +358,17 @@ export default function CohortPage() {
     setActiveTab("quiz");
     track("checkpoint_taken", { cohortId: id, sessionId: session.id });
     generateQuizFor(session.id);
+  };
+
+  // The checkpoint moment: right after the quiz, pull the member into the day's
+  // discussion thread with a reflection prompt pre-filled — the quiz proves you
+  // watched; the discussion is where the learning sticks.
+  const goToCheckpointDiscussion = (session) => {
+    const s = session || checkpointSession;
+    if (!s) return;
+    setDiscussionSession(s);
+    setActiveTab("discussions");
+    setNewPost(`My takeaway from "${s.topic}": `);
   };
 
   const clearCheckpoint = () => {
@@ -687,6 +710,25 @@ export default function CohortPage() {
                 <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 16 }}>Join the cohort to participate in discussions.</p>
               )}
 
+              {discussionSession && cohort.isMember && discussions.length === 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <p style={{ margin: "0 0 8px", fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>
+                    Not sure where to start? Tap one:
+                  </p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {starterPrompts(discussionSession.topic).map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setNewPost(p + " ")}
+                        style={{ padding: "7px 12px", borderRadius: 999, border: "1px solid var(--card-border)", background: "var(--accent-soft)", color: "var(--text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", textAlign: "left" }}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {discussions.length === 0 ? (
                 <p style={{ color: "var(--text-muted)", fontSize: 14 }}>No posts yet. Be the first to start a discussion!</p>
               ) : (
@@ -809,9 +851,19 @@ export default function CohortPage() {
                       <p style={{ margin: "6px 0 0", color: "var(--text-secondary)", fontSize: 14 }}>
                         {quizScore.score / quizScore.total >= 0.8 ? "Excellent work!" : quizScore.score / quizScore.total >= 0.5 ? "Good effort — keep going!" : "Review the material and try again."}
                       </p>
-                      <button onClick={handleGenerateQuiz} style={{ ...btnPrimary(false), marginTop: 16 }}>
-                        New Quiz
-                      </button>
+                      <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", marginTop: 16 }}>
+                        <button onClick={handleGenerateQuiz} style={btnPrimary(false)}>
+                          New Quiz
+                        </button>
+                        {checkpointSession && (
+                          <button
+                            onClick={() => goToCheckpointDiscussion(checkpointSession)}
+                            style={{ ...btnPrimary(false), background: "var(--accent-soft)", color: "var(--accent)", border: "1px solid var(--accent)" }}
+                          >
+                            💬 Discuss this with your cohort →
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <button onClick={() => { setQuiz(null); setSelectedAnswers({}); }} style={{ marginBottom: 16, background: "none", border: "none", color: "var(--accent)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>

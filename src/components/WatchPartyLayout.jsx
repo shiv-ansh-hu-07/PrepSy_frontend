@@ -31,6 +31,7 @@ export default function WatchPartyLayout({
   segmentPart = null,
   playlistVideos = null,
   watchedVideoIds = null,
+  hostUserId = null,
 }) {
   const { toggleMic, micEnabled, toggleCamera, camEnabled } = useMediaControls();
   const navigate = useNavigate();
@@ -43,6 +44,7 @@ export default function WatchPartyLayout({
   const [tab, setTab] = useState("chat");
   const ytControlsRef = useRef(null);
   const [currentVideoId, setCurrentVideoId] = useState(null);
+  const [hostState, setHostState] = useState({ amHost: true, hostName: null, pendingRequest: null });
   const hasPlaylist = Array.isArray(playlistVideos) && playlistVideos.length > 0;
   const watchedSet = new Set(Array.isArray(watchedVideoIds) ? watchedVideoIds : []);
   const [shareStatus, setShareStatus] = useState("");
@@ -204,6 +206,11 @@ export default function WatchPartyLayout({
                 <span style={styles.sessionDivider}>•</span>
                 Watch party
               </span>
+              {hasPlaylist && (
+                <span style={styles.hostBadge(hostState.amHost)} title={hostState.amHost ? "You control playback for the room" : "Playback is controlled by the host"}>
+                  {hostState.amHost ? "🎛 You're hosting" : `👁 ${hostState.hostName || "Host"} is hosting`}
+                </span>
+              )}
             </div>
             <button type="button" style={styles.roomHeaderButton} onClick={copyRoomId}>
               <Copy size={15} />
@@ -212,6 +219,29 @@ export default function WatchPartyLayout({
           </div>
 
           <div style={styles.stage} data-room-stage>
+            {hasPlaylist && hostState.amHost && hostState.pendingRequest && (
+              <div style={styles.controlRequestBanner}>
+                <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <strong>{hostState.pendingRequest.name}</strong> wants to control playback
+                </span>
+                <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                  <button
+                    type="button"
+                    style={styles.grantBtn}
+                    onClick={() => ytControlsRef.current?.giveControl(hostState.pendingRequest.identity)}
+                  >
+                    Give control
+                  </button>
+                  <button
+                    type="button"
+                    style={styles.dismissBtn}
+                    onClick={() => ytControlsRef.current?.dismissRequest()}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            )}
             <YouTubeRoom
               roomId={roomId}
               videoId={youtubeVideoId}
@@ -222,8 +252,10 @@ export default function WatchPartyLayout({
               segmentPart={segmentPart}
               playlistVideos={playlistVideos}
               watchedVideoIds={watchedVideoIds}
+              hostUserId={hostUserId}
               onRegisterControls={(c) => { ytControlsRef.current = c; }}
               onCurrentVideoId={setCurrentVideoId}
+              onHostState={setHostState}
             />
 
             {participants.some((p) => p.isCameraEnabled) && (
@@ -353,7 +385,9 @@ export default function WatchPartyLayout({
                 videos={playlistVideos}
                 watchedSet={watchedSet}
                 currentVideoId={currentVideoId}
+                amHost={hostState.amHost}
                 onPick={(vid) => ytControlsRef.current?.jumpTo(vid)}
+                onRequestControl={() => ytControlsRef.current?.requestControl()}
               />
             ) : (
               <PeopleList participants={participants} />
@@ -385,12 +419,21 @@ function StatPill({ icon: Icon, label, value }) {
   );
 }
 
-function PlaylistPanel({ videos, watchedSet, currentVideoId, onPick }) {
+function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, onPick, onRequestControl }) {
   return (
     <div style={styles.playlistPanel}>
-      <p style={styles.playlistHint}>
-        Pick any video — everyone in the room jumps to it together.
-      </p>
+      {amHost ? (
+        <p style={styles.playlistHint}>
+          You're hosting — pick any video and the whole room jumps to it together.
+        </p>
+      ) : (
+        <div style={styles.playlistLockedNote}>
+          <span>Only the host can change the video. Following along.</span>
+          <button type="button" style={styles.requestControlBtn} onClick={onRequestControl}>
+            Request control
+          </button>
+        </div>
+      )}
       {videos.map((v, i) => {
         const isCurrent = v.ytVideoId === currentVideoId;
         const watched = watchedSet.has(v.ytVideoId);
@@ -398,9 +441,10 @@ function PlaylistPanel({ videos, watchedSet, currentVideoId, onPick }) {
           <button
             key={v.ytVideoId || i}
             type="button"
-            onClick={() => onPick(v.ytVideoId)}
-            style={styles.playlistRow(isCurrent)}
-            title={v.title}
+            onClick={() => amHost && onPick(v.ytVideoId)}
+            disabled={!amHost}
+            style={{ ...styles.playlistRow(isCurrent), cursor: amHost ? "pointer" : "default", opacity: amHost || isCurrent ? 1 : 0.7 }}
+            title={amHost ? v.title : "Only the host can change the video"}
           >
             <span style={styles.playlistIndex(isCurrent)}>
               {isCurrent ? <Play size={12} fill="currentColor" /> : i + 1}
@@ -553,6 +597,37 @@ const styles = {
     fontSize: 12, color: "var(--text-secondary)", fontWeight: 500,
     background: "var(--accent-soft)", padding: "4px 11px", borderRadius: 999,
     whiteSpace: "nowrap",
+  },
+  hostBadge: (amHost) => ({
+    display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0,
+    fontSize: 11.5, fontWeight: 700, padding: "4px 11px", borderRadius: 999,
+    whiteSpace: "nowrap",
+    background: amHost ? "rgba(124,58,237,0.12)" : "var(--accent-soft)",
+    color: amHost ? "#7c3aed" : "var(--text-secondary)",
+    border: amHost ? "1px solid rgba(124,58,237,0.35)" : "1px solid transparent",
+  }),
+  controlRequestBanner: {
+    position: "absolute", top: 12, left: "50%", transform: "translateX(-50%)", zIndex: 45,
+    display: "flex", alignItems: "center", gap: 14, maxWidth: "calc(100% - 24px)",
+    padding: "8px 14px", borderRadius: 12, fontSize: 12.5, color: "#fff",
+    background: "rgba(17,24,39,0.92)", border: "1px solid rgba(148,163,184,0.3)",
+    boxShadow: "0 10px 26px rgba(0,0,0,0.4)", backdropFilter: "blur(8px)",
+  },
+  grantBtn: {
+    height: 28, padding: "0 12px", borderRadius: 8, border: "none", cursor: "pointer",
+    background: "linear-gradient(135deg,#7c3aed,#8b5cf6)", color: "#fff", fontWeight: 700, fontSize: 12,
+  },
+  dismissBtn: {
+    height: 28, padding: "0 10px", borderRadius: 8, cursor: "pointer",
+    background: "transparent", color: "#cbd5e1", border: "1px solid rgba(148,163,184,0.4)", fontSize: 12,
+  },
+  playlistLockedNote: {
+    display: "flex", flexDirection: "column", gap: 8, marginBottom: 8, padding: "10px 12px",
+    borderRadius: 10, background: "var(--accent-soft)", fontSize: 11.5, color: "var(--text-secondary)", lineHeight: 1.4,
+  },
+  requestControlBtn: {
+    alignSelf: "flex-start", height: 30, padding: "0 14px", borderRadius: 8, cursor: "pointer",
+    border: "1px solid var(--accent)", background: "var(--card-bg)", color: "var(--accent)", fontWeight: 700, fontSize: 12,
   },
   liveDot: { width: 7, height: 7, borderRadius: "50%", background: "#22c55e" },
   sessionDivider: { color: "#94A3B8" },
