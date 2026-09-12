@@ -79,8 +79,12 @@ export default function ChatDrawer({ onClose, currentUser, embedded = false }) {
 
   /* ================= AUTO SCROLL ================= */
 
+  // Scroll ONLY the messages container to the bottom. `scrollIntoView` would
+  // bubble up and scroll every scrollable ancestor (incl. the whole page),
+  // which pushed the layout up and left a long empty gap below the room.
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesEndRef.current?.parentElement;
+    if (container) container.scrollTop = container.scrollHeight;
   }, [messages]);
 
   /* ================= SEND MESSAGE ================= */

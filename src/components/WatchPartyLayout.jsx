@@ -176,6 +176,12 @@ export default function WatchPartyLayout({
               {tags.slice(0, 2).map((t) => (
                 <span key={t} style={styles.topicPill}>{t}</span>
               ))}
+              <span style={styles.watchingBadge}>
+                <span style={styles.liveDot} />
+                {participantCount} {participantCount === 1 ? "person" : "people"} watching
+                <span style={styles.sessionDivider}>•</span>
+                Watch party
+              </span>
             </div>
             <button type="button" style={styles.roomHeaderButton} onClick={copyRoomId}>
               <Copy size={15} />
@@ -184,13 +190,6 @@ export default function WatchPartyLayout({
           </div>
 
           <div style={styles.stage} data-room-stage>
-            <div style={styles.sessionBadgeDesktop}>
-              <span style={styles.liveDot} />
-              {participantCount} {participantCount === 1 ? "person" : "people"} watching
-              <span style={styles.sessionDivider}>•</span>
-              Watch party
-            </div>
-
             <YouTubeRoom
               roomId={roomId}
               videoId={youtubeVideoId}
@@ -459,11 +458,11 @@ const styles = {
     fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
     cursor: "pointer", flexShrink: 0, fontSize: 14,
   },
-  sessionBadgeDesktop: {
-    position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", zIndex: 20,
-    fontSize: 12, color: "var(--text-secondary)", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 7,
-    background: "var(--card-bg)", padding: "8px 14px", borderRadius: 999,
-    boxShadow: "0 8px 18px rgba(0,0,0,0.14)", backdropFilter: "blur(8px)",
+  watchingBadge: {
+    display: "inline-flex", alignItems: "center", gap: 7, flexShrink: 0,
+    fontSize: 12, color: "var(--text-secondary)", fontWeight: 500,
+    background: "var(--accent-soft)", padding: "4px 11px", borderRadius: 999,
+    whiteSpace: "nowrap",
   },
   liveDot: { width: 7, height: 7, borderRadius: "50%", background: "#22c55e" },
   sessionDivider: { color: "#94A3B8" },
