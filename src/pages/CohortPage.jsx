@@ -45,8 +45,9 @@ function sessionUserStatus(s, nowMs) {
   const start = new Date(s.scheduledAt).getTime();
   const durMs = (s.studyHours ? s.studyHours * 60 : 60) * 60000;
   const end = start + durMs;
-  if (s.attendedByMe) {
-    return { kind: "joined", bg: "#e8f5e9", color: "#2e7d32", label: "✓ Joined" };
+  // Real completion (watched the material / caught up) outranks everything.
+  if (s.watchedByMe || s.caughtUpByMe) {
+    return { kind: "completed", bg: "#e8f5e9", color: "#2e7d32", label: "✓ Completed" };
   }
   if (nowMs < start - REMIND_MS) {
     return { kind: "upcoming", bg: "var(--accent-soft)", color: "var(--accent)", label: fmtCountdown(start - nowMs) };
@@ -54,15 +55,17 @@ function sessionUserStatus(s, nowMs) {
   if (nowMs < end) {
     return { kind: "soon", bg: "rgba(239,68,68,0.12)", color: "#dc2626", label: "● Starting soon" };
   }
-  if (s.caughtUpByMe) {
-    return { kind: "caughtup", bg: "rgba(20,184,166,0.14)", color: "#0f766e", label: "✓ Caught up" };
+  // Was in the room but no completion evidence — participation, not done.
+  if (s.attendedByMe) {
+    return { kind: "attended", bg: "rgba(59,130,246,0.12)", color: "#2563eb", label: "Attended" };
   }
   return { kind: "missed", bg: "#fdecea", color: "#c62828", label: "Missed" };
 }
 
-// A session's day is "done" for a user if they joined live or caught up later.
+// A day is DONE only with real evidence of learning — the material was watched
+// or self-reported caught up. Being in the room is participation, not completion.
 function isSessionDone(s) {
-  return Boolean(s.attendedByMe || s.caughtUpByMe);
+  return Boolean(s.watchedByMe || s.caughtUpByMe);
 }
 
 // Small status pill with a coloured border.
@@ -364,6 +367,12 @@ export default function CohortPage() {
       });
       setQuizScore({ score: data.score, total: quiz.length });
       setQuizSubmitted(true);
+      // Honest completion signal: a checkpoint counts as "passed" at >=60%.
+      if (checkpointSession && quiz.length && data.score / quiz.length >= 0.6) {
+        track("checkpoint_passed", { cohortId: id, sessionId: checkpointSession.id, score: data.score, total: quiz.length });
+      }
+      // Refresh progress so the checkpoint-proven metric reflects this pass.
+      api.get(`/cohorts/${id}/progress`).then(({ data: p }) => setProgress(p)).catch(() => {});
       api.get(`/cohorts/${id}/quiz/attempts`).then(({ data: a }) => setPastAttempts(a)).catch(() => {});
     } catch {
       /* ignore */
@@ -903,6 +912,14 @@ export default function CohortPage() {
                           <span style={pill("#6f3bd6")}>▶ {progress.me.videosWatched}/{progress.totalVideos} videos watched</span>
                         )}
                       </div>
+                      {progress.me.completed > 0 && (
+                        <p style={{ margin: "12px 0 0", fontSize: 11.5, color: "var(--text-muted)", lineHeight: 1.5 }}>
+                          🎯 {progress.me.checkpointBackedDays || 0} of your {progress.me.completed} completed day{progress.me.completed === 1 ? "" : "s"} are checkpoint-proven.
+                          {typeof progress.me.attendedDays === "number" && (
+                            <> You attended the room on {progress.me.attendedDays} day{progress.me.attendedDays === 1 ? "" : "s"} — attendance counts as showing up, not completion.</>
+                          )}
+                        </p>
+                      )}
                     </div>
                   )}
 
@@ -1065,7 +1082,7 @@ export default function CohortPage() {
                             </button>
                           ) : null}
 
-                          {st.kind === "missed" && cohort.isMember ? (
+                          {(st.kind === "missed" || st.kind === "attended") && cohort.isMember ? (
                             <div style={{ marginTop: 10 }}>
                               <button
                                 onClick={() => setCatchUpOpen((p) => ({ ...p, [s.id]: !p[s.id] }))}
@@ -1109,7 +1126,7 @@ export default function CohortPage() {
                             </div>
                           ) : null}
 
-                          {st.kind === "caughtup" && cohort.isMember ? (
+                          {s.caughtUpByMe && cohort.isMember ? (
                             <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--text-secondary)" }}>
                               Caught up on your own ·{" "}
                               <button
