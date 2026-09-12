@@ -110,6 +110,13 @@ export async function saveRoomVideoState(roomId, state) {
   return data;
 }
 
+// Permanently exit a room: removes membership so no further reminders/emails
+// (room + cohort) are sent. Distinct from leaving the live session.
+export async function exitRoom(roomId) {
+  const { data } = await api.post(`/rooms/${roomId}/exit`);
+  return data;
+}
+
 // Full playlist + this member's watched set for a cohort room's Playlist panel.
 // Returns null (server) for non-cohort rooms; caller degrades gracefully.
 export async function fetchRoomPlaylist(roomId) {

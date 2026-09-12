@@ -5,7 +5,7 @@ import { useParticipants, useTracks, VideoTrack } from "@livekit/components-reac
 import useMediaControls from "../hooks/useMediaControl";
 import YouTubeRoom from "./YouTubeRoom";
 import ChatDrawer from "./ChatDrawer";
-import api, { fetchMyAnalytics, fetchFocusSummary, fetchVideoSummary } from "../services/api";
+import api, { fetchMyAnalytics, fetchFocusSummary, fetchVideoSummary, exitRoom as exitRoomApi } from "../services/api";
 
 const PREP_MS = 60_000;
 
@@ -170,6 +170,22 @@ export default function WatchPartyLayout({
 
   const handleCloseSummary = () => {
     navigate("/dashboard");
+  };
+
+  const [exiting, setExiting] = useState(false);
+  const handleExitRoom = async () => {
+    const ok = window.confirm(
+      "Exit this room for good? You'll stop receiving all reminders and emails for it. You can rejoin later if you change your mind."
+    );
+    if (!ok) return;
+    setExiting(true);
+    try {
+      await exitRoomApi(roomId);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      navigate("/dashboard");
+    }
   };
 
   return (
@@ -347,7 +363,13 @@ export default function WatchPartyLayout({
       </div>
 
       {showSummary && (
-        <LeaveSummaryModal summary={summary} loading={!summary} onClose={handleCloseSummary} />
+        <LeaveSummaryModal
+          summary={summary}
+          loading={!summary}
+          onClose={handleCloseSummary}
+          onExit={handleExitRoom}
+          exiting={exiting}
+        />
       )}
     </div>
   );
@@ -410,7 +432,7 @@ function PeopleList({ participants }) {
   );
 }
 
-function LeaveSummaryModal({ summary, loading, onClose }) {
+function LeaveSummaryModal({ summary, loading, onClose, onExit, exiting }) {
   return (
     <div style={modalStyles.overlay} onClick={onClose}>
       <div style={modalStyles.card} onClick={(e) => e.stopPropagation()}>
@@ -430,6 +452,16 @@ function LeaveSummaryModal({ summary, loading, onClose }) {
               <StatBox label="Watched with" value={`${summary?.studiedWithCount ?? 0} people`} />
               <StatBox label="Streak" value={`🔥 ${summary?.streak ?? 0} day${summary?.streak === 1 ? "" : "s"}`} />
             </div>
+            {onExit && (
+              <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--card-border)" }}>
+                <button onClick={onExit} disabled={exiting} style={modalStyles.exitBtn}>
+                  {exiting ? "Exiting…" : "Exit room & stop reminders"}
+                </button>
+                <p style={{ margin: "8px 0 0", fontSize: 11.5, color: "var(--text-muted)" }}>
+                  Leaves this room for good — no more reminders or emails. You can rejoin anytime.
+                </p>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -693,4 +725,9 @@ const modalStyles = {
   stat: { flex: 1, background: "var(--card-bg)", borderRadius: 12, padding: 12, border: "1px solid var(--card-border)" },
   label: { fontSize: 11, color: "var(--text-secondary)", margin: "0 0 4px" },
   value: { fontSize: 15, fontWeight: 700, color: "var(--text-primary)", margin: 0 },
+  exitBtn: {
+    width: "100%", height: 40, borderRadius: 10, cursor: "pointer",
+    border: "1px solid rgba(220,38,38,0.5)", background: "transparent",
+    color: "#dc2626", fontSize: 13, fontWeight: 600,
+  },
 };
