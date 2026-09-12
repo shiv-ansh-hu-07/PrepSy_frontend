@@ -143,6 +143,9 @@ export default function CohortPage() {
   const [replyOpen, setReplyOpen] = useState({});
   // When set, the discussion board is scoped to a day's checkpoint thread.
   const [discussionSession, setDiscussionSession] = useState(null);
+  // AI facilitator opening question for the scoped checkpoint thread.
+  const [aiPrompt, setAiPrompt] = useState(null);
+  const [aiPromptLoading, setAiPromptLoading] = useState(false);
   const [postingDiscussion, setPostingDiscussion] = useState(false);
   const [expandedTopics, setExpandedTopics] = useState({});
 
@@ -199,6 +202,23 @@ export default function CohortPage() {
       api.get(`/cohorts/${id}/progress`).then(({ data }) => setProgress(data)).catch(() => {});
     }
   }, [activeTab, id, cohort?.isMember, discussionSession]);
+
+  // Fetch (and lazily generate) the AI opening question for a checkpoint thread.
+  useEffect(() => {
+    if (!cohort?.isMember || !discussionSession) {
+      setAiPrompt(null);
+      return;
+    }
+    let cancelled = false;
+    setAiPromptLoading(true);
+    setAiPrompt(null);
+    api
+      .get(`/cohorts/${id}/sessions/${discussionSession.id}/discussion-prompt`)
+      .then(({ data }) => { if (!cancelled) setAiPrompt(data?.question ? data : null); })
+      .catch(() => { if (!cancelled) setAiPrompt(null); })
+      .finally(() => { if (!cancelled) setAiPromptLoading(false); });
+    return () => { cancelled = true; };
+  }, [id, cohort?.isMember, discussionSession]);
 
   const handleJoin = async () => {
     setJoining(true);
@@ -689,6 +709,40 @@ export default function CohortPage() {
                   </button>
                 </div>
               ) : null}
+
+              {/* AI facilitator opening question — seeds the checkpoint thread. */}
+              {discussionSession && (aiPromptLoading || aiPrompt?.question) && (
+                <div style={{ marginBottom: 18, padding: "14px 16px", borderRadius: 14, border: "1px solid var(--accent)", background: "linear-gradient(135deg, var(--accent-soft), transparent)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                    <span style={{ fontSize: 16 }}>🧭</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: "var(--accent)", textTransform: "uppercase", letterSpacing: 0.4 }}>
+                      PrepSy Coach asks
+                    </span>
+                  </div>
+                  {aiPromptLoading ? (
+                    <p style={{ margin: 0, fontSize: 13, color: "var(--text-muted)" }}>Thinking of a good question…</p>
+                  ) : (
+                    <>
+                      <p style={{ margin: 0, fontSize: 14.5, color: "var(--text-primary)", lineHeight: 1.55, fontWeight: 600 }}>
+                        {aiPrompt.question}
+                      </p>
+                      {cohort.isMember && (aiPrompt.followups || []).length > 0 && (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+                          {aiPrompt.followups.map((f) => (
+                            <button
+                              key={f}
+                              onClick={() => setNewPost(f + " ")}
+                              style={{ padding: "6px 12px", borderRadius: 999, border: "1px solid var(--card-border)", background: "var(--card-bg)", color: "var(--text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", textAlign: "left" }}
+                            >
+                              {f}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
               {cohort.isMember ? (
                 <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
                   <textarea
@@ -710,7 +764,7 @@ export default function CohortPage() {
                 <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 16 }}>Join the cohort to participate in discussions.</p>
               )}
 
-              {discussionSession && cohort.isMember && discussions.length === 0 && (
+              {discussionSession && cohort.isMember && discussions.length === 0 && !aiPromptLoading && !aiPrompt?.question && (
                 <div style={{ marginBottom: 20 }}>
                   <p style={{ margin: "0 0 8px", fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>
                     Not sure where to start? Tap one:
