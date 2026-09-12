@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "../services/api";
+import axios, { exitRoom as exitRoomApi } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import RoomsTabs from "../components/RoomsTabs";
@@ -45,6 +45,24 @@ function MyRooms() {
 
   const joinRoom = (roomId) => {
     navigate(`/room/${roomId}`);
+  };
+
+  const [exiting, setExiting] = useState(null);
+  const exitRoom = async (roomId) => {
+    const ok = window.confirm(
+      "Exit this room? You'll leave for good and stop receiving all reminders and emails for it. You can rejoin later if you change your mind."
+    );
+    if (!ok) return;
+    setExiting(roomId);
+    try {
+      await exitRoomApi(roomId);
+      setRooms((prev) => prev.filter((r) => r.roomId !== roomId));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to exit room");
+    } finally {
+      setExiting(null);
+    }
   };
 
   const deleteRoom = async (roomId) => {
@@ -188,6 +206,27 @@ function MyRooms() {
               >
                 Join
               </button>
+
+              {room.ownerId !== user?.id && (
+                <button
+                  onClick={() => exitRoom(room.roomId)}
+                  disabled={exiting === room.roomId}
+                  title="Leave permanently and stop all reminders/emails for this room"
+                  style={{
+                    padding: "10px 18px",
+                    borderRadius: "10px",
+                    background: "transparent",
+                    color: "#dc2626",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    border: "1px solid rgba(220,38,38,0.5)",
+                    cursor: exiting === room.roomId ? "not-allowed" : "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  {exiting === room.roomId ? "Exiting…" : "Exit"}
+                </button>
+              )}
 
               {room.ownerId === user?.id && (
                 <button
