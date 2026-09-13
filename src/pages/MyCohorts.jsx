@@ -17,6 +17,28 @@ export default function MyCohorts() {
   const [recommended, setRecommended] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [joiningId, setJoiningId] = useState(null);
+
+  const startLabel = (c) => {
+    if (c.status === "forming" && c.startDate) {
+      const d = new Date(c.startDate);
+      const day = d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+      return `Starts ${day}${c.dailyTime ? ` · ${c.dailyTime}` : ""}`;
+    }
+    return "In progress · join anytime";
+  };
+
+  const handleJoin = async (e, c) => {
+    e.stopPropagation();
+    setJoiningId(c.id);
+    try {
+      await api.post(`/cohorts/${c.id}/join`);
+      navigate(`/cohort/${c.id}`); // land on the cohort → meet your crew + intro
+    } catch (err) {
+      alert(err?.response?.data?.message || "Couldn't join this cohort.");
+      setJoiningId(null);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -79,10 +101,13 @@ export default function MyCohorts() {
 
           {recommended.length > 0 && (
             <div style={{ marginBottom: 28 }}>
-              <p style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 800, color: "var(--text-primary)" }}>✨ Recommended for you</p>
+              <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 800, color: "var(--text-primary)" }}>✨ Cohorts for you</p>
+              <p style={{ margin: "0 0 12px", fontSize: 12.5, color: "var(--text-secondary)" }}>
+                Join a crew that's starting soon — you'll begin day 1 together instead of alone.
+              </p>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "minmax(0, 1fr)" : "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
                 {recommended.map((c) => (
-                  <button key={c.id} onClick={() => navigate(`/cohort/${c.id}`)} style={{ ...card, marginBottom: 0, textAlign: "left", cursor: "pointer", display: "flex", flexDirection: "column", gap: 10, padding: 14 }}>
+                  <div key={c.id} onClick={() => navigate(`/cohort/${c.id}`)} style={{ ...card, marginBottom: 0, textAlign: "left", cursor: "pointer", display: "flex", flexDirection: "column", gap: 10, padding: 14 }}>
                     {c.thumbnailUrl && (
                       <img src={c.thumbnailUrl} alt="" style={{ width: "100%", height: 110, borderRadius: 10, objectFit: "cover" }} />
                     )}
@@ -92,9 +117,23 @@ export default function MyCohorts() {
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                       <span style={{ padding: "2px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: "var(--accent-soft)", color: "var(--accent)" }}>✨ {c.reason}</span>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--text-muted)", fontSize: 12 }}><Users size={13} /> {c.memberCount}</span>
+                      {typeof c.spotsLeft === "number" && (
+                        <span style={{ padding: "2px 9px", borderRadius: 999, fontSize: 11, fontWeight: 700, background: c.spotsLeft <= 2 ? "rgba(239,68,68,0.12)" : "var(--card-bg)", color: c.spotsLeft <= 2 ? "#dc2626" : "var(--text-secondary)", border: "1px solid var(--card-border)" }}>
+                          {c.memberCount}/{c.maxSize} · {c.spotsLeft} left
+                        </span>
+                      )}
                     </div>
-                  </button>
+                    <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: c.status === "forming" ? "var(--accent)" : "var(--text-muted)" }}>
+                      {c.status === "forming" ? "🗓 " : "▶ "}{startLabel(c)}
+                    </p>
+                    <button
+                      onClick={(e) => handleJoin(e, c)}
+                      disabled={joiningId === c.id}
+                      style={{ ...btnPrimary(joiningId === c.id), height: 38, fontSize: 13 }}
+                    >
+                      {joiningId === c.id ? "Joining…" : "Join this crew →"}
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
