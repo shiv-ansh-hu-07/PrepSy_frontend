@@ -160,6 +160,30 @@ export default function CohortPage() {
   const [catchUpOpen, setCatchUpOpen] = useState({}); // sessionId -> expanded
   const [catchingUp, setCatchingUp] = useState({}); // sessionId -> in-flight
 
+  // Per-day notes (revisit). Loaded on open, saved on demand.
+  const [notesOpen, setNotesOpen] = useState({});
+  const [noteText, setNoteText] = useState({});
+  const [noteLoaded, setNoteLoaded] = useState({});
+  const [noteSaving, setNoteSaving] = useState({});
+  const toggleNotes = async (sessionId) => {
+    const open = !notesOpen[sessionId];
+    setNotesOpen((p) => ({ ...p, [sessionId]: open }));
+    if (open && !noteLoaded[sessionId]) {
+      try {
+        const { data } = await api.get(`/cohorts/${id}/sessions/${sessionId}/notes`);
+        setNoteText((p) => ({ ...p, [sessionId]: data?.text || "" }));
+      } catch { /* ignore */ }
+      finally { setNoteLoaded((p) => ({ ...p, [sessionId]: true })); }
+    }
+  };
+  const saveNote = async (sessionId) => {
+    setNoteSaving((p) => ({ ...p, [sessionId]: true }));
+    try {
+      await api.post(`/cohorts/${id}/sessions/${sessionId}/notes`, { text: noteText[sessionId] || "" });
+    } catch { /* ignore */ }
+    finally { setNoteSaving((p) => ({ ...p, [sessionId]: false })); }
+  };
+
   // Quiz state
   const [quiz, setQuiz] = useState(null);
   const [quizLoading, setQuizLoading] = useState(false);
@@ -1304,6 +1328,31 @@ export default function CohortPage() {
                                 style={{ height: 32, padding: "0 14px", fontSize: 12.5, fontWeight: 700, borderRadius: 9, border: "1px solid var(--card-border)", background: "var(--card-bg)", color: "var(--text-secondary)", cursor: "pointer" }}
                               >
                                 💬 Discuss
+                              </button>
+                              <button
+                                onClick={() => toggleNotes(s.id)}
+                                title="Your private notes for this day"
+                                style={{ height: 32, padding: "0 14px", fontSize: 12.5, fontWeight: 700, borderRadius: 9, border: "1px solid var(--card-border)", background: "var(--card-bg)", color: "var(--text-secondary)", cursor: "pointer" }}
+                              >
+                                📝 Notes
+                              </button>
+                            </div>
+                          ) : null}
+                          {notesOpen[s.id] && cohort.isMember ? (
+                            <div style={{ marginTop: 10 }}>
+                              <textarea
+                                value={noteText[s.id] || ""}
+                                onChange={(e) => setNoteText((p) => ({ ...p, [s.id]: e.target.value }))}
+                                rows={4}
+                                placeholder="Your notes for this day — key points, doubts, timestamps…"
+                                style={{ width: "100%", boxSizing: "border-box", borderRadius: 10, border: "1.5px solid rgba(138,155,214,0.4)", background: "var(--input-bg)", padding: "10px 12px", fontSize: 13, color: "var(--text-primary)", outline: "none", resize: "vertical", fontFamily: "inherit" }}
+                              />
+                              <button
+                                onClick={() => saveNote(s.id)}
+                                disabled={noteSaving[s.id]}
+                                style={{ ...btnPrimary(noteSaving[s.id]), height: 34, marginTop: 8, padding: "0 16px", fontSize: 13 }}
+                              >
+                                {noteSaving[s.id] ? "Saving…" : "Save notes"}
                               </button>
                             </div>
                           ) : null}

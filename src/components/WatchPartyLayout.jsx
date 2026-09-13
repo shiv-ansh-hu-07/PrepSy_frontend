@@ -1,4 +1,4 @@
-import { Mic, MicOff, Video, VideoOff, MessageSquare, Users, LogOut, Copy, X, Play, Flame, Target, Sparkles, Eye, ListVideo, Check } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, MessageSquare, Users, LogOut, Copy, X, Play, Flame, Target, Sparkles, Eye, ListVideo, Check, FileText } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useParticipants, useTracks, VideoTrack, useRoomContext, useLocalParticipant } from "@livekit/components-react";
@@ -32,6 +32,9 @@ export default function WatchPartyLayout({
   playlistVideos = null,
   watchedVideoIds = null,
   hostUserId = null,
+  cohortId = null,
+  cohortSessionId = null,
+  cohortTopic = null,
 }) {
   const { toggleMic, micEnabled, toggleCamera, camEnabled } = useMediaControls();
   const navigate = useNavigate();
@@ -87,6 +90,31 @@ export default function WatchPartyLayout({
   const [currentVideoId, setCurrentVideoId] = useState(null);
   const [hostState, setHostState] = useState({ amHost: true, hostName: null, pendingRequest: null });
   const hasPlaylist = Array.isArray(playlistVideos) && playlistVideos.length > 0;
+  const hasNotes = Boolean(cohortId && cohortSessionId);
+
+  // Per-day notes (cohort rooms) — persisted so you can revisit the day later.
+  const [notes, setNotes] = useState("");
+  const [notesStatus, setNotesStatus] = useState(""); // "", "saving", "saved"
+  const notesLoadedRef = useRef(false);
+  useEffect(() => {
+    if (!hasNotes) return;
+    let cancelled = false;
+    api.get(`/cohorts/${cohortId}/sessions/${cohortSessionId}/notes`)
+      .then((res) => { if (!cancelled) { setNotes(res.data?.text || ""); notesLoadedRef.current = true; } })
+      .catch(() => { notesLoadedRef.current = true; });
+    return () => { cancelled = true; };
+  }, [hasNotes, cohortId, cohortSessionId]);
+  // Debounced autosave once loaded.
+  useEffect(() => {
+    if (!hasNotes || !notesLoadedRef.current) return undefined;
+    setNotesStatus("saving");
+    const t = setTimeout(() => {
+      api.post(`/cohorts/${cohortId}/sessions/${cohortSessionId}/notes`, { text: notes })
+        .then(() => setNotesStatus("saved"))
+        .catch(() => setNotesStatus(""));
+    }, 900);
+    return () => clearTimeout(t);
+  }, [notes, hasNotes, cohortId, cohortSessionId]);
   const watchedSet = new Set(Array.isArray(watchedVideoIds) ? watchedVideoIds : []);
   const [shareStatus, setShareStatus] = useState("");
   const [leaving, setLeaving] = useState(false);
@@ -430,6 +458,9 @@ export default function WatchPartyLayout({
             {hasPlaylist && (
               <Control icon={ListVideo} onClick={() => setTab("playlist")} active={tab === "playlist"} title="Playlist" />
             )}
+            {hasNotes && (
+              <Control icon={FileText} onClick={() => setTab("notes")} active={tab === "notes"} title="Notes" />
+            )}
             <Control icon={Users} onClick={() => setTab("people")} active={tab === "people"} title="People" />
             <Control icon={LogOut} danger onClick={handleLeave} title="Leave" />
           </div>
@@ -453,6 +484,15 @@ export default function WatchPartyLayout({
                 Playlist <span style={styles.tabCount}>{playlistVideos.length}</span>
               </button>
             )}
+            {hasNotes && (
+              <button
+                type="button"
+                style={styles.tabBtn(tab === "notes")}
+                onClick={() => setTab("notes")}
+              >
+                Notes
+              </button>
+            )}
             <button
               type="button"
               style={styles.tabBtn(tab === "people")}
@@ -474,6 +514,23 @@ export default function WatchPartyLayout({
                 onPick={(vid) => ytControlsRef.current?.jumpTo(vid)}
                 onRequestControl={() => ytControlsRef.current?.requestControl()}
               />
+            ) : tab === "notes" && hasNotes ? (
+              <div style={styles.notesPanel}>
+                <div style={styles.notesHeader}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    📝 {cohortTopic || "Today's notes"}
+                  </span>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)", flexShrink: 0 }}>
+                    {notesStatus === "saving" ? "Saving…" : notesStatus === "saved" ? "Saved ✓" : ""}
+                  </span>
+                </div>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Jot down key points from today's video — saved automatically, and here when you come back to this day."
+                  style={styles.notesArea}
+                />
+              </div>
             ) : (
               <PeopleList participants={participants} />
             )}
@@ -864,6 +921,14 @@ const styles = {
     display: "inline-block", marginLeft: 4, fontSize: 11, color: "var(--text-muted)",
   },
   tabBody: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column" },
+  notesPanel: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", padding: 12, gap: 8 },
+  notesHeader: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 },
+  notesArea: {
+    flex: 1, minHeight: 0, resize: "none", borderRadius: 12,
+    border: "1px solid var(--card-border)", background: "var(--input-bg, var(--card-bg))",
+    padding: "12px 14px", fontSize: 13.5, lineHeight: 1.6, color: "var(--text-primary)",
+    outline: "none", fontFamily: "inherit",
+  },
   peopleList: { padding: 12, display: "flex", flexDirection: "column", gap: 8, overflowY: "auto" },
   playlistPanel: { padding: 12, display: "flex", flexDirection: "column", gap: 6, overflowY: "auto" },
   playlistHint: {
