@@ -110,6 +110,12 @@ export async function saveRoomVideoState(roomId, state) {
   return data;
 }
 
+// Contact form — sends the message to the founder inbox (server-side email).
+export async function submitContact(payload) {
+  const { data } = await api.post(`/contact`, payload);
+  return data;
+}
+
 // Permanently exit a room: removes membership so no further reminders/emails
 // (room + cohort) are sent. Distinct from leaving the live session.
 export async function exitRoom(roomId) {

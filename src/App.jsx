@@ -7,6 +7,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 
 const Home = lazy(() => import("./pages/Home"));
+const Contact = lazy(() => import("./pages/Contact"));
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -108,6 +109,11 @@ export default function App() {
           <Route
             path="/feature"
             element={<Features />}
+          />
+
+          <Route
+            path="/contact"
+            element={<Contact />}
           />
 
           <Route

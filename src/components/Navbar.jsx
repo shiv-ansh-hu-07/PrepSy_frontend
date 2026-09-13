@@ -364,6 +364,8 @@ function buildDesktopLinks({ user, isHomePage, isFeaturePage, isLoginPage, isAct
     active: isActive("/community"),
   });
 
+  links.push({ label: "Contact", path: "/contact", active: isActive("/contact") });
+
   if ((isHomePage || isFeaturePage) && !user) {
     links.push({ label: "Login", path: "/login", active: isActive("/login") });
   }
@@ -389,6 +391,7 @@ function buildMobileLinks({ user, isHomePage, isFeaturePage }) {
     links.push({ label: "Analytics", path: "/analytics", active: false });
     links.push({ label: "Profile", path: "/profile", active: false });
     links.push({ label: "Features", path: "/feature", active: false });
+    links.push({ label: "Contact", path: "/contact", active: false });
   } else {
     links.push({
       label: isFeaturePage ? "Home" : "Features",
@@ -396,6 +399,7 @@ function buildMobileLinks({ user, isHomePage, isFeaturePage }) {
       active: false,
     });
     links.push({ label: "Community", path: "/community", active: false });
+    links.push({ label: "Contact", path: "/contact", active: false });
 
     if (isHomePage || isFeaturePage) {
       links.push({ label: "Login", path: "/login", active: false });
