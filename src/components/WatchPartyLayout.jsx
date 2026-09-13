@@ -1,7 +1,7 @@
 import { Mic, MicOff, Video, VideoOff, MessageSquare, Users, LogOut, Copy, X, Play, Flame, Target, Sparkles, Eye, ListVideo, Check } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useParticipants, useTracks, VideoTrack } from "@livekit/components-react";
+import { useParticipants, useTracks, VideoTrack, useRoomContext, useLocalParticipant } from "@livekit/components-react";
 import useMediaControls from "../hooks/useMediaControl";
 import YouTubeRoom from "./YouTubeRoom";
 import ChatDrawer from "./ChatDrawer";
@@ -37,6 +37,47 @@ export default function WatchPartyLayout({
   const navigate = useNavigate();
   const participants = useParticipants();
   const participantCount = participants.length;
+  const room = useRoomContext();
+  const { localParticipant } = useLocalParticipant();
+
+  // ── Live synced reactions ─────────────────────────────────────────────────
+  // Emoji reactions float over the video for everyone at once — the thing that
+  // makes co-watching feel shared instead of "watching alone with a chat box".
+  const REACTIONS = ["👍", "🔥", "😂", "🤯", "❤️", "👏"];
+  const [floats, setFloats] = useState([]); // { id, emoji, left }
+  const spawnFloat = (emoji) => {
+    const id = (crypto.randomUUID?.() || String(Math.random()));
+    const left = 8 + Math.random() * 84; // % across the stage
+    setFloats((f) => [...f, { id, emoji, left }]);
+    setTimeout(() => setFloats((f) => f.filter((x) => x.id !== id)), 2600);
+  };
+  const sendReaction = (emoji) => {
+    spawnFloat(emoji); // show mine instantly
+    if (room?.state === "connected" && localParticipant) {
+      try {
+        localParticipant.publishData(
+          new TextEncoder().encode(JSON.stringify({ type: "YT_REACTION", emoji })),
+          { reliable: false },
+        );
+      } catch {
+        /* best effort */
+      }
+    }
+  };
+  useEffect(() => {
+    if (!room) return undefined;
+    const handler = (payload, participant) => {
+      if (participant?.identity === localParticipant?.identity) return;
+      try {
+        const msg = JSON.parse(new TextDecoder().decode(payload));
+        if (msg?.type === "YT_REACTION" && msg.emoji) spawnFloat(msg.emoji);
+      } catch {
+        /* ignore non-JSON / other packets */
+      }
+    };
+    room.on("dataReceived", handler);
+    return () => room.off("dataReceived", handler);
+  }, [room, localParticipant]);
   const cameraTracks = useTracks([{ source: "camera", withPlaceholder: false }], {
     onlySubscribed: true,
   });
@@ -192,6 +233,13 @@ export default function WatchPartyLayout({
 
   return (
     <div style={styles.page}>
+      <style>{`
+        @keyframes yt-float-up {
+          0%   { transform: translateY(0) scale(0.8); opacity: 0; }
+          15%  { opacity: 1; transform: translateY(-10px) scale(1.1); }
+          100% { transform: translateY(-180px) scale(1); opacity: 0; }
+        }
+      `}</style>
       <div style={styles.centerWrap(isMobile)}>
         <div style={styles.stageWrap}>
           <div style={styles.roomHeaderBar}>
@@ -257,6 +305,43 @@ export default function WatchPartyLayout({
               onCurrentVideoId={setCurrentVideoId}
               onHostState={setHostState}
             />
+
+            {/* Always-on presence — see your crew is here, even cameras off. */}
+            <div style={styles.presenceStrip}>
+              {participants.map((p) => {
+                const words = (p.name || "Guest").trim().split(/\s+/);
+                const initials = words.slice(0, 2).map((w) => w[0]?.toUpperCase() || "").join("") || "G";
+                const isMe = p.identity === localParticipant?.identity;
+                return (
+                  <div key={p.identity} style={styles.presenceAvatar(isMe)} title={`${p.name || "Guest"}${isMe ? " (you)" : ""}`}>
+                    {initials}
+                    <span style={styles.presenceDot(p.isMicrophoneEnabled)} />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Floating live reactions */}
+            <div style={styles.floatsLayer} aria-hidden="true">
+              {floats.map((f) => (
+                <span key={f.id} style={{ ...styles.floatEmoji, left: `${f.left}%` }}>{f.emoji}</span>
+              ))}
+            </div>
+
+            {/* Reaction pill */}
+            <div style={styles.reactionPill}>
+              {REACTIONS.map((e) => (
+                <button
+                  key={e}
+                  type="button"
+                  onClick={() => sendReaction(e)}
+                  style={styles.reactionBtn}
+                  title="React"
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
 
             {participants.some((p) => p.isCameraEnabled) && (
               <div style={styles.cameraPip}>
@@ -631,6 +716,42 @@ const styles = {
   },
   liveDot: { width: 7, height: 7, borderRadius: "50%", background: "#22c55e" },
   sessionDivider: { color: "#94A3B8" },
+  presenceStrip: {
+    position: "absolute", top: 14, left: 14, zIndex: 26,
+    display: "flex", gap: 6, flexWrap: "wrap", maxWidth: "60%",
+    pointerEvents: "none",
+  },
+  presenceAvatar: (isMe) => ({
+    position: "relative", width: 34, height: 34, borderRadius: "50%",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    fontSize: 12, fontWeight: 700, color: "#fff",
+    background: "linear-gradient(135deg, var(--accent), #6f7fc0)",
+    border: isMe ? "2px solid #fff" : "2px solid rgba(255,255,255,0.35)",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.35)",
+  }),
+  presenceDot: (micOn) => ({
+    position: "absolute", bottom: -1, right: -1, width: 10, height: 10,
+    borderRadius: "50%", border: "2px solid #05070b",
+    background: micOn ? "#22c55e" : "#94a3b8",
+  }),
+  floatsLayer: {
+    position: "absolute", inset: 0, zIndex: 27, pointerEvents: "none", overflow: "hidden",
+  },
+  floatEmoji: {
+    position: "absolute", bottom: 70, fontSize: 30,
+    animation: "yt-float-up 2.6s ease-out forwards",
+    filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.4))",
+  },
+  reactionPill: {
+    position: "absolute", bottom: 14, left: "50%", transform: "translateX(-50%)", zIndex: 30,
+    display: "flex", gap: 2, padding: "4px 6px", borderRadius: 999,
+    background: "rgba(8,10,20,0.72)", border: "1px solid rgba(148,163,184,0.28)",
+    backdropFilter: "blur(8px)", boxShadow: "0 8px 22px rgba(0,0,0,0.35)",
+  },
+  reactionBtn: {
+    border: "none", background: "transparent", cursor: "pointer",
+    fontSize: 19, lineHeight: 1, padding: "4px 6px", borderRadius: 999,
+  },
   cameraPip: {
     position: "absolute", top: 14, right: 14, zIndex: 25,
     display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end",

@@ -544,25 +544,9 @@ export default function YouTubeRoom({
   // but PAUSE immediately followed by PLAY with a time jump signals a seek.
   // onStateChange covers this adequately for watch-party use.
 
-  // ── Participant mic indicators ────────────────────────────────────────────
-
-  const others = participants.filter(
-    (p) => p.identity !== localParticipant?.identity
-  );
-
   return (
     <div style={styles.shell}>
-      {/* Participant indicators */}
-      {others.length > 0 && (
-        <div style={styles.participantBar}>
-          {others.map((p) => (
-            <div key={p.identity} style={styles.participantChip}>
-              <span style={styles.dot} />
-              {p.name || p.identity}
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Presence is rendered by WatchPartyLayout (avatar strip on the stage). */}
 
       {/* YouTube player */}
       <div style={styles.playerWrap}>
