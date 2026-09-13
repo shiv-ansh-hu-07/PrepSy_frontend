@@ -97,7 +97,7 @@ const TABS = [
   { id: "quiz", label: "Quiz", icon: Brain },
   { id: "sessions", label: "Sessions", icon: Calendar },
   { id: "progress", label: "Progress", icon: TrendingUp },
-  { id: "members", label: "Members", icon: Users },
+  { id: "members", label: "Crew", icon: Users },
 ];
 
 export default function CohortPage() {
@@ -173,6 +173,38 @@ export default function CohortPage() {
   const [progress, setProgress] = useState(null);
   const [pastAttempts, setPastAttempts] = useState([]);
 
+  // Crew (members + intros) + my intro form
+  const [crew, setCrew] = useState(null);
+  const [introOpen, setIntroOpen] = useState(false);
+  const [introGoal, setIntroGoal] = useState("");
+  const [introBlurb, setIntroBlurb] = useState("");
+  const [savingIntro, setSavingIntro] = useState(false);
+
+  const fetchCrew = useCallback(async () => {
+    try {
+      const { data } = await api.get(`/cohorts/${id}/crew`);
+      setCrew(data);
+      const me = (data.members || []).find((m) => m.userId === user?.id);
+      setIntroGoal(me?.goal || data.prepForSuggestion || "");
+      setIntroBlurb(me?.blurb || "");
+    } catch {
+      /* ignore */
+    }
+  }, [id, user?.id]);
+
+  const handleSaveIntro = async () => {
+    setSavingIntro(true);
+    try {
+      await api.post(`/cohorts/${id}/intro`, { goal: introGoal.trim(), blurb: introBlurb.trim() });
+      await fetchCrew();
+      setIntroOpen(false);
+    } catch (err) {
+      alert(err?.response?.data?.message || "Couldn't save your intro.");
+    } finally {
+      setSavingIntro(false);
+    }
+  };
+
   const fetchCohort = useCallback(async () => {
     try {
       const { data } = await api.get(`/cohorts/${id}`);
@@ -200,8 +232,16 @@ export default function CohortPage() {
       api.get(`/cohorts/${id}/quiz/attempts`).then(({ data }) => setPastAttempts(data)).catch(() => {});
     } else if (activeTab === "progress") {
       api.get(`/cohorts/${id}/progress`).then(({ data }) => setProgress(data)).catch(() => {});
+    } else if (activeTab === "members") {
+      fetchCrew();
     }
-  }, [activeTab, id, cohort?.isMember, discussionSession]);
+  }, [activeTab, id, cohort?.isMember, discussionSession, fetchCrew]);
+
+  // Load crew once on entry (members only) so the kickoff banner can appear
+  // even before opening the Crew tab.
+  useEffect(() => {
+    if (cohort?.isMember) fetchCrew();
+  }, [cohort?.isMember, fetchCrew]);
 
   // Fetch (and lazily generate) the AI opening question for a checkpoint thread.
   useEffect(() => {
@@ -574,6 +614,24 @@ export default function CohortPage() {
                   Cancel
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* Kickoff nudge — new members introduce themselves to the crew. */}
+          {cohort.isMember && crew && !crew.hasIntro && (
+            <div style={{ ...card, marginBottom: 16, border: "1px solid var(--accent)", background: "linear-gradient(135deg, var(--accent-soft), transparent)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "var(--text-primary)" }}>👋 Say hi to your crew</p>
+                <p style={{ margin: "3px 0 0", fontSize: 13, color: "var(--text-secondary)" }}>
+                  A cohort works because you know who's in it. Add a one-line intro and what you're prepping for.
+                </p>
+              </div>
+              <button
+                onClick={() => { setActiveTab("members"); setIntroOpen(true); }}
+                style={{ ...btnPrimary(false), height: 40, flexShrink: 0 }}
+              >
+                Introduce yourself →
+              </button>
             </div>
           )}
 
@@ -1288,25 +1346,80 @@ export default function CohortPage() {
             <div style={card}>
               <h3 style={sectionTitle}>
                 <Users size={16} style={{ verticalAlign: "middle", marginRight: 8 }} />
-                Members ({cohort._count?.members})
+                Meet your crew ({crew?.members?.length ?? cohort._count?.members})
               </h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {(cohort.members || []).map((m) => (
-                  <div key={m.userId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 12, border: "1px solid var(--card-border)", background: "var(--accent-soft)" }}>
-                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, var(--accent), #6f7fc0)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
-                      {(m.user?.name || "?")[0]?.toUpperCase()}
-                    </div>
-                    <div>
-                      <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{m.user?.name || "Unknown"}</p>
-                      {cohort.createdById === m.userId && (
-                        <p style={{ margin: 0, fontSize: 11, color: "var(--accent)", fontWeight: 600 }}>Creator</p>
-                      )}
-                    </div>
-                    <p style={{ margin: "0 0 0 auto", fontSize: 12, color: "var(--text-muted)" }}>
-                      Joined {new Date(m.joinedAt).toLocaleDateString()}
-                    </p>
+
+              {/* My intro editor */}
+              {cohort.isMember && (introOpen || (crew && !crew.hasIntro)) && (
+                <div style={{ marginBottom: 18, padding: 16, borderRadius: 14, border: "1px solid var(--accent)", background: "var(--accent-soft)" }}>
+                  <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 800, color: "var(--text-primary)" }}>Your intro</p>
+                  <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 700, color: "var(--accent)", marginBottom: 10 }}>
+                    What are you prepping for?
+                    <input
+                      value={introGoal}
+                      onChange={(e) => setIntroGoal(e.target.value)}
+                      maxLength={80}
+                      placeholder="e.g. Placements — SDE by Dec"
+                      style={{ height: 42, borderRadius: 10, border: "1.5px solid rgba(138,155,214,0.4)", background: "var(--card-bg)", padding: "0 12px", fontSize: 14, color: "var(--text-primary)", outline: "none" }}
+                    />
+                  </label>
+                  <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, fontWeight: 700, color: "var(--accent)", marginBottom: 12 }}>
+                    A line about you (optional)
+                    <textarea
+                      value={introBlurb}
+                      onChange={(e) => setIntroBlurb(e.target.value)}
+                      maxLength={300}
+                      rows={2}
+                      placeholder="Final-year CS, grinding DSA. Best focus hours: late night."
+                      style={{ borderRadius: 10, border: "1.5px solid rgba(138,155,214,0.4)", background: "var(--card-bg)", padding: "10px 12px", fontSize: 14, color: "var(--text-primary)", outline: "none", resize: "vertical" }}
+                    />
+                  </label>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button onClick={handleSaveIntro} disabled={savingIntro || !introGoal.trim()} style={{ ...btnPrimary(savingIntro || !introGoal.trim()), height: 40 }}>
+                      {savingIntro ? "Saving…" : "Save intro"}
+                    </button>
+                    {crew?.hasIntro && (
+                      <button onClick={() => setIntroOpen(false)} style={{ ...btnPrimary(false), height: 40, background: "var(--card-bg)", color: "var(--accent)", border: "1px solid var(--accent)" }}>
+                        Cancel
+                      </button>
+                    )}
                   </div>
-                ))}
+                </div>
+              )}
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {(crew?.members || []).map((m) => {
+                  const isMe = m.userId === user?.id;
+                  return (
+                    <div key={m.userId} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 14px", borderRadius: 12, border: isMe ? "1px solid var(--accent)" : "1px solid var(--card-border)", background: "var(--accent-soft)" }}>
+                      <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg, var(--accent), #6f7fc0)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700, flexShrink: 0 }}>
+                        {(m.name || "?")[0]?.toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{m.name}{isMe ? " (you)" : ""}</p>
+                          {m.isCreator && <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--accent)", background: "var(--card-bg)", border: "1px solid var(--accent)", borderRadius: 999, padding: "1px 8px" }}>Creator</span>}
+                          {isMe && (
+                            <button onClick={() => setIntroOpen(true)} style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0 }}>
+                              Edit
+                            </button>
+                          )}
+                        </div>
+                        {m.goal ? (
+                          <p style={{ margin: "4px 0 0", fontSize: 12.5, color: "var(--text-primary)" }}>🎯 {m.goal}</p>
+                        ) : m.prepFor?.length ? (
+                          <p style={{ margin: "4px 0 0", fontSize: 12.5, color: "var(--text-secondary)" }}>Prepping for: {m.prepFor.join(" · ")}</p>
+                        ) : (
+                          <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--text-muted)", fontStyle: "italic" }}>No intro yet</p>
+                        )}
+                        {m.blurb && <p style={{ margin: "4px 0 0", fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.5 }}>{m.blurb}</p>}
+                      </div>
+                      <p style={{ margin: 0, fontSize: 11, color: "var(--text-muted)", flexShrink: 0 }}>
+                        {new Date(m.joinedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
