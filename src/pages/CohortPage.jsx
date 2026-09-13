@@ -993,6 +993,35 @@ export default function CohortPage() {
                 <p style={{ color: "var(--text-muted)", fontSize: 14 }}>No schedule yet — generate the plan in Sessions.</p>
               ) : (
                 <>
+                  {/* Shared crew streak — the group keeps it alive together. */}
+                  {progress.memberCount > 1 && (
+                    <div style={{ marginBottom: 16, padding: "14px 16px", borderRadius: 14, border: "1px solid #fed7aa", background: "linear-gradient(135deg,#fff7ed,transparent)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                      <div>
+                        <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "#c2410c" }}>
+                          🔥 Crew streak: {progress.cohortStreak} day{progress.cohortStreak === 1 ? "" : "s"}
+                        </p>
+                        {progress.hasTodaySession ? (
+                          <p style={{ margin: "3px 0 0", fontSize: 12.5, color: "var(--text-secondary)" }}>
+                            {progress.todayCompletedCount}/{progress.memberCount} of your crew studied today
+                            {progress.me && !progress.me.completedToday ? " — you're missing" : ""}
+                          </p>
+                        ) : (
+                          <p style={{ margin: "3px 0 0", fontSize: 12.5, color: "var(--text-secondary)" }}>
+                            Keep it alive — half the crew completing each day holds the streak.
+                          </p>
+                        )}
+                      </div>
+                      {progress.hasTodaySession && progress.me && !progress.me.completedToday && cohort.roomId && (
+                        <button
+                          onClick={() => navigate(`/room/${cohort.roomId}`)}
+                          style={{ ...btnPrimary(false), height: 38, padding: "0 18px", fontSize: 13, flexShrink: 0 }}
+                        >
+                          Join now →
+                        </button>
+                      )}
+                    </div>
+                  )}
+
                   {progress.me && (
                     <div style={{ marginBottom: 20, padding: 16, borderRadius: 14, border: "1px solid var(--accent)", background: "var(--accent-soft)" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
