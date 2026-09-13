@@ -56,7 +56,9 @@ export default function LearnPage() {
   const [expandedTopic, setExpandedTopic] = useState(null);
 
   const [cohortName, setCohortName] = useState("");
-  const [cohortMaxSize, setCohortMaxSize] = useState(10);
+  const [cohortMaxSize, setCohortMaxSize] = useState(6);
+  // Re-forming with the same crew from a finished cohort (?reformFrom=<id>).
+  const [reformFrom] = useState(() => new URLSearchParams(window.location.search).get("reformFrom") || null);
   const [creatingCohort, setCreatingCohort] = useState(false);
   const [cohortError, setCohortError] = useState(null);
   const [startMode, setStartMode] = useState("NOW");
@@ -149,6 +151,7 @@ export default function LearnPage() {
         maxSize: cohortMaxSize,
         startMode,
         sessions,
+        ...(reformFrom ? { reformFromCohortId: reformFrom } : {}),
       };
       if (startMode === "SCHEDULED" && cohortStart) {
         const dt = new Date(cohortStart);
@@ -230,6 +233,14 @@ export default function LearnPage() {
             <p style={{ margin: "6px 0 0", fontSize: 14, color: "var(--text-secondary)" }}>
               Paste a YouTube playlist — get an AI-generated curriculum, roadmap, and study cohort.
             </p>
+            {reformFrom && (
+              <div style={{ marginTop: 14, padding: "12px 16px", borderRadius: 12, border: "1px solid var(--accent)", background: "var(--accent-soft)" }}>
+                <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "var(--accent)" }}>🤝 Bringing your crew along</p>
+                <p style={{ margin: "3px 0 0", fontSize: 12.5, color: "var(--text-secondary)" }}>
+                  Pick the next course and create the cohort — your crew from the finished cohort will be added automatically.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* URL Input */}

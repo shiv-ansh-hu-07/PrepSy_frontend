@@ -350,6 +350,19 @@ export default function CohortPage() {
     }
   };
 
+  const [shareCopied, setShareCopied] = useState(false);
+  const handleShareCompletion = async () => {
+    const course = progress?.playlistTitle || cohort?.playlist?.title || "a course";
+    const text = `I just finished "${course}" with my study crew on PrepSy 🎓 ${window.location.origin}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 1800);
+    } catch {
+      /* clipboard unavailable */
+    }
+  };
+
   const handleCatchup = async (sessionId, done) => {
     setCatchingUp((prev) => ({ ...prev, [sessionId]: true }));
     // Optimistic: flip the flag locally so the chip updates immediately.
@@ -1051,6 +1064,34 @@ export default function CohortPage() {
                 <p style={{ color: "var(--text-muted)", fontSize: 14 }}>No schedule yet — generate the plan in Sessions.</p>
               ) : (
                 <>
+                  {/* Finish line — the cohort completed its plan. */}
+                  {progress.finished && (
+                    <div style={{ marginBottom: 16, padding: "18px 18px", borderRadius: 16, border: "1px solid #c4b5fd", background: "linear-gradient(135deg,#f3f0ff,transparent)", textAlign: "center" }}>
+                      <div style={{ fontSize: 34, marginBottom: 4 }}>🎓</div>
+                      <p style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "var(--text-primary)" }}>Cohort complete!</p>
+                      <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--text-secondary)" }}>
+                        Your crew finished <strong>{progress.playlistTitle || cohort.playlist?.title}</strong> together
+                        {progress.me ? ` — you completed ${progress.me.completed}/${progress.totalDays} days.` : "."}
+                      </p>
+                      <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", marginTop: 14 }}>
+                        {cohort.createdById === user?.id && (
+                          <button
+                            onClick={() => navigate(`/learn?reformFrom=${id}`)}
+                            style={{ ...btnPrimary(false), height: 40 }}
+                          >
+                            Start the next course with your crew →
+                          </button>
+                        )}
+                        <button
+                          onClick={handleShareCompletion}
+                          style={{ ...btnPrimary(false), height: 40, background: "var(--card-bg)", color: "var(--accent)", border: "1px solid var(--accent)" }}
+                        >
+                          {shareCopied ? "Copied!" : "Share"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Shared crew streak — the group keeps it alive together. */}
                   {progress.memberCount > 1 && (
                     <div style={{ marginBottom: 16, padding: "14px 16px", borderRadius: 14, border: "1px solid #fed7aa", background: "linear-gradient(135deg,#fff7ed,transparent)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
