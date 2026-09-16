@@ -49,6 +49,24 @@ export default function WatchPartyLayout({
   const REACTIONS = ["👍", "🔥", "😂", "🤯", "❤️", "👏"];
   const [floats, setFloats] = useState([]); // { id, emoji, left }
   const [chatUnread, setChatUnread] = useState(false);
+
+  // ── Voice/audio unblock ───────────────────────────────────────────────────
+  // In a watch party, clicks land inside the cross-origin YouTube iframe and
+  // never reach the parent page, so the browser's autoplay policy keeps the
+  // LiveKit AudioContext suspended → you can't hear anyone. Detect that and give
+  // an explicit "enable sound" control (the standard LiveKit pattern).
+  const [audioBlocked, setAudioBlocked] = useState(false);
+  useEffect(() => {
+    if (!room) return undefined;
+    const update = () => setAudioBlocked(room.canPlaybackAudio === false);
+    update();
+    room.on("audioPlaybackChanged", update);
+    return () => room.off("audioPlaybackChanged", update);
+  }, [room]);
+  const enableAudio = async () => {
+    try { await room?.startAudio(); } catch { /* needs a user gesture; this is one */ }
+    setAudioBlocked(room?.canPlaybackAudio === false);
+  };
   const spawnFloat = (emoji) => {
     const id = (crypto.randomUUID?.() || String(Math.random()));
     const left = 8 + Math.random() * 84; // % across the stage
@@ -56,6 +74,8 @@ export default function WatchPartyLayout({
     setTimeout(() => setFloats((f) => f.filter((x) => x.id !== id)), 2600);
   };
   const sendReaction = (emoji) => {
+    // A parent-page gesture — also a good moment to unblock suspended audio.
+    room?.startAudio?.().catch(() => {});
     spawnFloat(emoji); // show mine instantly
     if (room?.state === "connected" && localParticipant) {
       try {
@@ -307,6 +327,11 @@ export default function WatchPartyLayout({
           </div>
 
           <div style={styles.stage} data-room-stage>
+            {audioBlocked && (
+              <button type="button" style={styles.enableAudioBanner} onClick={enableAudio}>
+                🔊 Tap to enable voice & sound
+              </button>
+            )}
             {hasPlaylist && hostState.amHost && hostState.pendingRequest && (
               <div style={styles.controlRequestBanner}>
                 <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -786,6 +811,12 @@ const styles = {
     padding: "8px 14px", borderRadius: 12, fontSize: 12.5, color: "#fff",
     background: "rgba(17,24,39,0.92)", border: "1px solid rgba(148,163,184,0.3)",
     boxShadow: "0 10px 26px rgba(0,0,0,0.4)", backdropFilter: "blur(8px)",
+  },
+  enableAudioBanner: {
+    position: "absolute", top: 12, left: "50%", transform: "translateX(-50%)", zIndex: 46,
+    padding: "9px 18px", borderRadius: 999, border: "none", cursor: "pointer",
+    background: "linear-gradient(135deg,#7c3aed,#8b5cf6)", color: "#fff",
+    fontWeight: 700, fontSize: 13, boxShadow: "0 10px 26px rgba(124,58,237,0.5)",
   },
   grantBtn: {
     height: 28, padding: "0 12px", borderRadius: 8, border: "none", cursor: "pointer",
