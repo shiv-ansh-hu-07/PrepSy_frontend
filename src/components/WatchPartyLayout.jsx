@@ -1,11 +1,11 @@
-import { Mic, MicOff, Video, VideoOff, MessageSquare, Users, LogOut, Copy, X, Play, Flame, Target, Sparkles, Eye, ListVideo, Check, FileText } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, MessageSquare, Users, LogOut, Copy, X, Play, Flame, Target, Sparkles, Eye, ListVideo, Check, FileText, Download, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useParticipants, useTracks, VideoTrack, useRoomContext, useLocalParticipant } from "@livekit/components-react";
 import useMediaControls from "../hooks/useMediaControl";
 import YouTubeRoom from "./YouTubeRoom";
 import ChatDrawer from "./ChatDrawer";
-import api, { fetchMyAnalytics, fetchFocusSummary, fetchVideoSummary, exitRoom as exitRoomApi } from "../services/api";
+import api, { fetchMyAnalytics, fetchFocusSummary, fetchVideoSummary } from "../services/api";
 
 const PREP_MS = 60_000;
 
@@ -48,6 +48,7 @@ export default function WatchPartyLayout({
   // makes co-watching feel shared instead of "watching alone with a chat box".
   const REACTIONS = ["👍", "🔥", "😂", "🤯", "❤️", "👏"];
   const [floats, setFloats] = useState([]); // { id, emoji, left }
+  const [chatUnread, setChatUnread] = useState(false);
   const spawnFloat = (emoji) => {
     const id = (crypto.randomUUID?.() || String(Math.random()));
     const left = 8 + Math.random() * 84; // % across the stage
@@ -74,6 +75,8 @@ export default function WatchPartyLayout({
       try {
         const msg = JSON.parse(new TextDecoder().decode(payload));
         if (msg?.type === "YT_REACTION" && msg.emoji) spawnFloat(msg.emoji);
+        // Unread chat badge when a message arrives and chat isn't open.
+        if (msg?.type === "chat" && tabRef.current !== "chat") setChatUnread(true);
       } catch {
         /* ignore non-JSON / other packets */
       }
@@ -86,6 +89,11 @@ export default function WatchPartyLayout({
   });
 
   const [tab, setTab] = useState("chat");
+  const tabRef = useRef(tab);
+  useEffect(() => {
+    tabRef.current = tab;
+    if (tab === "chat") setChatUnread(false);
+  }, [tab]);
   const ytControlsRef = useRef(null);
   const [currentVideoId, setCurrentVideoId] = useState(null);
   const [hostState, setHostState] = useState({ amHost: true, hostName: null, pendingRequest: null });
@@ -115,6 +123,25 @@ export default function WatchPartyLayout({
     }, 900);
     return () => clearTimeout(t);
   }, [notes, hasNotes, cohortId, cohortSessionId]);
+  const notesFileRef = useRef(null);
+  const downloadNotes = async () => {
+    const { default: jsPDF } = await import("jspdf");
+    const doc = new jsPDF();
+    doc.setFont("Times", "Normal");
+    doc.setFontSize(16);
+    doc.text(`PrepSy Notes — ${cohortTopic || "Cohort"}`, 20, 20);
+    doc.setFontSize(12);
+    doc.text(notes || "No notes written.", 20, 40, { maxWidth: 170 });
+    doc.save("prepsy-notes.pdf");
+  };
+  const uploadNotes = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setNotes(String(reader.result || ""));
+    reader.readAsText(file);
+    e.target.value = ""; // allow re-selecting the same file
+  };
   const watchedSet = new Set(Array.isArray(watchedVideoIds) ? watchedVideoIds : []);
   const [shareStatus, setShareStatus] = useState("");
   const [leaving, setLeaving] = useState(false);
@@ -243,21 +270,6 @@ export default function WatchPartyLayout({
     navigate("/dashboard");
   };
 
-  const [exiting, setExiting] = useState(false);
-  const handleExitRoom = async () => {
-    const ok = window.confirm(
-      "Exit this room for good? You'll stop receiving all reminders and emails for it. You can rejoin later if you change your mind."
-    );
-    if (!ok) return;
-    setExiting(true);
-    try {
-      await exitRoomApi(roomId);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      navigate("/dashboard");
-    }
-  };
 
   return (
     <div style={styles.page}>
@@ -280,7 +292,7 @@ export default function WatchPartyLayout({
                 <span style={styles.liveDot} />
                 {participantCount} {participantCount === 1 ? "person" : "people"} watching
                 <span style={styles.sessionDivider}>•</span>
-                Watch party
+                {cohortId ? "YouTube cohort" : "Watch party"}
               </span>
               {hasPlaylist && (
                 <span style={styles.hostBadge(hostState.amHost)} title={hostState.amHost ? "You control playback for the room" : "Playback is controlled by the host"}>
@@ -454,7 +466,7 @@ export default function WatchPartyLayout({
           <div style={styles.bottomBar}>
             <Control icon={micEnabled ? Mic : MicOff} active={micEnabled} onClick={toggleMic} title="Toggle mic" />
             <Control icon={camEnabled ? Video : VideoOff} active={camEnabled} onClick={toggleCamera} title="Toggle camera" />
-            <Control icon={MessageSquare} onClick={() => setTab("chat")} active={tab === "chat"} title="Chat" />
+            <Control icon={MessageSquare} onClick={() => setTab("chat")} active={tab === "chat"} title="Chat" badge={chatUnread && tab !== "chat"} />
             {hasPlaylist && (
               <Control icon={ListVideo} onClick={() => setTab("playlist")} active={tab === "playlist"} title="Playlist" />
             )}
@@ -474,6 +486,9 @@ export default function WatchPartyLayout({
               onClick={() => setTab("chat")}
             >
               Chat
+              {chatUnread && tab !== "chat" && (
+                <span style={{ display: "inline-block", marginLeft: 6, width: 8, height: 8, borderRadius: "50%", background: "#ef4444", verticalAlign: "middle" }} />
+              )}
             </button>
             {hasPlaylist && (
               <button
@@ -530,6 +545,21 @@ export default function WatchPartyLayout({
                   placeholder="Jot down key points from today's video — saved automatically, and here when you come back to this day."
                   style={styles.notesArea}
                 />
+                <input
+                  ref={notesFileRef}
+                  type="file"
+                  accept=".txt,.md,text/plain,text/markdown"
+                  onChange={uploadNotes}
+                  style={{ display: "none" }}
+                />
+                <div style={styles.notesActions}>
+                  <button type="button" style={styles.notesActionBtn} onClick={downloadNotes}>
+                    <Download size={15} /> Download PDF
+                  </button>
+                  <button type="button" style={styles.notesActionBtn} onClick={() => notesFileRef.current?.click()}>
+                    <Upload size={15} /> Upload
+                  </button>
+                </div>
               </div>
             ) : (
               <PeopleList participants={participants} />
@@ -543,8 +573,6 @@ export default function WatchPartyLayout({
           summary={summary}
           loading={!summary}
           onClose={handleCloseSummary}
-          onExit={handleExitRoom}
-          exiting={exiting}
         />
       )}
     </div>
@@ -664,13 +692,14 @@ function StatBox({ label, value }) {
   );
 }
 
-function Control({ icon, danger, active, onClick, title }) {
+function Control({ icon, danger, active, onClick, title, badge }) {
   const IconComponent = icon;
   return (
     <button
       onClick={onClick}
       title={title}
       style={{
+        position: "relative",
         width: 48,
         height: 48,
         borderRadius: 14,
@@ -685,6 +714,9 @@ function Control({ icon, danger, active, onClick, title }) {
       }}
     >
       <IconComponent size={20} color={danger ? "#FFFFFF" : "var(--text-secondary)"} />
+      {badge && (
+        <span style={{ position: "absolute", top: 8, right: 8, width: 10, height: 10, borderRadius: "50%", background: "#ef4444", border: "2px solid #fff" }} />
+      )}
     </button>
   );
 }
@@ -928,6 +960,13 @@ const styles = {
     border: "1px solid var(--card-border)", background: "var(--input-bg, var(--card-bg))",
     padding: "12px 14px", fontSize: 13.5, lineHeight: 1.6, color: "var(--text-primary)",
     outline: "none", fontFamily: "inherit",
+  },
+  notesActions: { display: "flex", gap: 8, flexShrink: 0 },
+  notesActionBtn: {
+    flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+    height: 36, borderRadius: 10, cursor: "pointer",
+    border: "1px solid var(--card-border)", background: "var(--card-bg)",
+    color: "var(--text-secondary)", fontSize: 12.5, fontWeight: 700,
   },
   peopleList: { padding: 12, display: "flex", flexDirection: "column", gap: 8, overflowY: "auto" },
   playlistPanel: { padding: 12, display: "flex", flexDirection: "column", gap: 6, overflowY: "auto" },

@@ -36,7 +36,21 @@ export default function useMediaControls() {
       await ensureRoomAudioStarted();
       await localParticipant.setMicrophoneEnabled(!micEnabled);
     } catch (err) {
-      console.warn("Unable to toggle microphone:", err);
+      // Enabling failed because the mic is busy/unlisted — re-enumerate and
+      // point LiveKit at an actual input, then retry (mirrors the camera path).
+      if (!micEnabled && (err?.name === "NotFoundError" || err?.name === "NotReadableError")) {
+        try {
+          const devices = (await navigator.mediaDevices?.enumerateDevices?.()) ?? [];
+          const mic = devices.find((d) => d.kind === "audioinput");
+          if (!mic) { console.warn("No microphone found on this device."); return; }
+          await room.switchActiveDevice("audioinput", mic.deviceId);
+          await localParticipant.setMicrophoneEnabled(true);
+        } catch (retryErr) {
+          console.warn("Microphone retry failed:", retryErr?.name, retryErr?.message);
+        }
+      } else {
+        console.warn("Unable to toggle microphone:", err?.name, err?.message);
+      }
     }
   }, [ensureRoomAudioStarted, localParticipant, micEnabled, room]);
 
