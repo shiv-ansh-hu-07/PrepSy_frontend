@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import YouTube from "react-youtube";
 import { useRoomContext, useLocalParticipant, useParticipants } from "@livekit/components-react";
 import { fetchRoomVideoState, saveRoomVideoState, markVideoWatched } from "../services/api";
+import { track } from "../services/analytics";
 
 // ── Sync protocol ────────────────────────────────────────────────────────────
 // All events sent via LiveKit data channel (same as Pomodoro + chat).
@@ -14,6 +15,22 @@ const HOST_REQUEST_TYPE = "YT_HOST_REQUEST";   // a viewer asks the host for con
 const HOST_HANDOFF_TYPE = "YT_HOST_HANDOFF";   // the host grants control to someone
 const DRIFT_TOLERANCE_S = 2; // only re-seek if drift > 2 seconds
 const HEARTBEAT_MS = 15000;  // periodic sync every 15s to prevent drift
+
+// YouTube IFrame API onError codes → what they mean / what to tell the viewer.
+const YT_ERROR_MEANING = {
+  2: "invalid parameter (bad video id)",
+  5: "HTML5 player / streaming error",
+  100: "video not found, removed, or private",
+  101: "embedding disabled by the video owner",
+  150: "embedding disabled by the video owner",
+};
+const YT_ERROR_MESSAGE = {
+  100: "This video was removed or made private on YouTube. The host can pick another one.",
+  101: "The video's owner disabled playback on other sites. Try “Watch on YouTube”.",
+  150: "The video's owner disabled playback on other sites. Try “Watch on YouTube”.",
+  default:
+    "YouTube couldn't stream it here — usually a browser blocking third-party cookies, an ad-blocker, or a strict privacy/tracking setting. Try reloading, or allow youtube.com in this browser.",
+};
 
 export default function YouTubeRoom({
   roomId = null,
@@ -65,6 +82,14 @@ export default function YouTubeRoom({
   // cohort creator; control can be handed off at runtime via data messages.
   const [hostOverride, setHostOverride] = useState(null); // identity granted control
   const [pendingRequest, setPendingRequest] = useState(null); // { identity, name } (host sees)
+
+  // Player-level error surfacing + recovery. YouTube's embed shows a generic
+  // "An error occurred. Please try again later." with no cause; capturing the
+  // numeric code tells us WHY (bad id / embedding disabled / HTML5 / streaming),
+  // and remounting the iframe clears most transient failures.
+  const [errorCode, setErrorCode] = useState(null);
+  const [playerKey, setPlayerKey] = useState(0);
+  const autoRetriedRef = useRef(false);
 
   // Current video's title + channel, for creator attribution. Read live from
   // the player so it stays correct as the playlist advances.
@@ -517,7 +542,13 @@ export default function YouTubeRoom({
     }
 
     // Keep attribution in sync as the playlist advances to a new video.
-    if (e.data === YT_PLAYING) captureVideoMeta(e.target);
+    if (e.data === YT_PLAYING) {
+      captureVideoMeta(e.target);
+      // Playback recovered — clear any error and re-arm the one-shot auto-retry
+      // so a later (different) video can auto-recover too.
+      setErrorCode(null);
+      autoRetriedRef.current = false;
+    }
 
     if (isSyncingRef.current) return; // skip — this change was caused by applySync
     // Only the host drives the room: non-hosts' play/pause/seek do NOT broadcast,
@@ -540,9 +571,45 @@ export default function YouTubeRoom({
     }
   }, [broadcastState, captureVideoMeta, persistState, markWatched]);
 
-  // Manual seek detection — YouTube API doesn't fire a "seeked" event,
-  // but PAUSE immediately followed by PLAY with a time jump signals a seek.
-  // onStateChange covers this adequately for watch-party use.
+  // ── Player error handling + recovery ──────────────────────────────────────
+  // Fully rebuild the iframe. A remount re-runs onReady (re-cues the playlist)
+  // and re-requests sync, which clears most transient "An error occurred" cases.
+  const reloadPlayer = useCallback(() => {
+    playerRef.current = null;
+    receivedSyncRef.current = false;
+    didResumeRef.current = false;
+    setErrorCode(null);
+    setPlayerKey((k) => k + 1);
+    // The mount-time sync request only fires once for the component; after a
+    // manual/auto reload of just the iframe, ask the host to re-sync us so the
+    // fresh player lands on the room's current video/position (not the default).
+    setTimeout(() => broadcast({ type: REQUEST_TYPE }), 2200);
+  }, [broadcast]);
+
+  const onError = useCallback((e) => {
+    const code = e?.data ?? -1;
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[YouTubeRoom] YouTube player error",
+      { code, meaning: YT_ERROR_MEANING[code] || "unknown", videoId: playerRef.current?.getVideoData?.()?.video_id }
+    );
+    setErrorCode(code);
+    // Capture it server-side so we see the real cause from testers in the wild
+    // without having to be present / reproduce it (shows up on /founder).
+    track("yt_player_error", {
+      code,
+      meaning: YT_ERROR_MEANING[code] || "unknown",
+      videoId: playerRef.current?.getVideoData?.()?.video_id || null,
+      roomId: roomId || null,
+    });
+    // One automatic remount for the transient/streaming failures (2 invalid
+    // param, 5 HTML5 player error, -1 unknown). Embedding-disabled (101/150)
+    // and not-found (100) won't recover from a retry, so we don't loop on them.
+    if (!autoRetriedRef.current && (code === 5 || code === 2 || code === -1)) {
+      autoRetriedRef.current = true;
+      setTimeout(reloadPlayer, 1200);
+    }
+  }, [reloadPlayer, roomId]);
 
   return (
     <div style={styles.shell}>
@@ -551,6 +618,7 @@ export default function YouTubeRoom({
       {/* YouTube player */}
       <div style={styles.playerWrap}>
         <YouTube
+          key={playerKey}
           videoId={videoId || "videoseries"}
           opts={{
             width: "100%",
@@ -566,7 +634,18 @@ export default function YouTubeRoom({
           style={styles.ytEmbed}
           onReady={onReady}
           onStateChange={onStateChange}
+          onError={onError}
         />
+
+        {/* Only surface our own overlay once an auto-retry has already failed,
+            so a recoverable blip just reloads silently. */}
+        {errorCode !== null && autoRetriedRef.current ? (
+          <div style={styles.errorOverlay}>
+            <p style={styles.errorTitle}>This video wouldn't play here</p>
+            <p style={styles.errorMsg}>{YT_ERROR_MESSAGE[errorCode] || YT_ERROR_MESSAGE.default}</p>
+            <button style={styles.errorBtn} onClick={reloadPlayer}>↻ Reload player</button>
+          </div>
+        ) : null}
       </div>
 
       {videoMeta ? (
@@ -640,6 +719,43 @@ const styles = {
     inset: 0,
     width: "100%",
     height: "100%",
+  },
+  errorOverlay: {
+    position: "absolute",
+    inset: 0,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: 24,
+    textAlign: "center",
+    background: "rgba(5,7,11,0.92)",
+    zIndex: 3,
+  },
+  errorTitle: {
+    margin: 0,
+    color: "#f1f5f9",
+    fontSize: 15,
+    fontWeight: 700,
+  },
+  errorMsg: {
+    margin: 0,
+    maxWidth: 460,
+    color: "rgba(148,163,184,0.9)",
+    fontSize: 13,
+    lineHeight: 1.5,
+  },
+  errorBtn: {
+    marginTop: 8,
+    padding: "8px 18px",
+    borderRadius: 10,
+    border: "none",
+    background: "#7c3aed",
+    color: "#fff",
+    fontWeight: 700,
+    fontSize: 13,
+    cursor: "pointer",
   },
   hint: {
     margin: 0,
