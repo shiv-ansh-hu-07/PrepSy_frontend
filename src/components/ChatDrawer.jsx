@@ -9,8 +9,10 @@ export default function ChatDrawer({ onClose, currentUser, embedded = false }) {
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
+  const [replyTo, setReplyTo] = useState(null); // { text, sender }
 
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
   /* ================= FORMAT TIME ================= */
 
@@ -42,6 +44,8 @@ export default function ChatDrawer({ onClose, currentUser, embedded = false }) {
             sender: msg.senderName,
             senderId: msg.senderId,
             createdAt: msg.createdAt,
+            replyToText: msg.replyToText || null,
+            replyToSender: msg.replyToSender || null,
           }))
         );
       } catch (err) {
@@ -68,6 +72,8 @@ export default function ChatDrawer({ onClose, currentUser, embedded = false }) {
             sender: data.sender,
             senderId: data.senderId,
             createdAt: new Date().toISOString(),
+            replyToText: data.replyToText || null,
+            replyToSender: data.replyToSender || null,
           },
         ]);
       }
@@ -100,11 +106,16 @@ export default function ChatDrawer({ onClose, currentUser, embedded = false }) {
     const senderId =
       currentUser?.id || localParticipant?.identity || null;
 
+    const replyToText = replyTo?.text || null;
+    const replyToSender = replyTo?.sender || null;
+
     const messagePayload = {
       type: "chat",
       text: input,
       sender: senderName,
       senderId,
+      replyToText,
+      replyToSender,
     };
 
     try {
@@ -124,6 +135,8 @@ export default function ChatDrawer({ onClose, currentUser, embedded = false }) {
           sender: senderName,
           senderId,
           createdAt: new Date().toISOString(),
+          replyToText,
+          replyToSender,
         },
       ]);
 
@@ -135,10 +148,13 @@ export default function ChatDrawer({ onClose, currentUser, embedded = false }) {
           text: input,
           senderId,
           senderName,
+          replyToText,
+          replyToSender,
         }),
       }).catch((err) => console.error("Save failed:", err));
 
       setInput("");
+      setReplyTo(null);
     } catch (error) {
       console.error("Send failed:", error);
     }
@@ -179,7 +195,7 @@ export default function ChatDrawer({ onClose, currentUser, embedded = false }) {
               className={`flex ${isMe ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[75%] rounded-2xl px-4 py-3 shadow-sm ${
+                className={`group max-w-[75%] rounded-2xl px-4 py-3 shadow-sm ${
                   isMe
                     ? "bg-indigo-600 text-white rounded-br-none"
                     : "bg-white text-gray-800 border border-gray-200 rounded-bl-none"
@@ -192,16 +208,40 @@ export default function ChatDrawer({ onClose, currentUser, embedded = false }) {
                   </div>
                 )}
 
+                {/* Quoted reply context */}
+                {msg.replyToText && (
+                  <div
+                    style={{
+                      borderLeft: `3px solid ${isMe ? "rgba(255,255,255,0.6)" : "var(--accent)"}`,
+                      background: isMe ? "rgba(255,255,255,0.14)" : "rgba(99,102,241,0.08)",
+                      borderRadius: 8,
+                      padding: "5px 8px",
+                      marginBottom: 6,
+                    }}
+                  >
+                    <div style={{ fontSize: 10.5, fontWeight: 700, opacity: 0.9 }}>{msg.replyToSender || "Reply"}</div>
+                    <div style={{ fontSize: 11.5, opacity: 0.85, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 220 }}>{msg.replyToText}</div>
+                  </div>
+                )}
+
                 {/* Text */}
                 <div className="text-sm">{msg.text}</div>
 
-                {/* Time */}
+                {/* Time + reply action */}
                 <div
-                  className={`text-[10px] mt-2 ${
+                  className={`flex items-center justify-between gap-3 text-[10px] mt-2 ${
                     isMe ? "text-indigo-200" : "text-gray-400"
-                  } text-right`}
+                  }`}
                 >
-                  {formatTime(msg.createdAt)}
+                  <button
+                    type="button"
+                    onClick={() => { setReplyTo({ text: msg.text, sender: msg.sender || "User" }); inputRef.current?.focus(); }}
+                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: 10, fontWeight: 700, color: "inherit", padding: 0, opacity: 0.75 }}
+                    title="Reply"
+                  >
+                    ↩ Reply
+                  </button>
+                  <span>{formatTime(msg.createdAt)}</span>
                 </div>
               </div>
             </div>
@@ -212,9 +252,19 @@ export default function ChatDrawer({ onClose, currentUser, embedded = false }) {
 
       {/* Input */}
       <div className="p-4 border-t border-gray-200 bg-white">
+        {replyTo && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, padding: "6px 10px", borderRadius: 10, background: "rgba(99,102,241,0.08)", borderLeft: "3px solid var(--accent)" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--accent)" }}>Replying to {replyTo.sender}</div>
+              <div style={{ fontSize: 12, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{replyTo.text}</div>
+            </div>
+            <button type="button" onClick={() => setReplyTo(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: 16, lineHeight: 1, flexShrink: 0 }} title="Cancel reply">✕</button>
+          </div>
+        )}
         <div className="flex items-center gap-2">
           <EmojiPicker onPick={(e) => setInput((t) => t + e)} />
           <input
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
