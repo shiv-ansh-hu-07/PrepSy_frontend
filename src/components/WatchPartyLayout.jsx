@@ -1,4 +1,4 @@
-import { Mic, MicOff, Video, VideoOff, MessageSquare, Users, LogOut, Copy, X, Play, Flame, Target, Sparkles, Eye, ListVideo, Check, FileText, Download, Upload, Lock } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, MessageSquare, Users, LogOut, Copy, X, Play, Flame, Target, Sparkles, Eye, ListVideo, Check, FileText, Download, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useParticipants, useTracks, VideoTrack, useRoomContext, useLocalParticipant } from "@livekit/components-react";
@@ -632,33 +632,20 @@ function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, onPick, onR
       {videos.map((v, i) => {
         const isCurrent = v.ytVideoId === currentVideoId;
         const watched = watchedSet.has(v.ytVideoId);
-        // Hard topic gate: a locked video (its topic's checkpoint isn't passed)
-        // can't be picked by anyone — pass the previous topic's quiz to unlock.
-        const locked = Boolean(v.locked);
-        const canPick = amHost && !locked;
-        const title = locked
-          ? "Locked — pass the previous topic's checkpoint quiz to unlock"
-          : amHost
-          ? v.title
-          : "Only the host can change the video";
         return (
           <button
             key={v.ytVideoId || i}
             type="button"
-            onClick={() => canPick && onPick(v.ytVideoId)}
-            disabled={!canPick}
-            style={{ ...styles.playlistRow(isCurrent), cursor: canPick ? "pointer" : "default", opacity: locked ? 0.5 : amHost || isCurrent ? 1 : 0.7 }}
-            title={title}
+            onClick={() => amHost && onPick(v.ytVideoId)}
+            disabled={!amHost}
+            style={{ ...styles.playlistRow(isCurrent), cursor: amHost ? "pointer" : "default", opacity: amHost || isCurrent ? 1 : 0.7 }}
+            title={amHost ? v.title : "Only the host can change the video"}
           >
             <span style={styles.playlistIndex(isCurrent)}>
-              {locked ? <Lock size={12} /> : isCurrent ? <Play size={12} fill="currentColor" /> : i + 1}
+              {isCurrent ? <Play size={12} fill="currentColor" /> : i + 1}
             </span>
             <span style={styles.playlistTitle(isCurrent)}>{v.title}</span>
-            {locked ? (
-              <Lock size={13} color="#94A3B8" style={{ flexShrink: 0 }} />
-            ) : watched ? (
-              <Check size={14} color="#22c55e" style={{ flexShrink: 0 }} />
-            ) : null}
+            {watched && <Check size={14} color="#22c55e" style={{ flexShrink: 0 }} />}
           </button>
         );
       })}
