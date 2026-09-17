@@ -91,10 +91,20 @@ export default function Dashboard() {
     return () => { cancelled = true; };
   }, [user?.id]);
 
-  const sessionRooms = useMemo(
-    () => [...publicRooms].sort((a, b) => new Date(a.startTime || 0) - new Date(b.startTime || 0)),
-    [publicRooms]
-  );
+  // Rank the list so the busiest live rooms sit on top: live sessions first
+  // (a room you can actually join now), ordered by how many people are studying
+  // in them (most active first), then upcoming rooms by soonest start.
+  const sessionRooms = useMemo(() => {
+    const now = Date.now();
+    const isLive = (r) => getRoomSessionMeta(r, now).status === "live";
+    return [...publicRooms].sort((a, b) => {
+      const liveA = isLive(a), liveB = isLive(b);
+      if (liveA !== liveB) return liveA ? -1 : 1; // live rooms above upcoming
+      const usersA = a?.activeUsers ?? 0, usersB = b?.activeUsers ?? 0;
+      if (usersB !== usersA) return usersB - usersA; // most people studying first
+      return new Date(a.startTime || 0) - new Date(b.startTime || 0); // then soonest
+    });
+  }, [publicRooms]);
 
   if (!user && !guestSessionActive) {
     return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading...</div>;
