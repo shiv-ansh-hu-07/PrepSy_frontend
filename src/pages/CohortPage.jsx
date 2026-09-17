@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import { track } from "../services/analytics";
 import AppSideNav from "../components/AppSideNav";
-import { Users, BookOpen, MessageSquare, Brain, Calendar, ChevronDown, ChevronUp, Link2, TrendingUp } from "lucide-react";
+import { Users, BookOpen, MessageSquare, Brain, Calendar, ChevronDown, ChevronUp, Link2, TrendingUp, Layers, Lock, CheckCircle2, PlayCircle } from "lucide-react";
 
 const PAGE_BG = "var(--page-bg)";
 
@@ -93,6 +93,7 @@ function starterPrompts(topic) {
 
 const TABS = [
   { id: "roadmap", label: "Roadmap", icon: BookOpen },
+  { id: "topics", label: "Topics", icon: Layers },
   { id: "discussions", label: "Discussions", icon: MessageSquare },
   { id: "quiz", label: "Quiz", icon: Brain },
   { id: "sessions", label: "Sessions", icon: Calendar },
@@ -192,6 +193,12 @@ export default function CohortPage() {
   const [quizScore, setQuizScore] = useState(null);
   // When set, the quiz is a per-day checkpoint scoped to this StudySession.
   const [checkpointSession, setCheckpointSession] = useState(null);
+  // When set, the quiz is a topic checkpoint (hard-gated) scoped to this topic.
+  const [checkpointTopic, setCheckpointTopic] = useState(null);
+
+  // Topic progression (hard-gated checkpoints)
+  const [topics, setTopics] = useState(null);
+  const [topicsLoading, setTopicsLoading] = useState(false);
 
   // Progress / leaderboard
   const [progress, setProgress] = useState(null);
@@ -254,6 +261,9 @@ export default function CohortPage() {
       api.get(`/cohorts/${id}/sessions`).then(({ data }) => setSessions(data)).catch(() => {});
     } else if (activeTab === "quiz") {
       api.get(`/cohorts/${id}/quiz/attempts`).then(({ data }) => setPastAttempts(data)).catch(() => {});
+    } else if (activeTab === "topics") {
+      setTopicsLoading(true);
+      api.get(`/cohorts/${id}/topics`).then(({ data }) => setTopics(data.topics || [])).catch(() => {}).finally(() => setTopicsLoading(false));
     } else if (activeTab === "progress") {
       api.get(`/cohorts/${id}/progress`).then(({ data }) => setProgress(data)).catch(() => {});
     } else if (activeTab === "members") {
@@ -447,14 +457,45 @@ export default function CohortPage() {
     }
   };
 
-  const handleGenerateQuiz = () => generateQuizFor(checkpointSession?.id);
+  // Generate a topic checkpoint quiz (hard-gated, scoped to a curriculum topic).
+  const generateTopicQuizFor = async (topicIndex) => {
+    setQuizLoading(true);
+    setQuiz(null);
+    setSelectedAnswers({});
+    setQuizSubmitted(false);
+    setQuizScore(null);
+    try {
+      const { data } = await api.post(`/cohorts/${id}/topics/${topicIndex}/quiz`, { numQuestions: 5 });
+      setQuiz(data.questions);
+    } catch (err) {
+      alert(err?.response?.data?.message || "Quiz generation failed");
+    } finally {
+      setQuizLoading(false);
+    }
+  };
+
+  const refreshTopics = () =>
+    api.get(`/cohorts/${id}/topics`).then(({ data }) => setTopics(data.topics || [])).catch(() => {});
+
+  const handleGenerateQuiz = () =>
+    checkpointTopic ? generateTopicQuizFor(checkpointTopic.index) : generateQuizFor(checkpointSession?.id);
 
   // Start a per-day checkpoint quiz (scoped to that day's topic).
   const startCheckpoint = (session) => {
+    setCheckpointTopic(null);
     setCheckpointSession(session);
     setActiveTab("quiz");
     track("checkpoint_taken", { cohortId: id, sessionId: session.id });
     generateQuizFor(session.id);
+  };
+
+  // Start a topic checkpoint quiz (the hard gate to the next topic).
+  const startTopicCheckpoint = (topic) => {
+    setCheckpointSession(null);
+    setCheckpointTopic(topic);
+    setActiveTab("quiz");
+    track("topic_checkpoint_taken", { cohortId: id, topicIndex: topic.index });
+    generateTopicQuizFor(topic.index);
   };
 
   // The checkpoint moment: right after the quiz, pull the member into the day's
@@ -470,6 +511,7 @@ export default function CohortPage() {
 
   const clearCheckpoint = () => {
     setCheckpointSession(null);
+    setCheckpointTopic(null);
     setQuiz(null);
     setSelectedAnswers({});
     setQuizSubmitted(false);
@@ -480,15 +522,22 @@ export default function CohortPage() {
     if (!quiz) return;
     const answers = quiz.map((_, i) => selectedAnswers[i] || "");
     try {
-      const { data } = await api.post(`/cohorts/${id}/quiz/attempt`, {
-        questions: quiz,
-        answers,
-        studySessionId: checkpointSession?.id || undefined,
-      });
+      // Topic checkpoint (hard gate) vs day/full-cohort quiz use different routes.
+      const { data } = checkpointTopic
+        ? await api.post(`/cohorts/${id}/topics/${checkpointTopic.index}/attempt`, { questions: quiz, answers })
+        : await api.post(`/cohorts/${id}/quiz/attempt`, {
+            questions: quiz,
+            answers,
+            studySessionId: checkpointSession?.id || undefined,
+          });
       setQuizScore({ score: data.score, total: quiz.length });
       setQuizSubmitted(true);
-      // Honest completion signal: a checkpoint counts as "passed" at >=60%.
-      if (checkpointSession && quiz.length && data.score / quiz.length >= 0.6) {
+      const passed = quiz.length && data.score / quiz.length >= 0.6;
+      if (checkpointTopic && passed) {
+        track("topic_checkpoint_passed", { cohortId: id, topicIndex: checkpointTopic.index, score: data.score, total: quiz.length });
+        refreshTopics(); // reflect the newly-unlocked next topic
+      } else if (checkpointSession && passed) {
+        // Honest completion signal: a checkpoint counts as "passed" at >=60%.
         track("checkpoint_passed", { cohortId: id, sessionId: checkpointSession.id, score: data.score, total: quiz.length });
       }
       // Refresh progress so the checkpoint-proven metric reflects this pass.
@@ -790,6 +839,94 @@ export default function CohortPage() {
             </div>
           )}
 
+          {/* Tab: Topics (hard-gated checkpoints) */}
+          {activeTab === "topics" && (
+            <div style={card}>
+              <h3 style={sectionTitle}>🧩 Topics</h3>
+              <p style={{ margin: "0 0 18px", fontSize: 13.5, color: "var(--text-secondary)" }}>
+                Work through the curriculum topic by topic. Finish a topic's videos, then pass its
+                checkpoint quiz (≥60%) to unlock the next one.
+              </p>
+              {!cohort.isMember ? (
+                <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>Join the cohort to follow the topics.</p>
+              ) : topicsLoading && !topics ? (
+                <div style={{ textAlign: "center", padding: "28px 0" }}>
+                  <p style={{ fontSize: 32, margin: "0 0 10px" }}>🧩</p>
+                  <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>Loading topics…</p>
+                </div>
+              ) : !topics || topics.length === 0 ? (
+                <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
+                  No AI curriculum for this playlist yet — topics appear once the plan is generated.
+                </p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {topics.map((t) => {
+                    const pct = t.videoCount ? Math.round((t.watchedCount / t.videoCount) * 100) : 100;
+                    const StatusIcon = !t.unlocked ? Lock : t.passed ? CheckCircle2 : PlayCircle;
+                    const statusColor = !t.unlocked ? "var(--text-muted)" : t.passed ? "#16a34a" : "var(--accent)";
+                    return (
+                      <div
+                        key={t.index}
+                        style={{
+                          borderRadius: 14,
+                          border: `1px solid ${t.passed ? "rgba(34,197,94,0.35)" : "var(--card-border)"}`,
+                          background: t.unlocked ? "var(--card-bg)" : "var(--accent-soft)",
+                          opacity: t.unlocked ? 1 : 0.75,
+                          padding: "14px 16px",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                          <StatusIcon size={18} color={statusColor} style={{ flexShrink: 0 }} />
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", flexShrink: 0 }}>
+                            TOPIC {t.index + 1}
+                          </span>
+                          <span style={{ fontWeight: 700, fontSize: 14.5, color: "var(--text-primary)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {t.title}
+                          </span>
+                          {t.passed && (
+                            <span style={{ marginLeft: "auto", flexShrink: 0, fontSize: 11, fontWeight: 700, color: "#16a34a", background: "rgba(34,197,94,0.12)", padding: "2px 8px", borderRadius: 999 }}>
+                              ✓ Passed{t.quiz ? ` · ${t.quiz.score}/${t.quiz.total}` : ""}
+                            </span>
+                          )}
+                        </div>
+                        {t.description && (
+                          <p style={{ margin: "0 0 10px 28px", fontSize: 12.5, color: "var(--text-secondary)" }}>{t.description}</p>
+                        )}
+                        <div style={{ margin: "0 0 12px 28px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, color: "var(--text-muted)", marginBottom: 4 }}>
+                            <span>{t.watchedCount}/{t.videoCount} videos watched</span>
+                            <span>{pct}%</span>
+                          </div>
+                          <div style={{ height: 6, borderRadius: 999, background: "var(--card-border)", overflow: "hidden" }}>
+                            <div style={{ width: `${pct}%`, height: "100%", background: t.passed ? "#16a34a" : "var(--accent)", borderRadius: 999 }} />
+                          </div>
+                        </div>
+                        <div style={{ marginLeft: 28 }}>
+                          {!t.unlocked ? (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: "var(--text-muted)" }}>
+                              <Lock size={14} /> Locked — pass the previous topic's checkpoint
+                            </span>
+                          ) : !t.complete ? (
+                            <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text-secondary)" }}>
+                              Watch all {t.videoCount} videos to unlock the checkpoint
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => startTopicCheckpoint(t)}
+                              style={{ ...btnPrimary(false), ...(t.passed ? { background: "var(--accent-soft)", color: "var(--accent)", border: "1px solid var(--accent)" } : {}) }}
+                            >
+                              {t.passed ? "🔁 Retake checkpoint" : "🎯 Take checkpoint"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Tab: Discussions */}
           {activeTab === "discussions" && (
             <div style={card}>
@@ -950,7 +1087,16 @@ export default function CohortPage() {
           {activeTab === "quiz" && (
             <div style={card}>
               <h3 style={sectionTitle}>🧠 Quiz</h3>
-              {checkpointSession ? (
+              {checkpointTopic ? (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 14, padding: "8px 12px", borderRadius: 10, background: "var(--accent-soft)", border: "1px solid var(--accent)" }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--accent)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    🎯 Topic checkpoint · {checkpointTopic.title}
+                  </span>
+                  <button onClick={() => { clearCheckpoint(); setActiveTab("topics"); }} style={{ flexShrink: 0, background: "none", border: "none", color: "var(--accent)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                    ← Topics
+                  </button>
+                </div>
+              ) : checkpointSession ? (
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 14, padding: "8px 12px", borderRadius: 10, background: "var(--accent-soft)", border: "1px solid var(--accent)" }}>
                   <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--accent)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     🎯 Checkpoint · {checkpointSession.topic}
