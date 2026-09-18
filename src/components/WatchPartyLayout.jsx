@@ -118,6 +118,23 @@ export default function WatchPartyLayout({
   // Reactions are hidden until you tap the reaction button in the control bar.
   const [showReactions, setShowReactions] = useState(false);
 
+  // Shared-control alerts: everyone can play/pause/seek/change speed, and the
+  // room is told who did what ("Aman paused the video").
+  const [controlToasts, setControlToasts] = useState([]); // { id, text }
+  const pushControlToast = ({ actor, action, currentTime, rate }) => {
+    const name = actor || "Someone";
+    const at = formatCountdown((currentTime || 0) * 1000);
+    let text;
+    if (action === "PAUSE") text = `⏸  ${name} paused the video`;
+    else if (action === "PLAY") text = `▶  ${name} resumed the video`;
+    else if (action === "SEEK") text = `⏩  ${name} jumped to ${at}`;
+    else if (action === "RATE") text = `⚡  ${name} set speed to ${rate}×`;
+    else return;
+    const id = crypto.randomUUID?.() || String(Math.random());
+    setControlToasts((t) => [...t.slice(-2), { id, text }]);
+    setTimeout(() => setControlToasts((t) => t.filter((x) => x.id !== id)), 3500);
+  };
+
   // Cameras live in the People tab, not over the video. When anyone turns their
   // camera ON (the count rises), open the People tab for everyone at once — every
   // client sees the same participant camera states, so this stays in sync.
@@ -312,6 +329,10 @@ export default function WatchPartyLayout({
           15%  { opacity: 1; transform: translateY(-10px) scale(1.1); }
           100% { transform: translateY(-180px) scale(1); opacity: 0; }
         }
+        @keyframes yt-toast-in {
+          0%   { opacity: 0; transform: translateY(-8px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
       `}</style>
       <div style={styles.centerWrap(isMobile)}>
         <div style={styles.stageWrap}>
@@ -382,6 +403,7 @@ export default function WatchPartyLayout({
               onRegisterControls={(c) => { ytControlsRef.current = c; }}
               onCurrentVideoId={setCurrentVideoId}
               onHostState={setHostState}
+              onRemoteControl={pushControlToast}
             />
 
             {/* Always-on presence — see your crew is here, even cameras off. */}
@@ -405,6 +427,15 @@ export default function WatchPartyLayout({
                 <span key={f.id} style={{ ...styles.floatEmoji, left: `${f.left}%` }}>{f.emoji}</span>
               ))}
             </div>
+
+            {/* Shared-control alerts ("Aman paused the video") */}
+            {controlToasts.length > 0 && (
+              <div style={styles.controlToastLayer}>
+                {controlToasts.map((t) => (
+                  <div key={t.id} style={styles.controlToast}>{t.text}</div>
+                ))}
+              </div>
+            )}
 
             {/* Reaction pill — only while the reaction button is toggled on */}
             {showReactions && (
@@ -871,6 +902,18 @@ const styles = {
   }),
   floatsLayer: {
     position: "absolute", inset: 0, zIndex: 27, pointerEvents: "none", overflow: "hidden",
+  },
+  controlToastLayer: {
+    position: "absolute", top: 54, left: "50%", transform: "translateX(-50%)", zIndex: 32,
+    display: "flex", flexDirection: "column", gap: 6, alignItems: "center",
+    pointerEvents: "none", maxWidth: "92%",
+  },
+  controlToast: {
+    padding: "7px 14px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, color: "#fff",
+    background: "rgba(8,10,20,0.82)", border: "1px solid rgba(148,163,184,0.28)",
+    backdropFilter: "blur(8px)", boxShadow: "0 8px 22px rgba(0,0,0,0.35)",
+    whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%",
+    animation: "yt-toast-in 0.2s ease-out",
   },
   floatEmoji: {
     position: "absolute", bottom: 70, fontSize: 30,

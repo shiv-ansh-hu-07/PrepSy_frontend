@@ -6,7 +6,10 @@ import { track } from "../services/analytics";
 
 // ── Sync protocol ────────────────────────────────────────────────────────────
 // All events sent via LiveKit data channel (same as Pomodoro + chat).
-// { type: "YT_SYNC", action: "PLAY"|"PAUSE"|"SEEK", videoId, currentTime, ts }
+// { type: "YT_SYNC", action: "PLAY"|"PAUSE"|"SEEK"|"RATE", videoId, currentTime,
+//   ts, actor, rate?, announce? } — anyone can drive playback; `actor` is the
+//   name to announce and `announce` marks a genuine user action (vs a drift
+//   heartbeat / new-joiner answer) so only real actions raise an alert.
 // { type: "YT_REQUEST_SYNC" }  — new joiner asks for current state
 
 const SYNC_TYPE = "YT_SYNC";
@@ -46,6 +49,7 @@ export default function YouTubeRoom({
   onRegisterControls = null, // hand up { jumpTo, requestControl, giveControl }
   onCurrentVideoId = null,   // report the currently-playing videoId to the parent
   onHostState = null,        // report { amHost, hostName, pendingRequest }
+  onRemoteControl = null,    // report { actor, action, currentTime, rate } for the alert toast
 }) {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
@@ -58,6 +62,8 @@ export default function YouTubeRoom({
 
   const playerRef = useRef(null);       // YT.Player instance
   const isSyncingRef = useRef(false);   // suppress re-broadcast while applying remote sync
+  const lastPosRef = useRef({ t: 0, at: Date.now() }); // baseline for seek detection
+  const lastAnnounceAtRef = useRef(0); // collapse a burst of alerts into one
   const heartbeatRef = useRef(null);
   const savedStateRef = useRef(null);   // persisted playback memory for this room
   const receivedSyncRef = useRef(false); // a live participant has synced us this session
@@ -147,15 +153,25 @@ export default function YouTubeRoom({
     // Report the video actually playing now (the playlist may have advanced),
     // not the static `videoId` prop — which is null in cohort/playlist mode.
     const nowPlaying = player.getVideoData?.()?.video_id;
+    // Downgrade a rapid second alert to a silent sync (e.g. a seek-while-playing
+    // fires both SEEK and PLAY) — the room still syncs, but only one toast shows.
+    let announce = Boolean(extra.announce);
+    if (announce) {
+      const now = Date.now();
+      if (now - lastAnnounceAtRef.current < 900) announce = false;
+      else lastAnnounceAtRef.current = now;
+    }
     broadcast({
       type: SYNC_TYPE,
       action,
       videoId: nowPlaying || videoId || null,
       currentTime: player.getCurrentTime?.() ?? 0,
       ts: Date.now(),
+      actor: localParticipant?.name || "Someone",
       ...extra,
+      announce,
     });
-  }, [broadcast, videoId]);
+  }, [broadcast, videoId, localParticipant]);
 
   // ── Persist playback memory (so an empty room resumes, not restarts) ───────
 
@@ -265,6 +281,13 @@ export default function YouTubeRoom({
 
     isSyncingRef.current = true;
 
+    // Playback-rate change — no seek/play involved, just match the speed.
+    if (msg.action === "RATE") {
+      if (typeof msg.rate === "number") player.setPlaybackRate?.(msg.rate);
+      setTimeout(() => { isSyncingRef.current = false; }, 300);
+      return;
+    }
+
     // If the host is on a DIFFERENT video than us (the classic "I joined and it
     // started from video 1 while everyone's on video 2" case), switch to the
     // host's video first — otherwise we'd only seek within the wrong video.
@@ -288,7 +311,10 @@ export default function YouTubeRoom({
       captureVideoMeta(player);
       // A video load takes longer to settle than a seek — hold the lock a bit
       // longer so the resulting state changes don't echo back as new commands.
-      setTimeout(() => { isSyncingRef.current = false; }, 1000);
+      setTimeout(() => {
+        isSyncingRef.current = false;
+        lastPosRef.current = { t: playerRef.current?.getCurrentTime?.() ?? 0, at: Date.now() };
+      }, 1000);
       return;
     }
 
@@ -312,8 +338,13 @@ export default function YouTubeRoom({
       // maintain current play/pause state
     }
 
-    // Release sync lock after player has processed the command
-    setTimeout(() => { isSyncingRef.current = false; }, 300);
+    // Release sync lock after the player has processed the command, and reset the
+    // seek-detection baseline to the corrected position so an applied seek isn't
+    // mistaken for a new local seek (which would echo + double-toast).
+    setTimeout(() => {
+      isSyncingRef.current = false;
+      lastPosRef.current = { t: playerRef.current?.getCurrentTime?.() ?? 0, at: Date.now() };
+    }, 300);
   }, [captureVideoMeta]);
 
   // ── Respond to new-joiner sync request ────────────────────────────────────
@@ -350,7 +381,19 @@ export default function YouTubeRoom({
       let msg;
       try { msg = JSON.parse(new TextDecoder().decode(payload)); } catch { return; }
 
-      if (msg.type === SYNC_TYPE) applySync(msg);
+      if (msg.type === SYNC_TYPE) {
+        applySync(msg);
+        // Announce genuine user actions to the whole room (the sender is already
+        // excluded above, so this is "someone else did X").
+        if (msg.announce && msg.actor) {
+          onRemoteControl?.({
+            actor: msg.actor,
+            action: msg.action,
+            currentTime: msg.currentTime,
+            rate: msg.rate,
+          });
+        }
+      }
       if (msg.type === REQUEST_TYPE) handleSyncRequest(participant?.identity);
       // A viewer wants control — only the current host should surface it.
       if (msg.type === HOST_REQUEST_TYPE && amHostRef.current) {
@@ -365,17 +408,53 @@ export default function YouTubeRoom({
 
     room.on("dataReceived", handler);
     return () => room.off("dataReceived", handler);
-  }, [room, localParticipant, applySync, handleSyncRequest]);
+  }, [room, localParticipant, applySync, handleSyncRequest, onRemoteControl]);
 
   // ── Auto-start once the prep-timer lock naturally releases ────────────────
 
   const wasLockedRef = useRef(locked);
   useEffect(() => {
     if (wasLockedRef.current && !locked) {
+      // Programmatic start when the prep timer ends — every client does this on
+      // its own timer, so suppress the broadcast/alert (mark it as a sync op).
+      isSyncingRef.current = true;
       playerRef.current?.playVideo?.();
+      setTimeout(() => { isSyncingRef.current = false; }, 500);
     }
     wasLockedRef.current = locked;
   }, [locked]);
+
+  // ── Seek detection (no native onSeek) + speed changes ─────────────────────
+  // Poll the position once a second; a jump beyond what normal playback explains
+  // is a manual seek — broadcast it (with the actor) so the room follows + alerts.
+  useEffect(() => {
+    const id = setInterval(() => {
+      const player = playerRef.current;
+      if (!player) return;
+      if (isSyncingRef.current || lockedRef.current) {
+        lastPosRef.current = { t: player.getCurrentTime?.() ?? 0, at: Date.now() };
+        return;
+      }
+      const state = player.getPlayerState?.();
+      const now = Date.now();
+      const cur = player.getCurrentTime?.() ?? 0;
+      const rate = player.getPlaybackRate?.() || 1;
+      const prev = lastPosRef.current;
+      const elapsed = (now - prev.at) / 1000;
+      const expected = prev.t + (state === 1 ? elapsed * rate : 0); // advance only while playing
+      if (Math.abs(cur - expected) > 2.5) {
+        broadcastState("SEEK", { announce: true });
+      }
+      lastPosRef.current = { t: cur, at: now };
+    }, 1000);
+    return () => clearInterval(id);
+  }, [broadcastState]);
+
+  // Speed change — react-youtube fires this with the new rate; share it + alert.
+  const onPlaybackRateChange = useCallback((e) => {
+    if (isSyncingRef.current || lockedRef.current) return;
+    broadcastState("RATE", { announce: true, rate: e.data });
+  }, [broadcastState]);
 
   // ── Request sync on mount (new joiner) ────────────────────────────────────
 
@@ -551,18 +630,22 @@ export default function YouTubeRoom({
     }
 
     if (isSyncingRef.current) return; // skip — this change was caused by applySync
-    // Only the host drives the room: non-hosts' play/pause/seek do NOT broadcast,
-    // so one person can't move everyone else. Non-hosts still follow the host's
-    // sync (and get pulled back by the heartbeat if they wander).
-    if (e.data === YT_PLAYING && amHostRef.current) {
-      broadcastState("PLAY");
+    // Shared control: ANY member's play/pause moves the whole room and is
+    // announced to everyone ("<name> paused the video"). `announce` marks it a
+    // genuine user action so the periodic drift heartbeat doesn't raise alerts.
+    if (e.data === YT_PLAYING) {
+      broadcastState("PLAY", { announce: true });
       persistState();
+      lastPosRef.current = { t: e.target.getCurrentTime?.() ?? 0, at: Date.now() };
     }
-    if (e.data === YT_PAUSED && amHostRef.current) {
-      broadcastState("PAUSE");
+    if (e.data === YT_PAUSED) {
+      broadcastState("PAUSE", { announce: true });
       persistState(); // remember exactly where we paused
+      lastPosRef.current = { t: e.target.getCurrentTime?.() ?? 0, at: Date.now() };
     }
     if (e.data === YT_ENDED) {
+      // Only the host announces the end (every client hits ENDED, so this avoids
+      // an N-fold "paused" burst) — but everyone records their own watched credit.
       if (amHostRef.current) {
         broadcastState("PAUSE");
         persistState();
@@ -634,6 +717,7 @@ export default function YouTubeRoom({
           style={styles.ytEmbed}
           onReady={onReady}
           onStateChange={onStateChange}
+          onPlaybackRateChange={onPlaybackRateChange}
           onError={onError}
         />
 
