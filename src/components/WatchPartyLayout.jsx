@@ -1,4 +1,4 @@
-import { Mic, MicOff, Video, VideoOff, MessageSquare, Users, LogOut, Copy, X, Play, Flame, Target, Sparkles, Eye, ListVideo, Check, FileText, Download, Upload } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, LogOut, Copy, X, Play, Flame, Target, Sparkles, Eye, Check, Download, Upload, Smile } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useParticipants, useTracks, VideoTrack, useRoomContext, useLocalParticipant } from "@livekit/components-react";
@@ -114,6 +114,19 @@ export default function WatchPartyLayout({
     tabRef.current = tab;
     if (tab === "chat") setChatUnread(false);
   }, [tab]);
+
+  // Reactions are hidden until you tap the reaction button in the control bar.
+  const [showReactions, setShowReactions] = useState(false);
+
+  // Cameras live in the People tab, not over the video. When anyone turns their
+  // camera ON (the count rises), open the People tab for everyone at once — every
+  // client sees the same participant camera states, so this stays in sync.
+  const camOnCount = participants.filter((p) => p.isCameraEnabled).length;
+  const prevCamOnRef = useRef(0);
+  useEffect(() => {
+    if (camOnCount > prevCamOnRef.current) setTab("people");
+    prevCamOnRef.current = camOnCount;
+  }, [camOnCount]);
   const ytControlsRef = useRef(null);
   const [currentVideoId, setCurrentVideoId] = useState(null);
   const [hostState, setHostState] = useState({ amHost: true, hostName: null, pendingRequest: null });
@@ -393,36 +406,20 @@ export default function WatchPartyLayout({
               ))}
             </div>
 
-            {/* Reaction pill */}
-            <div style={styles.reactionPill}>
-              {REACTIONS.map((e) => (
-                <button
-                  key={e}
-                  type="button"
-                  onClick={() => sendReaction(e)}
-                  style={styles.reactionBtn}
-                  title="React"
-                >
-                  {e}
-                </button>
-              ))}
-            </div>
-
-            {participants.some((p) => p.isCameraEnabled) && (
-              <div style={styles.cameraPip}>
-                {participants.map((p) => {
-                  const track = cameraTracks.find(
-                    (t) => t.participant.identity === p.identity
-                  );
-                  const hasCamera = Boolean(p.isCameraEnabled && track?.publication?.track);
-                  if (!hasCamera) return null;
-                  return (
-                    <div key={p.identity} style={styles.cameraPipTile}>
-                      <VideoTrack trackRef={track} style={styles.cameraPipVideo} />
-                      <span style={styles.cameraPipName}>{p.name || "Guest"}</span>
-                    </div>
-                  );
-                })}
+            {/* Reaction pill — only while the reaction button is toggled on */}
+            {showReactions && (
+              <div style={styles.reactionPill}>
+                {REACTIONS.map((e) => (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => sendReaction(e)}
+                    style={styles.reactionBtn}
+                    title="React"
+                  >
+                    {e}
+                  </button>
+                ))}
               </div>
             )}
 
@@ -488,17 +485,12 @@ export default function WatchPartyLayout({
 
           </div>
 
+          {/* Chat / Playlist / Notes / People live in the right-side panel tabs,
+              so the control bar keeps just mic, camera, reactions and leave. */}
           <div style={styles.bottomBar}>
             <Control icon={micEnabled ? Mic : MicOff} active={micEnabled} onClick={toggleMic} title="Toggle mic" />
             <Control icon={camEnabled ? Video : VideoOff} active={camEnabled} onClick={toggleCamera} title="Toggle camera" />
-            <Control icon={MessageSquare} onClick={() => setTab("chat")} active={tab === "chat"} title="Chat" badge={chatUnread && tab !== "chat"} />
-            {hasPlaylist && (
-              <Control icon={ListVideo} onClick={() => setTab("playlist")} active={tab === "playlist"} title="Playlist" />
-            )}
-            {hasNotes && (
-              <Control icon={FileText} onClick={() => setTab("notes")} active={tab === "notes"} title="Notes" />
-            )}
-            <Control icon={Users} onClick={() => setTab("people")} active={tab === "people"} title="People" />
+            <Control icon={Smile} active={showReactions} onClick={() => setShowReactions((v) => !v)} title="React" />
             <Control icon={LogOut} danger onClick={handleLeave} title="Leave" />
           </div>
         </div>
@@ -587,7 +579,11 @@ export default function WatchPartyLayout({
                 </div>
               </div>
             ) : (
-              <PeopleList participants={participants} />
+              <PeopleList
+                participants={participants}
+                cameraTracks={cameraTracks}
+                localIdentity={localParticipant?.identity}
+              />
             )}
           </div>
         </div>
@@ -653,16 +649,35 @@ function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, onPick, onR
   );
 }
 
-function PeopleList({ participants }) {
+function PeopleList({ participants, cameraTracks = [], localIdentity = null }) {
+  const trackFor = (identity) => cameraTracks.find((t) => t.participant.identity === identity);
+  const camsOn = participants.filter((p) => p.isCameraEnabled && trackFor(p.identity)?.publication?.track);
   return (
     <div style={styles.peopleList}>
+      {/* Live cameras (moved here from over the video). Any camera-on member
+          shows up as a tile — the People tab opens for everyone when one turns on. */}
+      {camsOn.length > 0 && (
+        <div style={styles.peopleCamGrid}>
+          {camsOn.map((p) => (
+            <div key={p.identity} style={styles.peopleCamTile}>
+              <VideoTrack trackRef={trackFor(p.identity)} style={styles.cameraPipVideo} />
+              <span style={styles.cameraPipName}>
+                {p.name || "Guest"}{p.identity === localIdentity ? " (you)" : ""}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
       {participants.map((p) => {
         const words = (p.name || "Guest").trim().split(/\s+/);
         const initials = words.slice(0, 2).map((w) => w[0]?.toUpperCase() || "").join("");
         return (
           <div key={p.identity} style={styles.personRow}>
             <div style={styles.personAvatar}>{initials || "G"}</div>
-            <span style={styles.personName}>{p.name || "Guest"}</span>
+            <span style={styles.personName}>
+              {p.name || "Guest"}{p.identity === localIdentity ? " (you)" : ""}
+            </span>
+            {p.isCameraEnabled && <Video size={14} color="#22c55e" />}
             {!p.isMicrophoneEnabled && <MicOff size={14} color="#94A3B8" />}
           </div>
         );
@@ -872,14 +887,13 @@ const styles = {
     border: "none", background: "transparent", cursor: "pointer",
     fontSize: 19, lineHeight: 1, padding: "4px 6px", borderRadius: 999,
   },
-  cameraPip: {
-    position: "absolute", top: 14, right: 14, zIndex: 25,
-    display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end",
-    maxWidth: "min(100%, 480px)",
+  peopleCamGrid: {
+    display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8,
+    padding: "12px 12px 4px",
   },
-  cameraPipTile: {
-    width: 132, height: 90, borderRadius: 14, overflow: "hidden",
-    position: "relative", background: "#0f172a", boxShadow: "0 10px 26px rgba(0,0,0,0.35)",
+  peopleCamTile: {
+    width: "100%", aspectRatio: "16 / 10", borderRadius: 12, overflow: "hidden",
+    position: "relative", background: "#0f172a", boxShadow: "0 6px 16px rgba(0,0,0,0.25)",
   },
   cameraPipVideo: { width: "100%", height: "100%", objectFit: "cover" },
   cameraPipName: {
