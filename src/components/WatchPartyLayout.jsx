@@ -334,6 +334,28 @@ export default function WatchPartyLayout({
     }
   };
 
+  // Host "end today's session": classify each video (completed/started/skipped)
+  // from the shared pointer and move the schedule. Best-effort; shows a toast.
+  const [endingSession, setEndingSession] = useState(false);
+  const handleEndSession = async () => {
+    if (endingSession) return;
+    setEndingSession(true);
+    try {
+      const { data } = await api.post(`/cohorts/by-room/${roomId}/end-session`);
+      const n = data?.skipped ?? 0;
+      const id = crypto.randomUUID?.() || String(Math.random());
+      const text = n > 0
+        ? `✅ Session ended · ${n} skipped video${n === 1 ? "" : "s"} moved to catch-up`
+        : "✅ Session ended · schedule updated";
+      setControlToasts((t) => [...t.slice(-2), { id, text }]);
+      setTimeout(() => setControlToasts((t) => t.filter((x) => x.id !== id)), 3500);
+    } catch {
+      /* ignore */
+    } finally {
+      setEndingSession(false);
+    }
+  };
+
   const handleCloseSummary = () => {
     navigate("/dashboard");
   };
@@ -596,6 +618,8 @@ export default function WatchPartyLayout({
                 skipped={playlistSkipped}
                 onPick={(vid) => ytControlsRef.current?.jumpTo(vid)}
                 onRequestControl={() => ytControlsRef.current?.requestControl()}
+                onEndSession={handleEndSession}
+                endingSession={endingSession}
               />
             ) : tab === "notes" && hasNotes ? (
               <div style={styles.notesPanel}>
@@ -661,7 +685,7 @@ function StatPill({ icon: Icon, label, value }) {
   );
 }
 
-function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, progress, skipped, onPick, onRequestControl }) {
+function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, progress, skipped, onPick, onRequestControl, onEndSession, endingSession }) {
   const [showSkipped, setShowSkipped] = useState(false);
   const pct = progress?.percent ?? 0;
   const eta = progress?.etaDays ?? 0;
@@ -686,9 +710,22 @@ function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, progress, s
       )}
 
       {amHost ? (
-        <p style={styles.playlistHint}>
-          You're hosting — pick any video and the whole room jumps to it together.
-        </p>
+        <div style={styles.playlistHostRow}>
+          <p style={{ ...styles.playlistHint, margin: 0 }}>
+            You're hosting — pick any video and the whole room jumps to it together.
+          </p>
+          {onEndSession && (
+            <button
+              type="button"
+              style={styles.endSessionBtn}
+              onClick={onEndSession}
+              disabled={endingSession}
+              title="Wrap up: mark videos completed/started/skipped and update the schedule"
+            >
+              {endingSession ? "Ending…" : "End session"}
+            </button>
+          )}
+        </div>
       ) : (
         <div style={styles.playlistLockedNote}>
           <span>Only the host can change the video. Following along.</span>
@@ -698,17 +735,28 @@ function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, progress, s
         </div>
       )}
 
-      {/* Notice: videos left out of the plan when the room was created. */}
+      {/* Skipped videos (left out at creation or jumped past in a session) — not
+          on the shared stage or the schedule; watchable as optional catch-up. */}
       {hasSkipped && (
         <div style={styles.skippedNote}>
           <button type="button" style={styles.skippedToggle} onClick={() => setShowSkipped((s) => !s)}>
-            <span>⤼ {skipped.length} video{skipped.length === 1 ? "" : "s"} skipped when this room was created</span>
+            <span>⤼ {skipped.length} skipped · catch up anytime</span>
             <span>{showSkipped ? "▲" : "▼"}</span>
           </button>
           {showSkipped && (
             <ul style={styles.skippedList}>
               {skipped.map((v) => (
-                <li key={v.ytVideoId} style={styles.skippedItem}>{v.title}</li>
+                <li key={v.ytVideoId} style={styles.skippedItem}>
+                  <a
+                    href={`https://www.youtube.com/watch?v=${v.ytVideoId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={styles.skippedLink}
+                    title="Watch on YouTube (doesn't change the room)"
+                  >
+                    ▶ {v.title}
+                  </a>
+                </li>
               ))}
             </ul>
           )}
@@ -1147,6 +1195,18 @@ const styles = {
   },
   skippedItem: {
     fontSize: 11.5, color: "var(--text-muted)", lineHeight: 1.4,
+  },
+  skippedLink: {
+    color: "var(--accent)", textDecoration: "none", fontWeight: 600,
+  },
+  playlistHostRow: {
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+    gap: 10, marginBottom: 6,
+  },
+  endSessionBtn: {
+    flexShrink: 0, padding: "6px 12px", borderRadius: 999, border: "1px solid var(--accent)",
+    background: "var(--accent-soft)", color: "var(--accent)", fontSize: 11.5, fontWeight: 700,
+    cursor: "pointer", whiteSpace: "nowrap",
   },
   playlistRow: (current) => ({
     display: "flex", alignItems: "center", gap: 10, padding: "9px 10px",
