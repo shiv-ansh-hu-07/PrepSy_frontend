@@ -479,27 +479,66 @@ export default function WatchPartyLayout({
   const ffAnswersRef = useRef(ffAnswers);
   useEffect(() => { ffAnswersRef.current = ffAnswers; }, [ffAnswers]);
 
-  const playFfSound = () => {
+  // Procedural sound design (no assets/licensing). Each note: {f, t, dur, type, gain}.
+  const playTones = (seq) => {
     if (ffMuted) return;
     try {
       const Ctx = window.AudioContext || window.webkitAudioContext;
       const ctx = new Ctx();
-      const notes = [880, 1175, 1568]; // a bright little "ta-da-da"
-      notes.forEach((f, i) => {
+      let end = 0;
+      seq.forEach(({ f, t, dur, type = "triangle", gain = 0.25 }) => {
         const o = ctx.createOscillator();
         const g = ctx.createGain();
-        o.type = "triangle";
+        o.type = type;
         o.frequency.value = f;
         o.connect(g); g.connect(ctx.destination);
-        const t = ctx.currentTime + i * 0.12;
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
-        o.start(t); o.stop(t + 0.2);
+        const start = ctx.currentTime + t;
+        g.gain.setValueAtTime(0.0001, start);
+        g.gain.exponentialRampToValueAtTime(gain, start + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+        o.start(start); o.stop(start + dur + 0.03);
+        end = Math.max(end, t + dur);
       });
-      setTimeout(() => ctx.close().catch(() => {}), 900);
+      setTimeout(() => ctx.close().catch(() => {}), (end + 0.4) * 1000);
     } catch { /* no audio */ }
   };
+  // A low percussive thump for desi "dhol" punch.
+  const thump = (t = 0) => ({ f: 90, t, dur: 0.16, type: "sine", gain: 0.4 });
+  const playFfSound = () => playTones([{ f: 880, t: 0, dur: 0.18 }, { f: 1175, t: 0.12, dur: 0.18 }, { f: 1568, t: 0.24, dur: 0.22 }]);
+  const playCorrect = () => playTones([thump(0), { f: 659, t: 0.02, dur: 0.12 }, { f: 988, t: 0.12, dur: 0.12 }, { f: 1319, t: 0.22, dur: 0.2, gain: 0.3 }]);
+  const playWrong = () => playTones([{ f: 200, t: 0, dur: 0.18, type: "sawtooth", gain: 0.2 }, { f: 150, t: 0.16, dur: 0.28, type: "sawtooth", gain: 0.2 }]);
+  const playWinner = () => playTones([thump(0), { f: 523, t: 0.0, dur: 0.14 }, { f: 659, t: 0.14, dur: 0.14 }, { f: 784, t: 0.28, dur: 0.14 }, thump(0.42), { f: 1046, t: 0.42, dur: 0.32, gain: 0.32 }]);
+
+  // Clean Hinglish hype — original lines, captures the meme energy, no NSFW/IP.
+  const HYPE_CORRECT = ["Aag laga di! 🔥", "Kya baat hai! 👏", "Superhit! 🎯", "Genius nikla! 🧠", "Ekdum sahi! ✅", "Topper vibes! 👑"];
+  const HYPE_WRONG = ["Arre yaar 😅", "Next time pakka! 💪", "So close!", "Thoda aur! 📖"];
+  const [hypeBurst, setHypeBurst] = useState(null); // { id, text, kind }
+  const showHype = (text, kind) => {
+    const id = crypto.randomUUID?.() || String(Math.random());
+    setHypeBurst({ id, text, kind });
+    setTimeout(() => setHypeBurst((b) => (b && b.id === id ? null : b)), 1500);
+  };
+  const onFfAnswer = (index, opt, remainMs, correct) => {
+    setFfAnswers((p) => ({ ...p, [index]: { opt, remainMs } }));
+    if (correct) {
+      showHype(HYPE_CORRECT[Math.floor(Math.random() * HYPE_CORRECT.length)], "correct");
+      playCorrect();
+    } else {
+      showHype(HYPE_WRONG[Math.floor(Math.random() * HYPE_WRONG.length)], "wrong");
+      playWrong();
+    }
+  };
+
+  // Crown the champion (top of the round's scoreboard) with a fanfare, for all.
+  useEffect(() => {
+    if (!ffResult) return;
+    const top = ffResult.scoreboard?.[0];
+    if (top && top.points > 0) {
+      showHype(`👑 ${top.name} — Champion!`, "winner");
+      playWinner();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ffResult]);
 
   const openFf = (round) => {
     setFfRound(round);
@@ -661,6 +700,14 @@ export default function WatchPartyLayout({
         @keyframes yt-toast-in {
           0%   { opacity: 0; transform: translateY(-8px); }
           100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes ff-hype-pop {
+          0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(-6deg); }
+          25%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(3deg); }
+          40%  { transform: translate(-50%, -50%) scale(0.96) rotate(-2deg); }
+          55%  { transform: translate(-50%, -50%) scale(1.04) rotate(1deg); }
+          70%  { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+          100% { opacity: 0; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
         }
       `}</style>
       <div style={styles.centerWrap(isMobile)}>
@@ -922,6 +969,10 @@ export default function WatchPartyLayout({
                   {ffMuted ? "🔇" : "🔊"}
                 </button>
 
+                {hypeBurst && (
+                  <div key={hypeBurst.id} style={styles.hypeBurst(hypeBurst.kind)}>{hypeBurst.text}</div>
+                )}
+
                 {ffPhase.kind === "countdown" && (
                   <div style={{ textAlign: "center" }}>
                     <p style={styles.ffBigKicker}>⚡ FASTEST FINGER</p>
@@ -950,7 +1001,7 @@ export default function WatchPartyLayout({
                               key={j}
                               type="button"
                               disabled={Boolean(locked)}
-                              onClick={() => setFfAnswers((p) => ({ ...p, [ffPhase.index]: { opt, remainMs: ffPhase.remainMs } }))}
+                              onClick={() => onFfAnswer(ffPhase.index, opt, ffPhase.remainMs, opt === q.answer)}
                               style={styles.ffOption(chosen, Boolean(locked))}
                             >
                               {opt}
@@ -1608,6 +1659,18 @@ const styles = {
   ffLockedNote: { margin: "10px 0 0", fontSize: 12, color: "#a5b4fc", textAlign: "center" },
   ffBoard: { display: "flex", flexDirection: "column", gap: 6, margin: "8px 0 14px" },
   ffBoardRow: { display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", borderRadius: 10, background: "rgba(255,255,255,0.05)", fontSize: 13 },
+  hypeBurst: (kind) => ({
+    position: "absolute", top: "42%", left: "50%", zIndex: 50, pointerEvents: "none",
+    textAlign: "center", whiteSpace: "nowrap",
+    fontSize: "clamp(28px, 7vw, 52px)", fontWeight: 900, letterSpacing: 0.5,
+    color: kind === "wrong" ? "#fca5a5" : kind === "winner" ? "#fde047" : "#86efac",
+    textShadow: kind === "wrong"
+      ? "0 4px 24px rgba(239,68,68,0.6)"
+      : kind === "winner"
+      ? "0 4px 30px rgba(250,204,21,0.8)"
+      : "0 4px 26px rgba(34,197,94,0.7)",
+    animation: "ff-hype-pop 1.5s ease-out forwards",
+  }),
   waitingCloseBtn: {
     position: "absolute", top: 14, right: 14, width: 30, height: 30,
     borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.08)",
