@@ -384,10 +384,12 @@ export default function YouTubeRoom({
       if (msg.type === SYNC_TYPE) {
         applySync(msg);
         // Announce genuine user actions to the whole room (the sender is already
-        // excluded above, so this is "someone else did X").
-        if (msg.announce && msg.actor) {
+        // excluded above, so this is "someone else did X"). Attribute it from the
+        // LiveKit sender object — the receiver resolves who actually sent the
+        // packet — not the self-reported msg.actor, which can be stale/wrong.
+        if (msg.announce) {
           onRemoteControl?.({
-            actor: msg.actor,
+            actor: participant?.name || participant?.identity || msg.actor || "Someone",
             action: msg.action,
             currentTime: msg.currentTime,
             rate: msg.rate,

@@ -208,18 +208,30 @@ export default function WatchPartyLayout({
 
   const mountedAtRef = useRef(Date.now());
 
+  // Shared start anchor so the prep countdown is IDENTICAL for everyone no matter
+  // when each person opened the room: the earliest participant's join time (all
+  // clients observe the same set, so they agree on the minimum). A late joiner
+  // computes an anchor already in the past → no stale fresh 60s timer, they drop
+  // straight in. Falls back to our own mount time until joinedAt is available.
+  const earliestJoinMs = participants.reduce((min, p) => {
+    const t = p?.joinedAt ? new Date(p.joinedAt).getTime() : null;
+    return t != null && (min == null || t < min) ? t : min;
+  }, null);
+  const anchorMs = earliestJoinMs ?? mountedAtRef.current;
+
   const startTimeMs = startTime ? new Date(startTime).getTime() : null;
-  const prepEndsAt = mountedAtRef.current + PREP_MS;
+  const prepEndsAt = anchorMs + PREP_MS;
   // Scheduled sessions start at their fixed time so everyone stays in sync — if
   // the scheduled start is still ahead, count down to it (however far away).
-  // Ad-hoc rooms (no future startTime) just get a short settle-in prep.
+  // Ad-hoc rooms (no future startTime) just get a short settle-in prep from the
+  // shared anchor.
   const effectiveEndsAt =
-    startTimeMs && startTimeMs > mountedAtRef.current
+    startTimeMs && startTimeMs > anchorMs
       ? Math.max(startTimeMs, prepEndsAt)
       : prepEndsAt;
   // A genuine scheduled start (vs a short ad-hoc settle-in): everyone must wait
   // for the fixed time, so we don't offer the "start now" bypass for these.
-  const isScheduledStart = Boolean(startTimeMs && startTimeMs > mountedAtRef.current);
+  const isScheduledStart = Boolean(startTimeMs && startTimeMs > anchorMs);
   const isPreparing = now < effectiveEndsAt;
   const showWaiting = !dismissed && isPreparing;
   const [manuallyStarted, setManuallyStarted] = useState(false);
