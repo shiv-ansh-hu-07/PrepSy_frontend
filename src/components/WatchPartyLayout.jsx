@@ -392,32 +392,48 @@ export default function WatchPartyLayout({
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(null);
   const [launchingQuiz, setLaunchingQuiz] = useState(false);
+  // Loading state shown to EVERYONE while the LLM writes the quiz, so the video
+  // pauses and a nice screen appears immediately instead of a sudden pop-in.
+  const [popQuizLoading, setPopQuizLoading] = useState(null); // { by } | null
+
+  const startPopQuizLoading = (byName) => {
+    setPopQuizLoading({ by: byName });
+    ytControlsRef.current?.pause?.(); // pause the room right away, before questions land
+  };
 
   const openPopQuiz = (quiz, byName) => {
+    setPopQuizLoading(null);
     setPopQuiz({ questions: quiz.questions || [], topic: quiz.topic || "", by: byName });
     setQuizAnswers({});
     setQuizSubmitted(false);
     setQuizScore(null);
-    ytControlsRef.current?.pause?.(); // pause the room so everyone plays together
+    ytControlsRef.current?.pause?.(); // ensure the room is paused for the quiz
   };
 
   const launchPopQuiz = async () => {
-    if (launchingQuiz || popQuiz) return;
+    if (launchingQuiz || popQuiz || popQuizLoading) return;
     setLaunchingQuiz(true);
+    const byName = currentUser?.name || localParticipant?.name || "Someone";
+    // Immediately: pause + show the loading screen locally and for the room, so
+    // the transition is smooth and everyone knows a quiz is coming.
+    startPopQuizLoading("You");
+    publish({ type: "POP_QUIZ_LOADING", by: byName });
     try {
       const { data } = await api.post(`/cohorts/by-room/${roomId}/pop-quiz`, {
         videoId: currentVideoId || undefined,
         numQuestions: 4,
       });
       if (!data?.questions?.length) {
+        setPopQuizLoading(null);
+        publish({ type: "POP_QUIZ_CANCEL" });
         pushToast("Couldn't generate a quiz right now.");
         return;
       }
-      const byName = currentUser?.name || localParticipant?.name || "Someone";
       publish({ type: "POP_QUIZ_START", quiz: { questions: data.questions, topic: data.topic }, by: byName });
       openPopQuiz({ questions: data.questions, topic: data.topic }, byName);
-      pushToast(`🧠 You started a pop quiz!`);
     } catch (e) {
+      setPopQuizLoading(null);
+      publish({ type: "POP_QUIZ_CANCEL" });
       pushToast(e?.response?.data?.message || "Quiz generation failed.");
     } finally {
       setLaunchingQuiz(false);
@@ -437,6 +453,7 @@ export default function WatchPartyLayout({
 
   const closePopQuiz = () => {
     setPopQuiz(null);
+    setPopQuizLoading(null);
     setQuizAnswers({});
     setQuizSubmitted(false);
     setQuizScore(null);
@@ -449,9 +466,15 @@ export default function WatchPartyLayout({
       if (participant?.identity === localParticipant?.identity) return;
       let msg;
       try { msg = JSON.parse(new TextDecoder().decode(payload)); } catch { return; }
+      if (msg?.type === "POP_QUIZ_LOADING") {
+        startPopQuizLoading(msg.by || "Someone");
+        pushToast(`🧠 ${msg.by || "Someone"} is starting a pop quiz…`);
+      }
+      if (msg?.type === "POP_QUIZ_CANCEL") {
+        setPopQuizLoading(null);
+      }
       if (msg?.type === "POP_QUIZ_START" && msg.quiz?.questions?.length) {
         openPopQuiz(msg.quiz, msg.by);
-        pushToast(`🧠 ${msg.by || "Someone"} started a pop quiz!`);
       }
       if (msg?.type === "POP_QUIZ_RESULT") {
         const pct = msg.total ? msg.score / msg.total : 0;
@@ -701,6 +724,18 @@ export default function WatchPartyLayout({
           0%   { opacity: 0; transform: translateY(-8px); }
           100% { opacity: 1; transform: translateY(0); }
         }
+        @keyframes yt-fade-in {
+          0% { opacity: 0; }
+          100% { opacity: 1; }
+        }
+        @keyframes ff-card-in {
+          0%   { opacity: 0; transform: translateY(12px) scale(0.96); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes yt-spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
         @keyframes ff-hype-pop {
           0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(-6deg); }
           25%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(3deg); }
@@ -890,10 +925,24 @@ export default function WatchPartyLayout({
               </div>
             )}
 
+            {/* Loading screen while the LLM writes the quiz — smooth, shared */}
+            {popQuizLoading && !popQuiz && (
+              <div style={styles.quizOverlay}>
+                <div style={{ ...styles.quizCard, alignItems: "center", textAlign: "center", gap: 14 }}>
+                  <div style={styles.quizSpinner} />
+                  <p style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "#e0e7ff" }}>🧠 Pop quiz incoming…</p>
+                  <p style={{ margin: 0, fontSize: 13, color: "#a5b4fc" }}>
+                    {popQuizLoading.by === "You" ? "Writing questions for the current video" : `${popQuizLoading.by} is starting a quiz`}
+                  </p>
+                  <p style={{ margin: 0, fontSize: 11.5, color: "#94A3B8" }}>Video paused — get ready ✨</p>
+                </div>
+              </div>
+            )}
+
             {/* Live pop quiz — opens for everyone at once */}
             {popQuiz && (
               <div style={styles.quizOverlay}>
-                <div style={styles.quizCard}>
+                <div style={{ ...styles.quizCard, animation: "ff-card-in 0.35s ease-out" }}>
                   <div style={styles.quizHeader}>
                     <div style={{ minWidth: 0 }}>
                       <p style={styles.quizKicker}>🧠 Pop Quiz{popQuiz.by ? ` · started by ${popQuiz.by}` : ""}</p>
@@ -1053,9 +1102,9 @@ export default function WatchPartyLayout({
             {cohortId && (
               <Control
                 icon={Brain}
-                active={Boolean(popQuiz)}
-                onClick={launchPopQuiz}
-                title={launchingQuiz ? "Generating quiz…" : "Pop quiz for the room"}
+                active={Boolean(popQuiz || popQuizLoading)}
+                onClick={() => { if (!launchingQuiz && !popQuiz && !popQuizLoading) launchPopQuiz(); }}
+                title={popQuizLoading ? "Generating quiz…" : "Pop quiz for the room"}
               />
             )}
             <Control icon={LogOut} danger onClick={handleLeave} title="Leave" />
@@ -1596,6 +1645,12 @@ const styles = {
     position: "absolute", inset: 0, zIndex: 45,
     display: "flex", alignItems: "center", justifyContent: "center",
     background: "rgba(8,10,20,0.72)", backdropFilter: "blur(10px)", padding: 16,
+    animation: "yt-fade-in 0.3s ease-out",
+  },
+  quizSpinner: {
+    width: 44, height: 44, borderRadius: "50%",
+    border: "3px solid rgba(148,163,184,0.25)", borderTopColor: "#a78bfa",
+    animation: "yt-spin 0.9s linear infinite",
   },
   quizCard: {
     position: "relative", width: "min(100%, 460px)", maxHeight: "92%",
