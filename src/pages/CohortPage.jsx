@@ -52,8 +52,13 @@ function sessionUserStatus(s, nowMs) {
   if (nowMs < start - REMIND_MS) {
     return { kind: "upcoming", bg: "var(--accent-soft)", color: "var(--accent)", label: fmtCountdown(start - nowMs) };
   }
+  // Within the 15-min window BEFORE the start time — about to begin.
+  if (nowMs < start) {
+    return { kind: "soon", bg: "rgba(245,158,11,0.14)", color: "#d97706", label: "● Starting soon" };
+  }
+  // Started and still within its duration — it's live/in progress, not "soon".
   if (nowMs < end) {
-    return { kind: "soon", bg: "rgba(239,68,68,0.12)", color: "#dc2626", label: "● Starting soon" };
+    return { kind: "live", bg: "rgba(239,68,68,0.14)", color: "#dc2626", label: "● Live now" };
   }
   // Was in the room but no completion evidence — participation, not done.
   if (s.attendedByMe) {
@@ -1606,12 +1611,12 @@ export default function CohortPage() {
                               </button>
                             </div>
                           ) : null}
-                          {st.kind === "soon" && roomId && cohort.isMember ? (
+                          {(st.kind === "soon" || st.kind === "live") && roomId && cohort.isMember ? (
                             <button
                               onClick={() => navigate(`/room/${roomId}`)}
                               style={{ ...btnPrimary(false), height: 34, marginTop: 10, padding: "0 16px", fontSize: 13 }}
                             >
-                              Join now
+                              {st.kind === "live" ? "Join now" : "Enter early"}
                             </button>
                           ) : null}
 
