@@ -1,4 +1,4 @@
-import { Mic, MicOff, Video, VideoOff, LogOut, Copy, X, Play, Flame, Target, Sparkles, Eye, Check, Download, Upload, Smile } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, LogOut, Copy, X, Play, Flame, Target, Sparkles, Eye, Check, Download, Upload, Smile, Brain } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useParticipants, useTracks, VideoTrack, useRoomContext, useLocalParticipant } from "@livekit/components-react";
@@ -85,6 +85,16 @@ export default function WatchPartyLayout({
           new TextEncoder().encode(JSON.stringify({ type: "YT_REACTION", emoji })),
           { reliable: false },
         );
+      } catch {
+        /* best effort */
+      }
+    }
+  };
+  // Reliable broadcast of a small JSON payload to the whole room (pop quiz, etc.).
+  const publish = (obj) => {
+    if (room?.state === "connected" && localParticipant) {
+      try {
+        localParticipant.publishData(new TextEncoder().encode(JSON.stringify(obj)), { reliable: true });
       } catch {
         /* best effort */
       }
@@ -375,6 +385,84 @@ export default function WatchPartyLayout({
     navigate("/dashboard");
   };
 
+  // ── Live pop quiz (interactive break for the whole room) ──────────────────
+  const [popQuiz, setPopQuiz] = useState(null); // { questions, topic, by }
+  const [quizAnswers, setQuizAnswers] = useState({});
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [quizScore, setQuizScore] = useState(null);
+  const [launchingQuiz, setLaunchingQuiz] = useState(false);
+
+  const openPopQuiz = (quiz, byName) => {
+    setPopQuiz({ questions: quiz.questions || [], topic: quiz.topic || "", by: byName });
+    setQuizAnswers({});
+    setQuizSubmitted(false);
+    setQuizScore(null);
+    ytControlsRef.current?.pause?.(); // pause the room so everyone plays together
+  };
+
+  const launchPopQuiz = async () => {
+    if (launchingQuiz || popQuiz) return;
+    setLaunchingQuiz(true);
+    try {
+      const { data } = await api.post(`/cohorts/by-room/${roomId}/pop-quiz`, {
+        videoId: currentVideoId || undefined,
+        numQuestions: 4,
+      });
+      if (!data?.questions?.length) {
+        pushToast("Couldn't generate a quiz right now.");
+        return;
+      }
+      const byName = currentUser?.name || localParticipant?.name || "Someone";
+      publish({ type: "POP_QUIZ_START", quiz: { questions: data.questions, topic: data.topic }, by: byName });
+      openPopQuiz({ questions: data.questions, topic: data.topic }, byName);
+      pushToast(`🧠 You started a pop quiz!`);
+    } catch (e) {
+      pushToast(e?.response?.data?.message || "Quiz generation failed.");
+    } finally {
+      setLaunchingQuiz(false);
+    }
+  };
+
+  const submitPopQuiz = () => {
+    if (!popQuiz) return;
+    const qs = popQuiz.questions;
+    let score = 0;
+    qs.forEach((q, i) => { if (quizAnswers[i] === q.answer) score++; });
+    setQuizScore({ score, total: qs.length });
+    setQuizSubmitted(true);
+    const name = currentUser?.name || localParticipant?.name || "Someone";
+    publish({ type: "POP_QUIZ_RESULT", name, score, total: qs.length });
+  };
+
+  const closePopQuiz = () => {
+    setPopQuiz(null);
+    setQuizAnswers({});
+    setQuizSubmitted(false);
+    setQuizScore(null);
+  };
+
+  // Receive pop-quiz events from the room (start → open for everyone; result → toast).
+  useEffect(() => {
+    if (!room) return undefined;
+    const handler = (payload, participant) => {
+      if (participant?.identity === localParticipant?.identity) return;
+      let msg;
+      try { msg = JSON.parse(new TextDecoder().decode(payload)); } catch { return; }
+      if (msg?.type === "POP_QUIZ_START" && msg.quiz?.questions?.length) {
+        openPopQuiz(msg.quiz, msg.by);
+        pushToast(`🧠 ${msg.by || "Someone"} started a pop quiz!`);
+      }
+      if (msg?.type === "POP_QUIZ_RESULT") {
+        const pct = msg.total ? msg.score / msg.total : 0;
+        const badge = pct >= 0.8 ? "🏆" : pct >= 0.5 ? "👍" : "📖";
+        pushToast(`${badge} ${msg.name || "Someone"} scored ${msg.score}/${msg.total}`);
+      }
+    };
+    room.on("dataReceived", handler);
+    return () => room.off("dataReceived", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room, localParticipant, currentUser]);
+
 
   return (
     <div style={styles.page}>
@@ -569,6 +657,78 @@ export default function WatchPartyLayout({
               </div>
             )}
 
+            {/* Live pop quiz — opens for everyone at once */}
+            {popQuiz && (
+              <div style={styles.quizOverlay}>
+                <div style={styles.quizCard}>
+                  <div style={styles.quizHeader}>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={styles.quizKicker}>🧠 Pop Quiz{popQuiz.by ? ` · started by ${popQuiz.by}` : ""}</p>
+                      {popQuiz.topic && <p style={styles.quizTopic}>{popQuiz.topic}</p>}
+                    </div>
+                    <button type="button" style={styles.waitingCloseBtn} onClick={closePopQuiz} title="Close">
+                      <X size={16} />
+                    </button>
+                  </div>
+
+                  {quizSubmitted && quizScore ? (
+                    <div style={{ textAlign: "center", padding: "8px 0 4px" }}>
+                      <p style={{ fontSize: 40, margin: "0 0 6px" }}>
+                        {quizScore.score / quizScore.total >= 0.8 ? "🏆" : quizScore.score / quizScore.total >= 0.5 ? "👍" : "📖"}
+                      </p>
+                      <p style={{ margin: 0, fontSize: 24, fontWeight: 800, color: "#e0e7ff" }}>
+                        {quizScore.score} / {quizScore.total}
+                      </p>
+                      <p style={{ margin: "6px 0 0", fontSize: 12.5, color: "#94A3B8" }}>
+                        Your score was shared with the room. Review below.
+                      </p>
+                    </div>
+                  ) : null}
+
+                  <div style={styles.quizBody}>
+                    {popQuiz.questions.map((q, i) => (
+                      <div key={i} style={styles.quizQuestion}>
+                        <p style={styles.quizQText}>{i + 1}. {q.question}</p>
+                        {(q.options || []).map((opt, j) => {
+                          const selected = quizAnswers[i] === opt;
+                          const isCorrect = quizSubmitted && opt === q.answer;
+                          const isWrong = quizSubmitted && selected && opt !== q.answer;
+                          return (
+                            <button
+                              key={j}
+                              type="button"
+                              onClick={() => !quizSubmitted && setQuizAnswers((p) => ({ ...p, [i]: opt }))}
+                              style={styles.quizOption(selected, isCorrect, isWrong, quizSubmitted)}
+                            >
+                              {opt}
+                            </button>
+                          );
+                        })}
+                        {quizSubmitted && q.explanation && (
+                          <p style={styles.quizExplain}>{q.explanation}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {!quizSubmitted ? (
+                    <button
+                      type="button"
+                      onClick={submitPopQuiz}
+                      disabled={Object.keys(quizAnswers).length < popQuiz.questions.length}
+                      style={styles.quizSubmitBtn(Object.keys(quizAnswers).length < popQuiz.questions.length)}
+                    >
+                      Submit ({Object.keys(quizAnswers).length}/{popQuiz.questions.length})
+                    </button>
+                  ) : (
+                    <button type="button" onClick={closePopQuiz} style={styles.quizSubmitBtn(false)}>
+                      Done
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
           </div>
 
           {/* Chat / Playlist / Notes / People live in the right-side panel tabs,
@@ -577,6 +737,14 @@ export default function WatchPartyLayout({
             <Control icon={micEnabled ? Mic : MicOff} active={micEnabled} onClick={toggleMic} title="Toggle mic" />
             <Control icon={camEnabled ? Video : VideoOff} active={camEnabled} onClick={toggleCamera} title="Toggle camera" />
             <Control icon={Smile} active={showReactions} onClick={() => setShowReactions((v) => !v)} title="React" />
+            {cohortId && (
+              <Control
+                icon={Brain}
+                active={Boolean(popQuiz)}
+                onClick={launchPopQuiz}
+                title={launchingQuiz ? "Generating quiz…" : "Pop quiz for the room"}
+              />
+            )}
             <Control icon={LogOut} danger onClick={handleLeave} title="Leave" />
           </div>
         </div>
@@ -1084,6 +1252,39 @@ const styles = {
     borderRadius: 24, boxShadow: "0 24px 60px rgba(0,0,0,0.45)",
     maxHeight: "90%", overflowY: "auto",
   },
+  quizOverlay: {
+    position: "absolute", inset: 0, zIndex: 45,
+    display: "flex", alignItems: "center", justifyContent: "center",
+    background: "rgba(8,10,20,0.72)", backdropFilter: "blur(10px)", padding: 16,
+  },
+  quizCard: {
+    position: "relative", width: "min(100%, 460px)", maxHeight: "92%",
+    display: "flex", flexDirection: "column",
+    background: "linear-gradient(160deg, rgba(30,27,75,0.96) 0%, rgba(15,23,42,0.97) 100%)",
+    border: "1px solid rgba(124,58,237,0.4)", borderRadius: 20,
+    boxShadow: "0 24px 60px rgba(0,0,0,0.5)", padding: "18px 18px 16px",
+  },
+  quizHeader: {
+    display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 12,
+  },
+  quizKicker: { margin: 0, fontSize: 13, fontWeight: 800, color: "#c4b5fd" },
+  quizTopic: { margin: "3px 0 0", fontSize: 12, color: "#94A3B8", lineHeight: 1.4 },
+  quizBody: { overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, padding: "4px 2px", flex: 1 },
+  quizQuestion: { display: "flex", flexDirection: "column", gap: 6 },
+  quizQText: { margin: 0, fontSize: 13.5, fontWeight: 700, color: "#e2e8f0", lineHeight: 1.45 },
+  quizOption: (selected, correct, wrong, submitted) => ({
+    textAlign: "left", padding: "9px 12px", borderRadius: 10, fontSize: 13, cursor: submitted ? "default" : "pointer",
+    color: correct ? "#bbf7d0" : wrong ? "#fecaca" : "#cbd5e1",
+    border: `1px solid ${correct ? "#22c55e" : wrong ? "#ef4444" : selected ? "#7c3aed" : "rgba(148,163,184,0.25)"}`,
+    background: correct ? "rgba(34,197,94,0.12)" : wrong ? "rgba(239,68,68,0.12)" : selected ? "rgba(124,58,237,0.18)" : "rgba(255,255,255,0.03)",
+  }),
+  quizExplain: { margin: "2px 0 0", fontSize: 11.5, color: "#94A3B8", lineHeight: 1.45, fontStyle: "italic" },
+  quizSubmitBtn: (disabled) => ({
+    marginTop: 12, height: 42, borderRadius: 999, border: "none", width: "100%",
+    background: disabled ? "rgba(124,58,237,0.35)" : "linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)",
+    color: "#fff", fontWeight: 700, fontSize: 14, cursor: disabled ? "default" : "pointer",
+    boxShadow: disabled ? "none" : "0 10px 26px rgba(124,58,237,0.4)",
+  }),
   waitingCloseBtn: {
     position: "absolute", top: 14, right: 14, width: 30, height: 30,
     borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.08)",

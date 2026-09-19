@@ -265,9 +265,15 @@ export default function YouTubeRoom({
 
   const dismissRequest = useCallback(() => setPendingRequest(null), []);
 
+  // Pause the room (e.g. when a pop quiz starts). Uses the normal state change so
+  // shared control syncs the pause to everyone via the existing protocol.
+  const pause = useCallback(() => {
+    playerRef.current?.pauseVideo?.();
+  }, []);
+
   useEffect(() => {
-    onRegisterControls?.({ jumpTo, requestControl, giveControl, dismissRequest });
-  }, [onRegisterControls, jumpTo, requestControl, giveControl, dismissRequest]);
+    onRegisterControls?.({ jumpTo, requestControl, giveControl, dismissRequest, pause });
+  }, [onRegisterControls, jumpTo, requestControl, giveControl, dismissRequest, pause]);
 
   // ── Apply incoming sync (with drift correction) ───────────────────────────
 
