@@ -32,6 +32,8 @@ export default function WatchPartyLayout({
   playlistVideos = null,
   watchedVideoIds = null,
   hostUserId = null,
+  playlistSkipped = null,
+  courseProgress = null,
   cohortId = null,
   cohortSessionId = null,
   cohortTopic = null,
@@ -146,6 +148,10 @@ export default function WatchPartyLayout({
   }, [camOnCount]);
   const ytControlsRef = useRef(null);
   const [currentVideoId, setCurrentVideoId] = useState(null);
+  // What's on the main stage right now — headings (notes, etc.) bind to this so
+  // everything stays synced to the video actually playing, not a fixed day topic.
+  const currentVideoTitle =
+    (Array.isArray(playlistVideos) ? playlistVideos : []).find((v) => v.ytVideoId === currentVideoId)?.title || null;
   const [hostState, setHostState] = useState({ amHost: true, hostName: null, pendingRequest: null });
   const hasPlaylist = Array.isArray(playlistVideos) && playlistVideos.length > 0;
   const hasNotes = Boolean(cohortId && cohortSessionId);
@@ -586,14 +592,16 @@ export default function WatchPartyLayout({
                 watchedSet={watchedSet}
                 currentVideoId={currentVideoId}
                 amHost={hostState.amHost}
+                progress={courseProgress}
+                skipped={playlistSkipped}
                 onPick={(vid) => ytControlsRef.current?.jumpTo(vid)}
                 onRequestControl={() => ytControlsRef.current?.requestControl()}
               />
             ) : tab === "notes" && hasNotes ? (
               <div style={styles.notesPanel}>
                 <div style={styles.notesHeader}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    📝 {cohortTopic || "Today's notes"}
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={currentVideoTitle || cohortTopic || "Today's notes"}>
+                    📝 {currentVideoTitle || cohortTopic || "Today's notes"}
                   </span>
                   <span style={{ fontSize: 11, color: "var(--text-muted)", flexShrink: 0 }}>
                     {notesStatus === "saving" ? "Saving…" : notesStatus === "saved" ? "Saved ✓" : ""}
@@ -653,9 +661,30 @@ function StatPill({ icon: Icon, label, value }) {
   );
 }
 
-function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, onPick, onRequestControl }) {
+function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, progress, skipped, onPick, onRequestControl }) {
+  const [showSkipped, setShowSkipped] = useState(false);
+  const pct = progress?.percent ?? 0;
+  const eta = progress?.etaDays ?? 0;
+  const hasSkipped = Array.isArray(skipped) && skipped.length > 0;
   return (
     <div style={styles.playlistPanel}>
+      {/* Shared course progress — derived from the cohort pointer (no LLM). */}
+      {progress && progress.totalCount > 0 && (
+        <div style={styles.courseProgress}>
+          <div style={styles.courseProgressTop}>
+            <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>
+              {progress.completedCount}/{progress.totalCount} videos
+            </span>
+            <span style={{ color: "var(--text-muted)" }}>
+              {pct}% · {eta > 0 ? `≈${eta} day${eta === 1 ? "" : "s"} left` : "complete 🎉"}
+            </span>
+          </div>
+          <div style={styles.courseBarTrack}>
+            <div style={{ ...styles.courseBarFill, width: `${pct}%` }} />
+          </div>
+        </div>
+      )}
+
       {amHost ? (
         <p style={styles.playlistHint}>
           You're hosting — pick any video and the whole room jumps to it together.
@@ -668,6 +697,24 @@ function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, onPick, onR
           </button>
         </div>
       )}
+
+      {/* Notice: videos left out of the plan when the room was created. */}
+      {hasSkipped && (
+        <div style={styles.skippedNote}>
+          <button type="button" style={styles.skippedToggle} onClick={() => setShowSkipped((s) => !s)}>
+            <span>⤼ {skipped.length} video{skipped.length === 1 ? "" : "s"} skipped when this room was created</span>
+            <span>{showSkipped ? "▲" : "▼"}</span>
+          </button>
+          {showSkipped && (
+            <ul style={styles.skippedList}>
+              {skipped.map((v) => (
+                <li key={v.ytVideoId} style={styles.skippedItem}>{v.title}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
       {videos.map((v, i) => {
         const isCurrent = v.ytVideoId === currentVideoId;
         const watched = watchedSet.has(v.ytVideoId);
@@ -1072,6 +1119,34 @@ const styles = {
   playlistPanel: { padding: 12, display: "flex", flexDirection: "column", gap: 6, overflowY: "auto" },
   playlistHint: {
     margin: "0 0 6px", fontSize: 11.5, color: "var(--text-muted)", lineHeight: 1.4,
+  },
+  courseProgress: {
+    padding: "10px 12px", borderRadius: 12, border: "1px solid var(--card-border)",
+    background: "var(--card-bg)", marginBottom: 4, display: "flex", flexDirection: "column", gap: 8,
+  },
+  courseProgressTop: {
+    display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12,
+  },
+  courseBarTrack: {
+    height: 6, borderRadius: 999, background: "var(--accent-soft)", overflow: "hidden",
+  },
+  courseBarFill: {
+    height: "100%", borderRadius: 999, background: "var(--accent)", transition: "width 0.3s ease",
+  },
+  skippedNote: {
+    borderRadius: 10, border: "1px dashed var(--card-border)", background: "var(--accent-soft)",
+    marginBottom: 4, overflow: "hidden",
+  },
+  skippedToggle: {
+    display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, width: "100%",
+    padding: "8px 10px", border: "none", background: "transparent", cursor: "pointer",
+    fontSize: 11.5, fontWeight: 600, color: "var(--text-secondary)", textAlign: "left",
+  },
+  skippedList: {
+    margin: 0, padding: "0 12px 10px 26px", display: "flex", flexDirection: "column", gap: 4,
+  },
+  skippedItem: {
+    fontSize: 11.5, color: "var(--text-muted)", lineHeight: 1.4,
   },
   playlistRow: (current) => ({
     display: "flex", alignItems: "center", gap: 10, padding: "9px 10px",

@@ -298,6 +298,8 @@ export default function RoomPage() {
             playlistVideos={cohortPlaylist?.videos || null}
             watchedVideoIds={cohortPlaylist?.watchedVideoIds || null}
             hostUserId={cohortPlaylist?.hostUserId || null}
+            playlistSkipped={cohortPlaylist?.skipped || null}
+            courseProgress={cohortPlaylist?.progress || null}
             cohortId={cohortPlayback?.cohortId || null}
             cohortSessionId={cohortPlayback?.id || null}
             cohortTopic={cohortPlayback?.topic || null}
