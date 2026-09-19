@@ -121,21 +121,37 @@ export default function WatchPartyLayout({
   const [showReactions, setShowReactions] = useState(false);
 
   // Shared-control alerts: everyone can play/pause/seek/change speed, and the
-  // room is told who did what ("Aman paused the video").
+  // room is told who did what ("Aman paused the video"). Also join/leave notices.
+  const TOAST_MS = 5200; // stays a little longer so it's easy to read
   const [controlToasts, setControlToasts] = useState([]); // { id, text }
+  const pushToast = (text) => {
+    if (!text) return;
+    const id = crypto.randomUUID?.() || String(Math.random());
+    setControlToasts((t) => [...t.slice(-2), { id, text }]);
+    setTimeout(() => setControlToasts((t) => t.filter((x) => x.id !== id)), TOAST_MS);
+  };
   const pushControlToast = ({ actor, action, currentTime, rate }) => {
     const name = actor || "Someone";
     const at = formatCountdown((currentTime || 0) * 1000);
-    let text;
-    if (action === "PAUSE") text = `⏸  ${name} paused the video`;
-    else if (action === "PLAY") text = `▶  ${name} resumed the video`;
-    else if (action === "SEEK") text = `⏩  ${name} jumped to ${at}`;
-    else if (action === "RATE") text = `⚡  ${name} set speed to ${rate}×`;
-    else return;
-    const id = crypto.randomUUID?.() || String(Math.random());
-    setControlToasts((t) => [...t.slice(-2), { id, text }]);
-    setTimeout(() => setControlToasts((t) => t.filter((x) => x.id !== id)), 3500);
+    if (action === "PAUSE") pushToast(`⏸  ${name} paused the video`);
+    else if (action === "PLAY") pushToast(`▶  ${name} resumed the video`);
+    else if (action === "SEEK") pushToast(`⏩  ${name} jumped to ${at}`);
+    else if (action === "RATE") pushToast(`⚡  ${name} set speed to ${rate}×`);
   };
+
+  // Everyone already in the room is told when someone joins or leaves.
+  useEffect(() => {
+    if (!room) return undefined;
+    const onJoin = (p) => pushToast(`👋  ${p?.name || p?.identity || "Someone"} joined the room`);
+    const onLeave = (p) => pushToast(`↩  ${p?.name || p?.identity || "Someone"} left the room`);
+    room.on("participantConnected", onJoin);
+    room.on("participantDisconnected", onLeave);
+    return () => {
+      room.off("participantConnected", onJoin);
+      room.off("participantDisconnected", onLeave);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room]);
 
   // Cameras live in the People tab, not over the video. When anyone turns their
   // camera ON (the count rises), open the People tab for everyone at once — every
@@ -343,12 +359,11 @@ export default function WatchPartyLayout({
     try {
       const { data } = await api.post(`/cohorts/by-room/${roomId}/end-session`);
       const n = data?.skipped ?? 0;
-      const id = crypto.randomUUID?.() || String(Math.random());
-      const text = n > 0
-        ? `✅ Session ended · ${n} skipped video${n === 1 ? "" : "s"} moved to catch-up`
-        : "✅ Session ended · schedule updated";
-      setControlToasts((t) => [...t.slice(-2), { id, text }]);
-      setTimeout(() => setControlToasts((t) => t.filter((x) => x.id !== id)), 3500);
+      pushToast(
+        n > 0
+          ? `✅ Session ended · ${n} skipped video${n === 1 ? "" : "s"} moved to catch-up`
+          : "✅ Session ended · schedule updated",
+      );
     } catch {
       /* ignore */
     } finally {
@@ -1011,16 +1026,16 @@ const styles = {
     position: "absolute", inset: 0, zIndex: 27, pointerEvents: "none", overflow: "hidden",
   },
   controlToastLayer: {
-    position: "absolute", top: 54, left: "50%", transform: "translateX(-50%)", zIndex: 32,
-    display: "flex", flexDirection: "column", gap: 6, alignItems: "center",
-    pointerEvents: "none", maxWidth: "92%",
+    position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 32,
+    display: "flex", flexDirection: "column", gap: 8, alignItems: "center",
+    pointerEvents: "none", maxWidth: "94%",
   },
   controlToast: {
-    padding: "7px 14px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, color: "#fff",
-    background: "rgba(8,10,20,0.82)", border: "1px solid rgba(148,163,184,0.28)",
-    backdropFilter: "blur(8px)", boxShadow: "0 8px 22px rgba(0,0,0,0.35)",
+    padding: "10px 18px", borderRadius: 12, fontSize: 13.5, fontWeight: 600, color: "#fff",
+    background: "rgba(15,18,32,0.92)", border: "1px solid rgba(124,58,237,0.5)",
+    backdropFilter: "blur(10px)", boxShadow: "0 10px 28px rgba(0,0,0,0.45)",
     whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%",
-    animation: "yt-toast-in 0.2s ease-out",
+    animation: "yt-toast-in 0.22s ease-out",
   },
   floatEmoji: {
     position: "absolute", bottom: 70, fontSize: 30,

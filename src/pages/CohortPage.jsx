@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useWindowWidth } from "../hooks/useBreakpoint";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import { track } from "../services/analytics";
 import AppSideNav from "../components/AppSideNav";
-import { Users, BookOpen, MessageSquare, Brain, Calendar, ChevronDown, ChevronUp, Link2, TrendingUp, Layers, Lock, CheckCircle2, PlayCircle } from "lucide-react";
+import { Users, BookOpen, MessageSquare, Brain, Calendar, ChevronDown, ChevronUp, Link2, TrendingUp, Layers, Lock, CheckCircle2, PlayCircle, Paperclip, X, FileText } from "lucide-react";
 
 const PAGE_BG = "var(--page-bg)";
 
@@ -91,6 +91,36 @@ function starterPrompts(topic) {
   ];
 }
 
+// Render a discussion post's attachment: inline image preview, or a file chip
+// link for documents. Opens in a new tab; never affects anything else.
+function DiscussionAttachment({ post }) {
+  const url = post?.attachmentUrl;
+  if (!url) return null;
+  const isImage = (post.attachmentType || "").startsWith("image/");
+  if (isImage) {
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", marginTop: 10 }}>
+        <img
+          src={url}
+          alt={post.attachmentName || "attachment"}
+          style={{ maxWidth: "100%", maxHeight: 260, borderRadius: 12, border: "1px solid var(--card-border)", display: "block" }}
+        />
+      </a>
+    );
+  }
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 10, padding: "8px 12px", borderRadius: 10, border: "1px solid var(--card-border)", background: "var(--input-bg)", color: "var(--accent)", fontSize: 13, fontWeight: 600, textDecoration: "none", maxWidth: "100%" }}
+    >
+      <FileText size={16} style={{ flexShrink: 0 }} />
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{post.attachmentName || "Download attachment"}</span>
+    </a>
+  );
+}
+
 const TABS = [
   { id: "roadmap", label: "Roadmap", icon: BookOpen },
   { id: "topics", label: "Topics", icon: Layers },
@@ -148,6 +178,10 @@ export default function CohortPage() {
   const [aiPrompt, setAiPrompt] = useState(null);
   const [aiPromptLoading, setAiPromptLoading] = useState(false);
   const [postingDiscussion, setPostingDiscussion] = useState(false);
+  // Pending file attachment for the next top-level post.
+  const [pendingAttachment, setPendingAttachment] = useState(null); // { url, name, type }
+  const [attaching, setAttaching] = useState(false);
+  const attachInputRef = useRef(null);
   const [expandedTopics, setExpandedTopics] = useState({});
 
   // Sessions state
@@ -414,13 +448,18 @@ export default function CohortPage() {
 
   const handlePostDiscussion = async (parentId) => {
     const content = parentId ? replyContent[parentId] : newPost;
-    if (!content?.trim()) return;
+    // Attachments are supported on top-level posts; a post needs text OR a file.
+    const attachment = parentId ? null : pendingAttachment;
+    if (!content?.trim() && !attachment) return;
     setPostingDiscussion(true);
     try {
       await api.post(`/cohorts/${id}/discussions`, {
-        content: content.trim(),
+        content: (content || "").trim(),
         parentId: parentId || undefined,
         studySessionId: discussionSession?.id || undefined,
+        attachmentUrl: attachment?.url,
+        attachmentName: attachment?.name,
+        attachmentType: attachment?.type,
       });
       const q = discussionSession ? `?sessionId=${discussionSession.id}` : "";
       const { data } = await api.get(`/cohorts/${id}/discussions${q}`);
@@ -430,11 +469,37 @@ export default function CohortPage() {
         setReplyOpen((prev) => ({ ...prev, [parentId]: false }));
       } else {
         setNewPost("");
+        setPendingAttachment(null);
       }
     } catch {
       /* ignore */
     } finally {
       setPostingDiscussion(false);
+    }
+  };
+
+  // Upload a discussion attachment (image/document) → stash the returned URL to
+  // send with the next post.
+  const handleAttachFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file
+    if (!file) return;
+    if (file.size > 25 * 1024 * 1024) {
+      alert("File too large (max 25 MB).");
+      return;
+    }
+    setAttaching(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const { data } = await api.post(`/cohorts/${id}/discussions/media`, form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setPendingAttachment(data); // { url, name, type }
+    } catch {
+      alert("Upload failed. Please try again.");
+    } finally {
+      setAttaching(false);
     }
   };
 
@@ -976,21 +1041,41 @@ export default function CohortPage() {
                 </div>
               )}
               {cohort.isMember ? (
-                <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
                   <textarea
                     value={newPost}
                     onChange={(e) => setNewPost(e.target.value)}
                     placeholder="Share a thought, question, or resource…"
                     rows={3}
-                    style={{ flex: 1, borderRadius: 12, border: "1.5px solid rgba(138,155,214,0.4)", background: "var(--input-bg)", padding: "10px 14px", fontSize: 14, color: "var(--text-primary)", outline: "none", resize: "vertical" }}
+                    style={{ width: "100%", boxSizing: "border-box", borderRadius: 12, border: "1.5px solid rgba(138,155,214,0.4)", background: "var(--input-bg)", padding: "10px 14px", fontSize: 14, color: "var(--text-primary)", outline: "none", resize: "vertical" }}
                   />
-                  <button
-                    onClick={() => handlePostDiscussion(null)}
-                    disabled={postingDiscussion || !newPost.trim()}
-                    style={{ ...btnPrimary(postingDiscussion || !newPost.trim()), alignSelf: "flex-end", height: 44 }}
-                  >
-                    Post
-                  </button>
+                  {pendingAttachment && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 10, background: "var(--accent-soft)", border: "1px solid var(--card-border)", alignSelf: "flex-start", maxWidth: "100%" }}>
+                      <Paperclip size={14} color="var(--accent)" style={{ flexShrink: 0 }} />
+                      <span style={{ fontSize: 12.5, color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pendingAttachment.name || "attachment"}</span>
+                      <button onClick={() => setPendingAttachment(null)} title="Remove" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex", flexShrink: 0 }}>
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <input ref={attachInputRef} type="file" accept="image/*,.pdf,.doc,.docx,.txt,.md,.ppt,.pptx,.xls,.xlsx" onChange={handleAttachFile} style={{ display: "none" }} />
+                    <button
+                      onClick={() => attachInputRef.current?.click()}
+                      disabled={attaching}
+                      title="Attach a file (image or document, max 25 MB)"
+                      style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 10, border: "1px solid var(--card-border)", background: "transparent", color: "var(--text-secondary)", fontSize: 13, fontWeight: 600, cursor: attaching ? "default" : "pointer" }}
+                    >
+                      <Paperclip size={15} /> {attaching ? "Uploading…" : "Attach"}
+                    </button>
+                    <button
+                      onClick={() => handlePostDiscussion(null)}
+                      disabled={postingDiscussion || (!newPost.trim() && !pendingAttachment)}
+                      style={{ ...btnPrimary(postingDiscussion || (!newPost.trim() && !pendingAttachment)), marginLeft: "auto", height: 44 }}
+                    >
+                      Post
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 16 }}>Join the cohort to participate in discussions.</p>
@@ -1031,7 +1116,8 @@ export default function CohortPage() {
                             {new Date(post.createdAt).toLocaleDateString()}
                           </span>
                         </div>
-                        <p style={{ margin: 0, fontSize: 14, color: "var(--text-primary)", lineHeight: 1.6 }}>{post.content}</p>
+                        {post.content && <p style={{ margin: 0, fontSize: 14, color: "var(--text-primary)", lineHeight: 1.6 }}>{post.content}</p>}
+                        <DiscussionAttachment post={post} />
 
                         {cohort.isMember && (
                           <button
@@ -1071,7 +1157,8 @@ export default function CohortPage() {
                                 </div>
                                 <span style={{ fontWeight: 700, fontSize: 12, color: "var(--text-primary)" }}>{reply.author?.name}</span>
                               </div>
-                              <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>{reply.content}</p>
+                              {reply.content && <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>{reply.content}</p>}
+                              <DiscussionAttachment post={reply} />
                             </div>
                           ))}
                         </div>
