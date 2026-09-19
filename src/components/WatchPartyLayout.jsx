@@ -34,6 +34,7 @@ export default function WatchPartyLayout({
   hostUserId = null,
   playlistSkipped = null,
   courseProgress = null,
+  surpriseQuiz = true,
   cohortId = null,
   cohortSessionId = null,
   cohortTopic = null,
@@ -463,6 +464,191 @@ export default function WatchPartyLayout({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room, localParticipant, currentUser]);
 
+  // ── Fastest-finger (surprise, host-driven, shared clock) ──────────────────
+  const FF_COUNTDOWN_MS = 3000;
+  const FF_PER_Q_MS = 12000;
+  const FF_BASE = 100;
+  const [ffRound, setFfRound] = useState(null); // { roundId, questions, topic, startAt, by }
+  const [ffAnswers, setFfAnswers] = useState({}); // { [qIndex]: { opt, remainMs } }
+  const [ffPhase, setFfPhase] = useState(null); // { kind:'countdown'|'question'|'done', n?, index?, remainMs? }
+  const [ffResult, setFfResult] = useState(null); // { points, scoreboard }
+  const ffPostedRef = useRef(false);
+  const [ffMuted, setFfMuted] = useState(() => {
+    try { return localStorage.getItem("prepsy_ff_muted") === "1"; } catch { return false; }
+  });
+  const ffAnswersRef = useRef(ffAnswers);
+  useEffect(() => { ffAnswersRef.current = ffAnswers; }, [ffAnswers]);
+
+  const playFfSound = () => {
+    if (ffMuted) return;
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new Ctx();
+      const notes = [880, 1175, 1568]; // a bright little "ta-da-da"
+      notes.forEach((f, i) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = "triangle";
+        o.frequency.value = f;
+        o.connect(g); g.connect(ctx.destination);
+        const t = ctx.currentTime + i * 0.12;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+        o.start(t); o.stop(t + 0.2);
+      });
+      setTimeout(() => ctx.close().catch(() => {}), 900);
+    } catch { /* no audio */ }
+  };
+
+  const openFf = (round) => {
+    setFfRound(round);
+    setFfAnswers({});
+    setFfResult(null);
+    ffPostedRef.current = false;
+    ytControlsRef.current?.pause?.(); // pause the room so nobody misses content
+    playFfSound();
+  };
+
+  const launchFastestFinger = async () => {
+    if (ffRound || !cohortId) return;
+    try {
+      const { data } = await api.post(`/cohorts/by-room/${roomId}/pop-quiz`, {
+        videoId: currentVideoId || undefined,
+        numQuestions: 6,
+      });
+      if (!data?.questions?.length) return;
+      const round = {
+        roundId: crypto.randomUUID?.() || String(Date.now()),
+        questions: data.questions,
+        topic: data.topic || "",
+        startAt: Date.now() + 400, // small lead so the broadcast lands first
+        by: currentUser?.name || localParticipant?.name || "Someone",
+      };
+      publish({ type: "FF_START", round });
+      openFf(round);
+    } catch {
+      /* best effort */
+    }
+  };
+
+  const closeFf = () => {
+    setFfRound(null);
+    setFfPhase(null);
+    setFfAnswers({});
+    setFfResult(null);
+  };
+
+  // Drive the round off the shared clock so every client advances together.
+  useEffect(() => {
+    if (!ffRound) { setFfPhase(null); return undefined; }
+    const qs = ffRound.questions;
+    const tick = () => {
+      const elapsed = Date.now() - ffRound.startAt;
+      if (elapsed < FF_COUNTDOWN_MS) {
+        setFfPhase({ kind: "countdown", n: Math.ceil((FF_COUNTDOWN_MS - elapsed) / 1000) });
+        return;
+      }
+      const qe = elapsed - FF_COUNTDOWN_MS;
+      const index = Math.floor(qe / FF_PER_Q_MS);
+      if (index >= qs.length) {
+        setFfPhase({ kind: "done" });
+        return;
+      }
+      setFfPhase({ kind: "question", index, remainMs: FF_PER_Q_MS - (qe % FF_PER_Q_MS) });
+    };
+    tick();
+    const iv = setInterval(tick, 150);
+    return () => clearInterval(iv);
+  }, [ffRound]);
+
+  // When the round ends, score it once, post the points, and load the scoreboard.
+  useEffect(() => {
+    if (!ffRound || ffPhase?.kind !== "done" || ffPostedRef.current) return;
+    ffPostedRef.current = true;
+    const qs = ffRound.questions;
+    const ans = ffAnswersRef.current;
+    let points = 0;
+    qs.forEach((q, i) => {
+      const a = ans[i];
+      if (a && a.opt === q.answer) {
+        points += FF_BASE + Math.round((Math.max(0, a.remainMs) / FF_PER_Q_MS) * FF_BASE);
+      }
+    });
+    (async () => {
+      try {
+        const { data } = await api.post(`/cohorts/${cohortId}/quiz/score`, { points });
+        setFfResult({ points, scoreboard: data || [] });
+      } catch {
+        setFfResult({ points, scoreboard: [] });
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ffPhase, ffRound]);
+
+  // Receive FF_START from the host.
+  useEffect(() => {
+    if (!room) return undefined;
+    const handler = (payload, participant) => {
+      if (participant?.identity === localParticipant?.identity) return;
+      let msg;
+      try { msg = JSON.parse(new TextDecoder().decode(payload)); } catch { return; }
+      if (msg?.type === "FF_START" && msg.round?.questions?.length && !ffRound) {
+        openFf(msg.round);
+      }
+    };
+    room.on("dataReceived", handler);
+    return () => room.off("dataReceived", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room, localParticipant, ffRound, ffMuted]);
+
+  // Host-only surprise scheduler: while enabled and playing, fire a round at a
+  // random time, rate-limited so it never spams or lands back-to-back.
+  // Creator-controlled toggle (default from the server; optimistic local flip).
+  const [surpriseOn, setSurpriseOn] = useState(surpriseQuiz);
+  useEffect(() => { setSurpriseOn(surpriseQuiz); }, [surpriseQuiz]);
+  const isCreator = Boolean(currentUser?.id && currentUser.id === hostUserId);
+  const toggleSurpriseQuiz = async () => {
+    if (!cohortId) return;
+    const next = !surpriseOn;
+    setSurpriseOn(next);
+    try { await api.patch(`/cohorts/${cohortId}`, { surpriseQuiz: next }); } catch { setSurpriseOn(!next); }
+  };
+
+  const ffCondRef = useRef({});
+  useEffect(() => {
+    ffCondRef.current = {
+      enabled: surpriseOn && Boolean(cohortId),
+      amHost: hostState.amHost,
+      busy: Boolean(ffRound || popQuiz),
+      preparing: showWaiting,
+    };
+  });
+  const ffLastFireRef = useRef(0);
+  const launchFfRef = useRef(launchFastestFinger);
+  useEffect(() => { launchFfRef.current = launchFastestFinger; });
+  useEffect(() => {
+    if (!cohortId) return undefined;
+    const iv = setInterval(() => {
+      const c = ffCondRef.current;
+      if (!c.enabled || !c.amHost || c.busy || c.preparing) return;
+      if (Date.now() - ffLastFireRef.current < 12 * 60 * 1000) return; // min 12-min gap
+      if (Math.random() < 0.2) { // ~random within the allowed window
+        ffLastFireRef.current = Date.now();
+        launchFfRef.current?.();
+      }
+    }, 60 * 1000);
+    return () => clearInterval(iv);
+  }, [cohortId]);
+
+  const toggleFfMute = () => {
+    setFfMuted((m) => {
+      const next = !m;
+      try { localStorage.setItem("prepsy_ff_muted", next ? "1" : "0"); } catch { /* ignore */ }
+      return next;
+    });
+  };
+
 
   return (
     <div style={styles.page}>
@@ -729,6 +915,82 @@ export default function WatchPartyLayout({
               </div>
             )}
 
+            {/* Surprise fastest-finger round — synced for everyone */}
+            {ffRound && ffPhase && (
+              <div style={styles.ffOverlay}>
+                <button type="button" onClick={toggleFfMute} title={ffMuted ? "Unmute" : "Mute"} style={styles.ffMuteBtn}>
+                  {ffMuted ? "🔇" : "🔊"}
+                </button>
+
+                {ffPhase.kind === "countdown" && (
+                  <div style={{ textAlign: "center" }}>
+                    <p style={styles.ffBigKicker}>⚡ FASTEST FINGER</p>
+                    <p style={styles.ffSub}>{ffRound.by ? `${ffRound.by} triggered a quiz — ` : ""}get ready!</p>
+                    <p style={styles.ffCountNum}>{ffPhase.n}</p>
+                  </div>
+                )}
+
+                {ffPhase.kind === "question" && (() => {
+                  const q = ffRound.questions[ffPhase.index];
+                  const locked = ffAnswers[ffPhase.index];
+                  const pct = Math.max(0, Math.min(100, (ffPhase.remainMs / FF_PER_Q_MS) * 100));
+                  return (
+                    <div style={styles.ffCard}>
+                      <div style={styles.ffTopRow}>
+                        <span style={styles.ffKicker}>⚡ Q{ffPhase.index + 1}/{ffRound.questions.length}</span>
+                        <span style={{ fontSize: 12, color: "#c4b5fd", fontWeight: 700 }}>{Math.ceil(ffPhase.remainMs / 1000)}s</span>
+                      </div>
+                      <div style={styles.ffTimerTrack}><div style={{ ...styles.ffTimerFill, width: `${pct}%` }} /></div>
+                      <p style={styles.ffQText}>{q.question}</p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {(q.options || []).map((opt, j) => {
+                          const chosen = locked?.opt === opt;
+                          return (
+                            <button
+                              key={j}
+                              type="button"
+                              disabled={Boolean(locked)}
+                              onClick={() => setFfAnswers((p) => ({ ...p, [ffPhase.index]: { opt, remainMs: ffPhase.remainMs } }))}
+                              style={styles.ffOption(chosen, Boolean(locked))}
+                            >
+                              {opt}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {locked && <p style={styles.ffLockedNote}>Locked in — hang tight for the next one…</p>}
+                    </div>
+                  );
+                })()}
+
+                {ffPhase.kind === "done" && (
+                  <div style={styles.ffCard}>
+                    <p style={styles.ffBigKicker}>🏁 Round over</p>
+                    {ffResult ? (
+                      <>
+                        <p style={{ textAlign: "center", margin: "4px 0 14px", fontSize: 15, color: "#e0e7ff" }}>
+                          You earned <strong>+{ffResult.points}</strong> points
+                        </p>
+                        <p style={styles.ffKicker}>🏆 Cohort scoreboard</p>
+                        <div style={styles.ffBoard}>
+                          {(ffResult.scoreboard || []).slice(0, 8).map((r, i) => (
+                            <div key={r.userId} style={styles.ffBoardRow}>
+                              <span style={{ width: 22, color: "#c4b5fd", fontWeight: 800 }}>{i + 1}</span>
+                              <span style={{ flex: 1, color: "#e2e8f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
+                              <span style={{ fontWeight: 800, color: "#fff" }}>{r.points}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <button type="button" onClick={closeFf} style={styles.quizSubmitBtn(false)}>Done</button>
+                      </>
+                    ) : (
+                      <p style={{ textAlign: "center", color: "#94A3B8", padding: "12px 0" }}>Tallying scores…</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
 
           {/* Chat / Playlist / Notes / People live in the right-side panel tabs,
@@ -803,6 +1065,10 @@ export default function WatchPartyLayout({
                 onRequestControl={() => ytControlsRef.current?.requestControl()}
                 onEndSession={handleEndSession}
                 endingSession={endingSession}
+                onLaunchFf={launchFastestFinger}
+                ffBusy={Boolean(ffRound)}
+                surpriseOn={surpriseOn}
+                onToggleSurprise={isCreator ? toggleSurpriseQuiz : null}
               />
             ) : tab === "notes" && hasNotes ? (
               <div style={styles.notesPanel}>
@@ -868,7 +1134,7 @@ function StatPill({ icon: Icon, label, value }) {
   );
 }
 
-function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, progress, skipped, onPick, onRequestControl, onEndSession, endingSession }) {
+function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, progress, skipped, onPick, onRequestControl, onEndSession, endingSession, onLaunchFf, ffBusy, surpriseOn, onToggleSurprise }) {
   const [showSkipped, setShowSkipped] = useState(false);
   const pct = progress?.percent ?? 0;
   const eta = progress?.etaDays ?? 0;
@@ -909,7 +1175,30 @@ function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, progress, s
             </button>
           )}
         </div>
-      ) : (
+      ) : null}
+
+      {/* Fastest-finger controls (host): fire one now + the surprise toggle. */}
+      {amHost && (onLaunchFf || onToggleSurprise) && (
+        <div style={styles.ffControls}>
+          {onLaunchFf && (
+            <button type="button" style={styles.ffLaunchBtn} onClick={onLaunchFf} disabled={ffBusy} title="Start a fastest-finger round now">
+              ⚡ {ffBusy ? "Round live…" : "Fastest finger"}
+            </button>
+          )}
+          {onToggleSurprise && (
+            <button
+              type="button"
+              style={styles.ffToggleBtn(surpriseOn)}
+              onClick={onToggleSurprise}
+              title="Surprise fastest-finger quizzes fire at random during a session"
+            >
+              Surprise: {surpriseOn ? "On" : "Off"}
+            </button>
+          )}
+        </div>
+      )}
+
+      {!amHost && (
         <div style={styles.playlistLockedNote}>
           <span>Only the host can change the video. Following along.</span>
           <button type="button" style={styles.requestControlBtn} onClick={onRequestControl}>
@@ -1285,6 +1574,40 @@ const styles = {
     color: "#fff", fontWeight: 700, fontSize: 14, cursor: disabled ? "default" : "pointer",
     boxShadow: disabled ? "none" : "0 10px 26px rgba(124,58,237,0.4)",
   }),
+  ffOverlay: {
+    position: "absolute", inset: 0, zIndex: 46,
+    display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+    background: "radial-gradient(circle at 50% 40%, rgba(76,29,149,0.75), rgba(8,10,20,0.9))",
+    backdropFilter: "blur(12px)",
+  },
+  ffMuteBtn: {
+    position: "absolute", top: 12, right: 12, width: 34, height: 34, borderRadius: "50%",
+    border: "1px solid rgba(148,163,184,0.3)", background: "rgba(0,0,0,0.35)", cursor: "pointer",
+    fontSize: 15, color: "#fff",
+  },
+  ffBigKicker: { margin: 0, fontSize: 22, fontWeight: 900, color: "#e9d5ff", letterSpacing: 1, textAlign: "center", textShadow: "0 0 24px rgba(167,139,250,0.6)" },
+  ffSub: { margin: "8px 0 0", fontSize: 13, color: "#c4b5fd", textAlign: "center" },
+  ffCountNum: { margin: "6px 0 0", fontSize: 72, fontWeight: 900, color: "#fff", textShadow: "0 0 40px rgba(167,139,250,0.7)", animation: "yt-toast-in 0.2s ease-out" },
+  ffCard: {
+    width: "min(100%, 460px)", maxHeight: "92%", display: "flex", flexDirection: "column",
+    background: "linear-gradient(160deg, rgba(46,16,101,0.96), rgba(15,23,42,0.97))",
+    border: "1px solid rgba(167,139,250,0.5)", borderRadius: 20, padding: "18px", boxShadow: "0 24px 60px rgba(0,0,0,0.55)",
+  },
+  ffTopRow: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
+  ffKicker: { margin: 0, fontSize: 13, fontWeight: 800, color: "#c4b5fd" },
+  ffTimerTrack: { height: 6, borderRadius: 999, background: "rgba(148,163,184,0.25)", overflow: "hidden", marginBottom: 12 },
+  ffTimerFill: { height: "100%", background: "linear-gradient(90deg,#f59e0b,#ef4444)", borderRadius: 999, transition: "width 0.15s linear" },
+  ffQText: { margin: "0 0 12px", fontSize: 15, fontWeight: 700, color: "#f1f5f9", lineHeight: 1.4 },
+  ffOption: (chosen, locked) => ({
+    textAlign: "left", padding: "11px 14px", borderRadius: 12, fontSize: 13.5, fontWeight: 600,
+    cursor: locked ? "default" : "pointer", color: chosen ? "#fff" : "#cbd5e1",
+    border: `1px solid ${chosen ? "#a78bfa" : "rgba(148,163,184,0.28)"}`,
+    background: chosen ? "rgba(124,58,237,0.4)" : "rgba(255,255,255,0.04)",
+    opacity: locked && !chosen ? 0.55 : 1,
+  }),
+  ffLockedNote: { margin: "10px 0 0", fontSize: 12, color: "#a5b4fc", textAlign: "center" },
+  ffBoard: { display: "flex", flexDirection: "column", gap: 6, margin: "8px 0 14px" },
+  ffBoardRow: { display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", borderRadius: 10, background: "rgba(255,255,255,0.05)", fontSize: 13 },
   waitingCloseBtn: {
     position: "absolute", top: 14, right: 14, width: 30, height: 30,
     borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.08)",
@@ -1424,6 +1747,18 @@ const styles = {
     background: "var(--accent-soft)", color: "var(--accent)", fontSize: 11.5, fontWeight: 700,
     cursor: "pointer", whiteSpace: "nowrap",
   },
+  ffControls: { display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap" },
+  ffLaunchBtn: {
+    flex: 1, minWidth: 130, padding: "8px 12px", borderRadius: 10, border: "none",
+    background: "linear-gradient(135deg, #7c3aed, #a855f7)", color: "#fff",
+    fontSize: 12.5, fontWeight: 700, cursor: "pointer",
+  },
+  ffToggleBtn: (on) => ({
+    flexShrink: 0, padding: "8px 12px", borderRadius: 10, cursor: "pointer",
+    border: `1px solid ${on ? "var(--accent)" : "var(--card-border)"}`,
+    background: on ? "var(--accent-soft)" : "transparent",
+    color: on ? "var(--accent)" : "var(--text-muted)", fontSize: 11.5, fontWeight: 700,
+  }),
   playlistRow: (current) => ({
     display: "flex", alignItems: "center", gap: 10, padding: "9px 10px",
     borderRadius: 10, cursor: "pointer", textAlign: "left", width: "100%",

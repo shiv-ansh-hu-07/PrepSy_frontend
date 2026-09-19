@@ -236,6 +236,7 @@ export default function CohortPage() {
 
   // Progress / leaderboard
   const [progress, setProgress] = useState(null);
+  const [scoreboard, setScoreboard] = useState([]);
   const [pastAttempts, setPastAttempts] = useState([]);
 
   // Crew (members + intros) + my intro form
@@ -300,6 +301,7 @@ export default function CohortPage() {
       api.get(`/cohorts/${id}/topics`).then(({ data }) => setTopics(data.topics || [])).catch(() => {}).finally(() => setTopicsLoading(false));
     } else if (activeTab === "progress") {
       api.get(`/cohorts/${id}/progress`).then(({ data }) => setProgress(data)).catch(() => {});
+      api.get(`/cohorts/${id}/scoreboard`).then(({ data }) => setScoreboard(data || [])).catch(() => {});
     } else if (activeTab === "members") {
       fetchCrew();
     }
@@ -1312,6 +1314,21 @@ export default function CohortPage() {
           {/* Tab: Progress */}
           {activeTab === "progress" && (
             <div style={card}>
+              {scoreboard.some((r) => r.points > 0) && (
+                <div style={{ marginBottom: 20, padding: "14px 16px", borderRadius: 14, border: "1px solid var(--card-border)", background: "var(--accent-soft)" }}>
+                  <h3 style={{ ...sectionTitle, marginTop: 0 }}>🏆 Cohort scoreboard</h3>
+                  <p style={{ margin: "0 0 10px", fontSize: 12, color: "var(--text-muted)" }}>Running points from fastest-finger quizzes.</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {scoreboard.slice(0, 10).map((r, i) => (
+                      <div key={r.userId} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", borderRadius: 10, background: "var(--card-bg)", fontSize: 13.5 }}>
+                        <span style={{ width: 24, fontWeight: 800, color: i === 0 ? "#f59e0b" : "var(--text-muted)" }}>{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</span>
+                        <span style={{ flex: 1, color: "var(--text-primary)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
+                        <span style={{ fontWeight: 800, color: "var(--accent)" }}>{r.points}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <h3 style={sectionTitle}>📈 Progress</h3>
               {!cohort.isMember ? (
                 <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>Join the cohort to see progress.</p>

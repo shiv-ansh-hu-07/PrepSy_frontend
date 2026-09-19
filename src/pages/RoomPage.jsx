@@ -300,6 +300,7 @@ export default function RoomPage() {
             hostUserId={cohortPlaylist?.hostUserId || null}
             playlistSkipped={cohortPlaylist?.skipped || null}
             courseProgress={cohortPlaylist?.progress || null}
+            surpriseQuiz={cohortPlaylist?.surpriseQuiz !== false}
             cohortId={cohortPlayback?.cohortId || null}
             cohortSessionId={cohortPlayback?.id || null}
             cohortTopic={cohortPlayback?.topic || null}
