@@ -181,31 +181,35 @@ export default function WatchPartyLayout({
     (Array.isArray(playlistVideos) ? playlistVideos : []).find((v) => v.ytVideoId === currentVideoId)?.title || null;
   const [hostState, setHostState] = useState({ amHost: true, hostName: null, pendingRequest: null });
   const hasPlaylist = Array.isArray(playlistVideos) && playlistVideos.length > 0;
-  const hasNotes = Boolean(cohortId && cohortSessionId);
+  // Notes are available for any cohort room. A scheduled day uses its session id;
+  // a cohort without a day schedule uses a shared "general" pad.
+  const hasNotes = Boolean(cohortId);
+  const notesKey = cohortSessionId || "general";
 
-  // Per-day notes (cohort rooms) — persisted so you can revisit the day later.
+  // Per-day (or general) notes (cohort rooms) — persisted so you can revisit later.
   const [notes, setNotes] = useState("");
   const [notesStatus, setNotesStatus] = useState(""); // "", "saving", "saved"
   const notesLoadedRef = useRef(false);
   useEffect(() => {
     if (!hasNotes) return;
     let cancelled = false;
-    api.get(`/cohorts/${cohortId}/sessions/${cohortSessionId}/notes`)
+    notesLoadedRef.current = false;
+    api.get(`/cohorts/${cohortId}/sessions/${notesKey}/notes`)
       .then((res) => { if (!cancelled) { setNotes(res.data?.text || ""); notesLoadedRef.current = true; } })
       .catch(() => { notesLoadedRef.current = true; });
     return () => { cancelled = true; };
-  }, [hasNotes, cohortId, cohortSessionId]);
+  }, [hasNotes, cohortId, notesKey]);
   // Debounced autosave once loaded.
   useEffect(() => {
     if (!hasNotes || !notesLoadedRef.current) return undefined;
     setNotesStatus("saving");
     const t = setTimeout(() => {
-      api.post(`/cohorts/${cohortId}/sessions/${cohortSessionId}/notes`, { text: notes })
+      api.post(`/cohorts/${cohortId}/sessions/${notesKey}/notes`, { text: notes })
         .then(() => setNotesStatus("saved"))
         .catch(() => setNotesStatus(""));
     }, 900);
     return () => clearTimeout(t);
-  }, [notes, hasNotes, cohortId, cohortSessionId]);
+  }, [notes, hasNotes, cohortId, notesKey]);
   const notesFileRef = useRef(null);
   const downloadNotes = async () => {
     const { default: jsPDF } = await import("jspdf");

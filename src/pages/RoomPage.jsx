@@ -301,7 +301,7 @@ export default function RoomPage() {
             playlistSkipped={cohortPlaylist?.skipped || null}
             courseProgress={cohortPlaylist?.progress || null}
             surpriseQuiz={cohortPlaylist?.surpriseQuiz !== false}
-            cohortId={cohortPlayback?.cohortId || null}
+            cohortId={cohortPlayback?.cohortId || cohortPlaylist?.cohortId || null}
             cohortSessionId={cohortPlayback?.id || null}
             cohortTopic={cohortPlayback?.topic || null}
           />
