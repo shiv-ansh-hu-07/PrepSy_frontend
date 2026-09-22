@@ -5,6 +5,7 @@ import { useParticipants, useTracks, VideoTrack, useRoomContext, useLocalPartici
 import useMediaControls from "../hooks/useMediaControl";
 import YouTubeRoom from "./YouTubeRoom";
 import ChatDrawer from "./ChatDrawer";
+import Whiteboard from "./Whiteboard";
 import api, { fetchMyAnalytics, fetchFocusSummary, fetchVideoSummary } from "../services/api";
 
 const PREP_MS = 60_000;
@@ -507,6 +508,53 @@ export default function WatchPartyLayout({
     return () => room.off("dataReceived", handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room, localParticipant, currentUser]);
+
+  // ── Shared whiteboard (everyone can draw) ─────────────────────────────────
+  const [wbStrokes, setWbStrokes] = useState([]);
+  const wbStrokesRef = useRef([]);
+  useEffect(() => { wbStrokesRef.current = wbStrokes; }, [wbStrokes]);
+
+  const handleWbStroke = (stroke) => {
+    setWbStrokes((s) => [...s, stroke]);
+    publish({ type: "WB_STROKE", stroke });
+  };
+  const handleWbClear = () => {
+    setWbStrokes([]);
+    publish({ type: "WB_CLEAR" });
+  };
+
+  // Collect whiteboard events (even when the tab isn't open) + answer/ask for the
+  // current board on join so late joiners see what's already drawn.
+  useEffect(() => {
+    if (!room) return undefined;
+    const handler = (payload, participant) => {
+      if (participant?.identity === localParticipant?.identity) return;
+      let msg;
+      try { msg = JSON.parse(new TextDecoder().decode(payload)); } catch { return; }
+      if (msg?.type === "WB_STROKE" && msg.stroke) {
+        setWbStrokes((s) => (s.some((x) => x.id === msg.stroke.id) ? s : [...s, msg.stroke]));
+      } else if (msg?.type === "WB_CLEAR") {
+        setWbStrokes([]);
+      } else if (msg?.type === "WB_REQUEST") {
+        // First peer with a board answers; the joiner only adopts it if empty.
+        if (wbStrokesRef.current.length) {
+          publish({ type: "WB_STATE", strokes: wbStrokesRef.current.slice(-600) });
+        }
+      } else if (msg?.type === "WB_STATE" && Array.isArray(msg.strokes)) {
+        setWbStrokes((cur) => (cur.length ? cur : msg.strokes));
+      }
+    };
+    room.on("dataReceived", handler);
+    return () => room.off("dataReceived", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room, localParticipant]);
+
+  useEffect(() => {
+    if (!room) return undefined;
+    const id = setTimeout(() => publish({ type: "WB_REQUEST" }), 1800);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room]);
 
   // ── Fastest-finger (surprise, host-driven, shared clock) ──────────────────
   const FF_COUNTDOWN_MS = 3000;
@@ -1184,6 +1232,13 @@ export default function WatchPartyLayout({
             >
               People <span style={styles.tabCount}>{participantCount}</span>
             </button>
+            <button
+              type="button"
+              style={styles.tabBtn(tab === "whiteboard")}
+              onClick={() => setTab("whiteboard")}
+            >
+              Board
+            </button>
           </div>
 
           <div style={styles.tabBody}>
@@ -1238,6 +1293,8 @@ export default function WatchPartyLayout({
                   </button>
                 </div>
               </div>
+            ) : tab === "whiteboard" ? (
+              <Whiteboard strokes={wbStrokes} onStroke={handleWbStroke} onClear={handleWbClear} />
             ) : (
               <PeopleList
                 participants={participants}
