@@ -399,6 +399,13 @@ export default function WatchPartyLayout({
   // Loading state shown to EVERYONE while the LLM writes the quiz, so the video
   // pauses and a nice screen appears immediately instead of a sudden pop-in.
   const [popQuizLoading, setPopQuizLoading] = useState(null); // { by } | null
+  // Who has finished the pop quiz — the video stays paused until everyone has,
+  // so nobody misses content while others are still answering.
+  const [popQuizDone, setPopQuizDone] = useState(() => new Set()); // identities
+  const markPopQuizDone = (identity) => {
+    if (!identity) return;
+    setPopQuizDone((s) => (s.has(identity) ? s : new Set(s).add(identity)));
+  };
 
   const startPopQuizLoading = (byName) => {
     setPopQuizLoading({ by: byName });
@@ -411,6 +418,7 @@ export default function WatchPartyLayout({
     setQuizAnswers({});
     setQuizSubmitted(false);
     setQuizScore(null);
+    setPopQuizDone(new Set());
     ytControlsRef.current?.pause?.(); // ensure the room is paused for the quiz
   };
 
@@ -451,6 +459,7 @@ export default function WatchPartyLayout({
     qs.forEach((q, i) => { if (quizAnswers[i] === q.answer) score++; });
     setQuizScore({ score, total: qs.length });
     setQuizSubmitted(true);
+    markPopQuizDone(localParticipant?.identity);
     const name = currentUser?.name || localParticipant?.name || "Someone";
     publish({ type: "POP_QUIZ_RESULT", name, score, total: qs.length });
   };
@@ -461,6 +470,7 @@ export default function WatchPartyLayout({
     setQuizAnswers({});
     setQuizSubmitted(false);
     setQuizScore(null);
+    setPopQuizDone(new Set());
   };
 
   // Receive pop-quiz events from the room (start → open for everyone; result → toast).
@@ -481,6 +491,7 @@ export default function WatchPartyLayout({
         openPopQuiz(msg.quiz, msg.by);
       }
       if (msg?.type === "POP_QUIZ_RESULT") {
+        markPopQuizDone(participant?.identity);
         const pct = msg.total ? msg.score / msg.total : 0;
         const badge = pct >= 0.8 ? "🏆" : pct >= 0.5 ? "👍" : "📖";
         pushToast(`${badge} ${msg.name || "Someone"} scored ${msg.score}/${msg.total}`);
@@ -690,16 +701,20 @@ export default function WatchPartyLayout({
       preparing: showWaiting,
     };
   });
-  const ffLastFireRef = useRef(0);
+  // Start the clock at mount so the FIRST surprise round also waits the full gap
+  // (no round right after joining).
+  const ffLastFireRef = useRef(Date.now());
   const launchFfRef = useRef(launchFastestFinger);
   useEffect(() => { launchFfRef.current = launchFastestFinger; });
   useEffect(() => {
     if (!cohortId) return undefined;
+    const FF_MIN_GAP_MS = 15 * 60 * 1000; // never sooner than 15 min apart
     const iv = setInterval(() => {
       const c = ffCondRef.current;
       if (!c.enabled || !c.amHost || c.busy || c.preparing) return;
-      if (Date.now() - ffLastFireRef.current < 12 * 60 * 1000) return; // min 12-min gap
-      if (Math.random() < 0.2) { // ~random within the allowed window
+      if (Date.now() - ffLastFireRef.current < FF_MIN_GAP_MS) return;
+      // After the 15-min floor, ~25%/min fires it → lands around 15–20 min.
+      if (Math.random() < 0.25) {
         ffLastFireRef.current = Date.now();
         launchFfRef.current?.();
       }
@@ -808,7 +823,7 @@ export default function WatchPartyLayout({
               roomId={roomId}
               videoId={youtubeVideoId}
               playlistId={youtubePlaylistId}
-              locked={playbackLocked}
+              locked={playbackLocked || Boolean(popQuiz) || Boolean(popQuizLoading) || Boolean(ffRound)}
               restrictVideoIds={restrictVideoIds}
               segment={segment}
               segmentPart={segmentPart}
@@ -1006,9 +1021,21 @@ export default function WatchPartyLayout({
                     >
                       Submit ({Object.keys(quizAnswers).length}/{popQuiz.questions.length})
                     </button>
+                  ) : popQuizDone.size < participantCount ? (
+                    // Everyone finishes before the video resumes.
+                    <div style={{ marginTop: 12, textAlign: "center" }}>
+                      <p style={{ margin: "0 0 8px", fontSize: 12.5, color: "#a5b4fc" }}>
+                        ⏳ Waiting for others… {popQuizDone.size}/{participantCount} done
+                      </p>
+                      {hostState.amHost && (
+                        <button type="button" onClick={closePopQuiz} style={{ ...styles.quizSubmitBtn(false), background: "rgba(148,163,184,0.25)" }}>
+                          Resume anyway (host)
+                        </button>
+                      )}
+                    </div>
                   ) : (
                     <button type="button" onClick={closePopQuiz} style={styles.quizSubmitBtn(false)}>
-                      Done
+                      Everyone's done ✓ · Done
                     </button>
                   )}
                 </div>

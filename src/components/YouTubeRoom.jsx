@@ -64,6 +64,7 @@ export default function YouTubeRoom({
   const isSyncingRef = useRef(false);   // suppress re-broadcast while applying remote sync
   const lastPosRef = useRef({ t: 0, at: Date.now() }); // baseline for seek detection
   const lastAnnounceAtRef = useRef(0); // collapse a burst of alerts into one
+  const lastAppliedSyncAtRef = useRef(0); // when we last APPLIED a remote sync (echo guard)
   const heartbeatRef = useRef(null);
   const savedStateRef = useRef(null);   // persisted playback memory for this room
   const receivedSyncRef = useRef(false); // a live participant has synced us this session
@@ -166,6 +167,9 @@ export default function YouTubeRoom({
       action,
       videoId: nowPlaying || videoId || null,
       currentTime: player.getCurrentTime?.() ?? 0,
+      // Carry the playback rate on EVERY sync so speed stays consistent across
+      // play/pause/seek, the drift heartbeat, and new joiners.
+      rate: player.getPlaybackRate?.() ?? 1,
       ts: Date.now(),
       actor: localParticipant?.name || "Someone",
       ...extra,
@@ -286,10 +290,15 @@ export default function YouTubeRoom({
     const targetTime = msg.currentTime + networkDelay;
 
     isSyncingRef.current = true;
+    lastAppliedSyncAtRef.current = Date.now(); // suppress echoes for a moment
+
+    // Keep the playback rate in lockstep on every sync (not just RATE events).
+    if (typeof msg.rate === "number" && player.getPlaybackRate?.() !== msg.rate) {
+      player.setPlaybackRate?.(msg.rate);
+    }
 
     // Playback-rate change — no seek/play involved, just match the speed.
     if (msg.action === "RATE") {
-      if (typeof msg.rate === "number") player.setPlaybackRate?.(msg.rate);
       setTimeout(() => { isSyncingRef.current = false; }, 300);
       return;
     }
@@ -319,6 +328,7 @@ export default function YouTubeRoom({
       // longer so the resulting state changes don't echo back as new commands.
       setTimeout(() => {
         isSyncingRef.current = false;
+        lastAppliedSyncAtRef.current = Date.now();
         lastPosRef.current = { t: playerRef.current?.getCurrentTime?.() ?? 0, at: Date.now() };
       }, 1000);
       return;
@@ -349,6 +359,7 @@ export default function YouTubeRoom({
     // mistaken for a new local seek (which would echo + double-toast).
     setTimeout(() => {
       isSyncingRef.current = false;
+      lastAppliedSyncAtRef.current = Date.now();
       lastPosRef.current = { t: playerRef.current?.getCurrentTime?.() ?? 0, at: Date.now() };
     }, 300);
   }, [captureVideoMeta]);
@@ -439,7 +450,9 @@ export default function YouTubeRoom({
     const id = setInterval(() => {
       const player = playerRef.current;
       if (!player) return;
-      if (isSyncingRef.current || lockedRef.current) {
+      // Skip while applying a remote sync (or just after) and while locked, so an
+      // applied jump isn't mistaken for a local seek and rebroadcast under our name.
+      if (isSyncingRef.current || lockedRef.current || Date.now() - lastAppliedSyncAtRef.current < 1500) {
         lastPosRef.current = { t: player.getCurrentTime?.() ?? 0, at: Date.now() };
         return;
       }
@@ -461,6 +474,7 @@ export default function YouTubeRoom({
   // Speed change — react-youtube fires this with the new rate; share it + alert.
   const onPlaybackRateChange = useCallback((e) => {
     if (isSyncingRef.current || lockedRef.current) return;
+    if (Date.now() - lastAppliedSyncAtRef.current < 1500) return; // echo of an applied rate
     broadcastState("RATE", { announce: true, rate: e.data });
   }, [broadcastState]);
 
@@ -638,6 +652,11 @@ export default function YouTubeRoom({
     }
 
     if (isSyncingRef.current) return; // skip — this change was caused by applySync
+    // Echo guard: the YouTube player often takes longer than the sync lock to
+    // actually transition (buffering), so a state change shortly after APPLYING a
+    // remote sync is that echo, not a genuine local action. Don't rebroadcast it
+    // (this is what caused actions to show the wrong person's name).
+    if (Date.now() - lastAppliedSyncAtRef.current < 1500) return;
     // Shared control: ANY member's play/pause moves the whole room and is
     // announced to everyone ("<name> paused the video"). `announce` marks it a
     // genuine user action so the periodic drift heartbeat doesn't raise alerts.
