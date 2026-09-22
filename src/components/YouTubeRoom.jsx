@@ -369,18 +369,22 @@ export default function YouTubeRoom({
   const handleSyncRequest = useCallback((requesterIdentity) => {
     const player = playerRef.current;
     if (!player) return;
-    // The host answers new joiners (it's the single source of truth for the
-    // room's position). If the host is the one joining, fall back to the elected
-    // first identity excluding the requester so someone still replies.
-    if (amHostRef.current) {
-      // host replies below
-    } else {
-      const responders = participants.filter((p) => p.identity !== requesterIdentity);
-      const sorted = responders.sort((a, b) => a.identity.localeCompare(b.identity));
+    if (requesterIdentity && requesterIdentity === localParticipant?.identity) return; // don't answer myself
+
+    // The host answers joiners (it's the single source of truth for the room's
+    // position). But if the HOST is the one rejoining, the host can't answer its
+    // own request — so the elected lowest-identity peer (excluding the requester)
+    // steps in. This was the bug: everyone deferred to "the host will answer"
+    // even when the host was the requester, so nobody replied → the rejoiner fell
+    // back to video 1.
+    if (!amHostRef.current) {
       const hid = hostIdentity();
-      // Only step in if there's effectively no host present to answer.
-      if (hid && participants.some((p) => p.identity === hid)) return;
-      if (sorted[0]?.identity !== localParticipant?.identity) return;
+      const hostCanAnswer = hid && hid !== requesterIdentity && participants.some((p) => p.identity === hid);
+      if (hostCanAnswer) return; // the present host will reply
+      const responders = participants
+        .filter((p) => p.identity !== requesterIdentity)
+        .sort((a, b) => a.identity.localeCompare(b.identity));
+      if (responders[0]?.identity !== localParticipant?.identity) return; // only the elected one replies
     }
 
     const state = player.getPlayerState?.();
@@ -481,12 +485,20 @@ export default function YouTubeRoom({
   // ── Request sync on mount (new joiner) ────────────────────────────────────
 
   useEffect(() => {
-    if (!room || room.state !== "connected") return;
-    // Small delay so player has time to initialise before we receive a response
-    const id = setTimeout(() => {
+    if (!room || room.state !== "connected") return undefined;
+    // Ask for the room's current position, and RETRY until a peer answers — a
+    // single request can be lost if our player isn't ready yet or the responder's
+    // packet races us. Stops once a live sync arrives (or we've resumed locally).
+    let tries = 0;
+    let timer;
+    const attempt = () => {
+      if (receivedSyncRef.current || didResumeRef.current) return;
       broadcast({ type: REQUEST_TYPE });
-    }, 1500);
-    return () => clearTimeout(id);
+      tries += 1;
+      if (tries < 5) timer = setTimeout(attempt, 1500);
+    };
+    timer = setTimeout(attempt, 1200);
+    return () => clearTimeout(timer);
   }, [room, broadcast]);
 
   // ── Load this room's saved playback memory on mount ───────────────────────
@@ -547,9 +559,9 @@ export default function YouTubeRoom({
 
   useEffect(() => {
     if (!room) return undefined;
-    // Wait past the 1500ms sync request + a response window. If a live peer
-    // synced us we skip; otherwise resume the room's last saved position.
-    const id = setTimeout(resumeFromSaved, 2800);
+    // Wait past a couple of sync-request retries + a response window. If a live
+    // peer synced us we skip; otherwise resume the room's last saved position.
+    const id = setTimeout(resumeFromSaved, 3500);
     return () => clearTimeout(id);
   }, [room, resumeFromSaved]);
 
