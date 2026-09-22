@@ -390,6 +390,11 @@ export default function WatchPartyLayout({
     navigate("/dashboard");
   };
 
+  // When the last surprise fastest-finger round fired (also bumped whenever ANY
+  // quiz happens, so a pop quiz pushes the next surprise round out by the full gap
+  // — no two quizzes back-to-back). Inits to mount so the first one waits too.
+  const ffLastFireRef = useRef(Date.now());
+
   // ── Live pop quiz (interactive break for the whole room) ──────────────────
   const [popQuiz, setPopQuiz] = useState(null); // { questions, topic, by }
   const [quizAnswers, setQuizAnswers] = useState({});
@@ -419,6 +424,7 @@ export default function WatchPartyLayout({
     setQuizSubmitted(false);
     setQuizScore(null);
     setPopQuizDone(new Set());
+    ffLastFireRef.current = Date.now(); // a quiz just happened → restart the FF cooldown
     ytControlsRef.current?.pause?.(); // ensure the room is paused for the quiz
   };
 
@@ -583,6 +589,7 @@ export default function WatchPartyLayout({
     setFfAnswers({});
     setFfResult(null);
     ffPostedRef.current = false;
+    ffLastFireRef.current = Date.now(); // restart the cooldown (covers manual FF too)
     ytControlsRef.current?.pause?.(); // pause the room so nobody misses content
     playFfSound();
   };
@@ -701,9 +708,7 @@ export default function WatchPartyLayout({
       preparing: showWaiting,
     };
   });
-  // Start the clock at mount so the FIRST surprise round also waits the full gap
-  // (no round right after joining).
-  const ffLastFireRef = useRef(Date.now());
+  // ffLastFireRef is declared above (bumped on mount + whenever any quiz opens).
   const launchFfRef = useRef(launchFastestFinger);
   useEffect(() => { launchFfRef.current = launchFastestFinger; });
   useEffect(() => {
