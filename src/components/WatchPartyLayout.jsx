@@ -1,4 +1,4 @@
-import { Mic, MicOff, Video, VideoOff, LogOut, Copy, X, Play, Flame, Target, Sparkles, Eye, Check, Download, Upload, Smile, Brain } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, LogOut, Copy, X, Play, Flame, Target, Sparkles, Eye, Check, Download, Upload, Smile, Brain, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useParticipants, useTracks, VideoTrack, useRoomContext, useLocalParticipant } from "@livekit/components-react";
@@ -1182,6 +1182,7 @@ export default function WatchPartyLayout({
           <div style={styles.bottomBar}>
             <Control icon={micEnabled ? Mic : MicOff} active={micEnabled} onClick={toggleMic} title="Toggle mic" />
             <Control icon={camEnabled ? Video : VideoOff} active={camEnabled} onClick={toggleCamera} title="Toggle camera" />
+            <Control icon={Users} active={tab === "people"} onClick={() => setTab("people")} title={`People (${participantCount})`} />
             <Control icon={Smile} active={showReactions} onClick={() => setShowReactions((v) => !v)} title="React" />
             {cohortId && (
               <Control
@@ -1225,13 +1226,6 @@ export default function WatchPartyLayout({
                 Notes
               </button>
             )}
-            <button
-              type="button"
-              style={styles.tabBtn(tab === "people")}
-              onClick={() => setTab("people")}
-            >
-              People <span style={styles.tabCount}>{participantCount}</span>
-            </button>
             <button
               type="button"
               style={styles.tabBtn(tab === "whiteboard")}
