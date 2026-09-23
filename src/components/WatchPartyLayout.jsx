@@ -1,4 +1,4 @@
-import { Mic, MicOff, Video, VideoOff, LogOut, Copy, X, Play, Flame, Target, Sparkles, Eye, Check, Download, Upload, Smile, Brain, Users } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, LogOut, Copy, X, Play, Flame, Target, Sparkles, Eye, Check, Download, Upload, Smile, Brain, Users, MonitorUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useParticipants, useTracks, VideoTrack, useRoomContext, useLocalParticipant } from "@livekit/components-react";
@@ -40,7 +40,7 @@ export default function WatchPartyLayout({
   cohortSessionId = null,
   cohortTopic = null,
 }) {
-  const { toggleMic, micEnabled, toggleCamera, camEnabled } = useMediaControls();
+  const { toggleMic, micEnabled, toggleCamera, camEnabled, toggleScreenShare, screenEnabled, screenShareError } = useMediaControls();
   const navigate = useNavigate();
   const participants = useParticipants();
   const participantCount = participants.length;
@@ -121,6 +121,19 @@ export default function WatchPartyLayout({
   const cameraTracks = useTracks([{ source: "camera", withPlaceholder: false }], {
     onlySubscribed: true,
   });
+  // Someone sharing their screen takes over the stage as a "presentation".
+  const screenTracks = useTracks([{ source: "screen_share", withPlaceholder: false }], {
+    onlySubscribed: true,
+  });
+  const activeScreen = screenTracks.find(
+    (t) => t.participant?.isScreenShareEnabled && t.publication?.track,
+  );
+  const screenSharing = Boolean(activeScreen);
+  const screenSharerName = activeScreen
+    ? (activeScreen.participant?.identity === localParticipant?.identity
+        ? "You"
+        : activeScreen.participant?.name || activeScreen.participant?.identity || "Someone")
+    : null;
 
   const [tab, setTab] = useState("chat");
   const tabRef = useRef(tab);
@@ -150,6 +163,12 @@ export default function WatchPartyLayout({
     else if (action === "SEEK") pushToast(`⏩  ${name} jumped to ${at}`);
     else if (action === "RATE") pushToast(`⚡  ${name} set speed to ${rate}×`);
   };
+
+  // Surface screen-share errors (e.g. capture failed) as a toast.
+  useEffect(() => {
+    if (screenShareError) pushToast(`🖥️ ${screenShareError}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screenShareError]);
 
   // Everyone already in the room is told when someone joins or leaves.
   useEffect(() => {
@@ -876,7 +895,7 @@ export default function WatchPartyLayout({
               roomId={roomId}
               videoId={youtubeVideoId}
               playlistId={youtubePlaylistId}
-              locked={playbackLocked || Boolean(popQuiz) || Boolean(popQuizLoading) || Boolean(ffRound)}
+              locked={playbackLocked || Boolean(popQuiz) || Boolean(popQuizLoading) || Boolean(ffRound) || screenSharing}
               restrictVideoIds={restrictVideoIds}
               segment={segment}
               segmentPart={segmentPart}
@@ -903,6 +922,24 @@ export default function WatchPartyLayout({
                 );
               })}
             </div>
+
+            {/* Screen share takes over the stage (video is paused meanwhile) */}
+            {screenSharing && (
+              <div style={styles.screenShareLayer}>
+                <VideoTrack trackRef={activeScreen} style={styles.screenShareVideo} />
+                <div style={styles.screenShareBanner}>
+                  <MonitorUp size={14} />
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {screenSharerName} {screenSharerName === "You" ? "are" : "is"} sharing a screen
+                  </span>
+                  {screenEnabled && (
+                    <button type="button" onClick={toggleScreenShare} style={styles.screenShareStopBtn}>
+                      Stop sharing
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Floating live reactions */}
             <div style={styles.floatsLayer} aria-hidden="true">
@@ -1182,6 +1219,15 @@ export default function WatchPartyLayout({
           <div style={styles.bottomBar}>
             <Control icon={micEnabled ? Mic : MicOff} active={micEnabled} onClick={toggleMic} title="Toggle mic" />
             <Control icon={camEnabled ? Video : VideoOff} active={camEnabled} onClick={toggleCamera} title="Toggle camera" />
+            <Control
+              icon={MonitorUp}
+              active={screenEnabled}
+              onClick={() => {
+                if (!screenEnabled && screenSharing) { pushToast("Someone is already sharing their screen."); return; }
+                toggleScreenShare();
+              }}
+              title={screenEnabled ? "Stop sharing screen" : "Share your screen"}
+            />
             <Control icon={Users} active={tab === "people"} onClick={() => setTab("people")} title={`People (${participantCount})`} />
             <Control icon={Smile} active={showReactions} onClick={() => setShowReactions((v) => !v)} title="React" />
             {cohortId && (
@@ -1666,6 +1712,21 @@ const styles = {
     borderRadius: "50%", border: "2px solid #05070b",
     background: micOn ? "#22c55e" : "#94a3b8",
   }),
+  screenShareLayer: {
+    position: "absolute", inset: 0, zIndex: 33, background: "#000",
+    display: "flex", alignItems: "center", justifyContent: "center",
+  },
+  screenShareVideo: { width: "100%", height: "100%", objectFit: "contain", background: "#000" },
+  screenShareBanner: {
+    position: "absolute", top: 12, left: "50%", transform: "translateX(-50%)",
+    display: "flex", alignItems: "center", gap: 8, maxWidth: "92%",
+    padding: "7px 14px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, color: "#fff",
+    background: "rgba(15,18,32,0.9)", border: "1px solid rgba(124,58,237,0.5)", backdropFilter: "blur(8px)",
+  },
+  screenShareStopBtn: {
+    flexShrink: 0, marginLeft: 4, padding: "3px 10px", borderRadius: 999, border: "none",
+    background: "#ef4444", color: "#fff", fontSize: 11.5, fontWeight: 700, cursor: "pointer",
+  },
   floatsLayer: {
     position: "absolute", inset: 0, zIndex: 27, pointerEvents: "none", overflow: "hidden",
   },
