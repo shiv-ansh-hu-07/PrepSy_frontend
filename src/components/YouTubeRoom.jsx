@@ -436,13 +436,28 @@ export default function YouTubeRoom({
   // ── Auto-start once the prep-timer lock naturally releases ────────────────
 
   const wasLockedRef = useRef(locked);
+  const pendingAutoplayRef = useRef(false);
   useEffect(() => {
-    if (wasLockedRef.current && !locked) {
-      // Programmatic start when the prep timer ends — every client does this on
-      // its own timer, so suppress the broadcast/alert (mark it as a sync op).
+    // Lock turned ON (prep / quiz / screen share): pause a video that's ALREADY
+    // playing so it holds its position — the lock alone only catches a fresh PLAY,
+    // so without this a running video kept playing behind an overlay and lost its
+    // spot (screen share) or never paused. Silent (no broadcast) — every client
+    // observes the same lock, so no need to announce it.
+    if (locked && playerRef.current?.getPlayerState?.() === 1) {
       isSyncingRef.current = true;
-      playerRef.current?.playVideo?.();
-      setTimeout(() => { isSyncingRef.current = false; }, 500);
+      playerRef.current.pauseVideo?.();
+      setTimeout(() => { isSyncingRef.current = false; }, 300);
+    }
+    // Lock turned OFF: resume from where we paused. If the player isn't ready yet
+    // (prep ended before onReady), remember it and play the moment it's ready.
+    if (wasLockedRef.current && !locked) {
+      if (playerRef.current) {
+        isSyncingRef.current = true;
+        playerRef.current.playVideo?.();
+        setTimeout(() => { isSyncingRef.current = false; }, 500);
+      } else {
+        pendingAutoplayRef.current = true;
+      }
     }
     wasLockedRef.current = locked;
   }, [locked]);
@@ -628,6 +643,13 @@ export default function YouTubeRoom({
     // despite autoplay:0. Never let that slip past the prep-timer lock.
     if (lockedRef.current) {
       e.target.pauseVideo?.();
+    } else if (pendingAutoplayRef.current) {
+      // The lock released before the player was ready (scheduled session started
+      // before this iframe finished loading) — start playback now.
+      pendingAutoplayRef.current = false;
+      isSyncingRef.current = true;
+      e.target.playVideo?.();
+      setTimeout(() => { isSyncingRef.current = false; }, 500);
     }
     captureVideoMeta(e.target);
   }, [videoId, playlistId, captureVideoMeta, applyRestriction]);
