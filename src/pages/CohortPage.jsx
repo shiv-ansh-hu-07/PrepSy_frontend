@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import { track } from "../services/analytics";
 import AppSideNav from "../components/AppSideNav";
+import { useCohortLive, CohortScoreboard } from "../components/CohortLiveBoard";
 import { Users, BookOpen, MessageSquare, Brain, Calendar, ChevronDown, ChevronUp, Link2, TrendingUp, Layers, Lock, CheckCircle2, PlayCircle, Paperclip, X, FileText } from "lucide-react";
 
 const PAGE_BG = "var(--page-bg)";
@@ -155,6 +156,10 @@ export default function CohortPage() {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editTime, setEditTime] = useState("");
+  const [editVisibility, setEditVisibility] = useState("PUBLIC");
+  const [editSyncMode, setEditSyncMode] = useState("SYNC");
+  // Private cohorts are reached via an invite link: /cohort/:id?invite=<code>.
+  const [invite] = useState(() => new URLSearchParams(window.location.search).get("invite") || "");
   const [savingEdit, setSavingEdit] = useState(false);
   const [planHours, setPlanHours] = useState(2);
   const [planDays, setPlanDays] = useState(30);
@@ -163,8 +168,12 @@ export default function CohortPage() {
   const [generatingPlan, setGeneratingPlan] = useState(false);
 
   const handleCopyInvite = async () => {
+    const link =
+      cohort?.visibility === "PRIVATE" && cohort?.inviteCode
+        ? `${window.location.origin}/cohort/${id}?invite=${encodeURIComponent(cohort.inviteCode)}`
+        : `${window.location.origin}/cohort/${id}`;
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(link);
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
@@ -278,14 +287,18 @@ export default function CohortPage() {
 
   const fetchCohort = useCallback(async () => {
     try {
-      const { data } = await api.get(`/cohorts/${id}`);
+      const { data } = await api.get(`/cohorts/${id}`, { params: invite ? { invite } : {} });
       setCohort(data);
-    } catch {
-      setError("Cohort not found or access denied.");
+    } catch (err) {
+      const msg = err?.response?.data?.message;
+      setError(typeof msg === "string" ? msg : "Cohort not found or access denied.");
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, invite]);
+
+  // Live scoreboard (members only) — polls while the page is open.
+  const liveBoard = useCohortLive(cohort?.isMember ? id : null);
 
   useEffect(() => {
     fetchCohort();
@@ -338,7 +351,7 @@ export default function CohortPage() {
   const handleJoin = async () => {
     setJoining(true);
     try {
-      await api.post(`/cohorts/${id}/join`);
+      await api.post(`/cohorts/${id}/join`, invite ? { invite } : {});
       track("cohort_joined", { cohortId: id });
       await fetchCohort();
       if (cohort?.roomId) navigate(`/room/${cohort.roomId}`);
@@ -376,6 +389,8 @@ export default function CohortPage() {
   const openEdit = () => {
     setEditName(cohort?.name || "");
     setEditTime(cohort?.dailyTime || "");
+    setEditVisibility(cohort?.visibility === "PRIVATE" ? "PRIVATE" : "PUBLIC");
+    setEditSyncMode(cohort?.syncMode === "SOLO" ? "SOLO" : "SYNC");
     setEditing(true);
   };
 
@@ -383,7 +398,12 @@ export default function CohortPage() {
     if (!editName.trim()) return;
     setSavingEdit(true);
     try {
-      await api.patch(`/cohorts/${id}`, { name: editName.trim(), dailyTime: editTime });
+      await api.patch(`/cohorts/${id}`, {
+        name: editName.trim(),
+        dailyTime: editTime,
+        visibility: editVisibility,
+        syncMode: editSyncMode,
+      });
       await fetchCohort();
       setEditing(false);
     } catch (err) {
@@ -687,6 +707,14 @@ export default function CohortPage() {
                 <p style={{ margin: "5px 0 0", fontSize: 13, color: "var(--text-secondary)" }}>
                   {cohort.playlist?.title} · {cohort._count?.members} member{cohort._count?.members !== 1 ? "s" : ""}
                 </p>
+                <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                  <span style={modeBadge} title={cohort.visibility === "PRIVATE" ? "Only people with the invite link can join" : "Anyone can find and join this cohort"}>
+                    {cohort.visibility === "PRIVATE" ? "🔒 Private" : "🌍 Public"}
+                  </span>
+                  <span style={modeBadge} title={cohort.syncMode === "SOLO" ? "Everyone watches at their own pace" : "One shared, synced player"}>
+                    {cohort.syncMode === "SOLO" ? "🏁 Self-paced race" : "🔗 In sync"}
+                  </span>
+                </div>
                 {plan && (
                   <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
                     <span style={{ padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700, background: diffStyle.bg, color: diffStyle.color }}>
@@ -765,6 +793,31 @@ export default function CohortPage() {
                   title="Daily session time"
                   style={{ height: 42, borderRadius: 10, border: "1.5px solid rgba(138,155,214,0.4)", background: "var(--card-bg)", padding: "0 12px", fontSize: 14, color: "var(--text-primary)", outline: "none" }}
                 />
+              </div>
+              <EditChoice
+                label="Who can join"
+                value={editVisibility}
+                onChange={setEditVisibility}
+                options={[
+                  { value: "PUBLIC", title: "🌍 Public", hint: "Shown in recommendations — anyone can join." },
+                  { value: "PRIVATE", title: "🔒 Private", hint: "Unlisted — joining needs your invite link." },
+                ]}
+              />
+              <EditChoice
+                label="How you watch"
+                value={editSyncMode}
+                onChange={setEditSyncMode}
+                options={[
+                  { value: "SYNC", title: "🔗 In sync", hint: "One shared player for the whole room." },
+                  { value: "SOLO", title: "🏁 Self-paced race", hint: "Everyone on their own video, with a live tracker." },
+                ]}
+              />
+              {editSyncMode !== (cohort.syncMode === "SOLO" ? "SOLO" : "SYNC") && (
+                <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--text-secondary)" }}>
+                  Members already in the room will switch modes when they rejoin.
+                </p>
+              )}
+              <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
                 <button onClick={handleSaveEdit} disabled={savingEdit || !editName.trim()} style={{ ...btnPrimary(savingEdit || !editName.trim()), height: 42 }}>
                   {savingEdit ? "Saving…" : "Save"}
                 </button>
@@ -772,6 +825,17 @@ export default function CohortPage() {
                   Cancel
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* Live scoreboard — study time + who's watching what, right now. */}
+          {cohort.isMember && (
+            <div style={{ marginBottom: 16 }}>
+              <CohortScoreboard
+                board={liveBoard}
+                isMobile={isMobile}
+                onEnterRoom={cohort.roomId ? () => navigate(`/room/${cohort.roomId}`) : null}
+              />
             </div>
           )}
 
@@ -1769,6 +1833,46 @@ export default function CohortPage() {
             </div>
           )}
         </main>
+      </div>
+    </div>
+  );
+}
+
+const modeBadge = {
+  padding: "3px 10px",
+  borderRadius: 999,
+  fontSize: 12,
+  fontWeight: 700,
+  background: "var(--accent-soft)",
+  color: "var(--text-secondary)",
+  border: "1px solid var(--card-border)",
+};
+
+// Two-option picker used in the Edit panel (privacy / watch mode).
+function EditChoice({ label, value, onChange, options }) {
+  return (
+    <div style={{ marginTop: 14 }}>
+      <span style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", marginBottom: 6 }}>{label}</span>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 8 }}>
+        {options.map((o) => {
+          const on = value === o.value;
+          return (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => onChange(o.value)}
+              aria-pressed={on}
+              style={{
+                textAlign: "left", padding: "9px 12px", borderRadius: 12, cursor: "pointer",
+                border: `1.5px solid ${on ? "var(--accent)" : "var(--card-border)"}`,
+                background: on ? "var(--accent-soft)" : "var(--card-bg)",
+              }}
+            >
+              <span style={{ display: "block", fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{o.title}</span>
+              <span style={{ display: "block", marginTop: 2, fontSize: 12, color: "var(--text-secondary)" }}>{o.hint}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import useMediaControls from "../hooks/useMediaControl";
 import YouTubeRoom from "./YouTubeRoom";
 import ChatDrawer from "./ChatDrawer";
 import Whiteboard from "./Whiteboard";
+import { useCohortLive, membersByVideo, LiveRaceList, Avatar, fmtClock } from "./CohortLiveBoard";
 import api, { fetchMyAnalytics, fetchFocusSummary, fetchVideoSummary } from "../services/api";
 
 const PREP_MS = 60_000;
@@ -39,6 +40,8 @@ export default function WatchPartyLayout({
   cohortId = null,
   cohortSessionId = null,
   cohortTopic = null,
+  syncMode = "SYNC",
+  myPosition = null,
 }) {
   const { toggleMic, micEnabled, toggleCamera, camEnabled, toggleScreenShare, screenEnabled, screenShareError } = useMediaControls();
   const navigate = useNavigate();
@@ -237,6 +240,11 @@ export default function WatchPartyLayout({
     (Array.isArray(playlistVideos) ? playlistVideos : []).find((v) => v.ytVideoId === currentVideoId)?.title || null;
   const [hostState, setHostState] = useState({ amHost: true, hostName: null, pendingRequest: null });
   const hasPlaylist = Array.isArray(playlistVideos) && playlistVideos.length > 0;
+  // Self-paced cohort: no shared player, so shared quiz/host features are off.
+  const solo = syncMode === "SOLO";
+  // Signed-in cohort members send presence + see the live tracker.
+  const isCohortMember = Boolean(cohortId && currentUser?.id);
+  const liveBoard = useCohortLive(isCohortMember ? cohortId : null, { intervalMs: 8000 });
   // Notes are available for any cohort room. A scheduled day uses its session id;
   // a cohort without a day schedule uses a shared "general" pad.
   const hasNotes = Boolean(cohortId);
@@ -805,7 +813,7 @@ export default function WatchPartyLayout({
   const ffCondRef = useRef({});
   useEffect(() => {
     ffCondRef.current = {
-      enabled: surpriseOn && Boolean(cohortId) && !focusMode, // Focus mode suppresses surprise rounds
+      enabled: surpriseOn && Boolean(cohortId) && !focusMode && !solo, // Focus mode (and self-paced cohorts) suppress surprise rounds
       amHost: hostState.amHost,
       busy: Boolean(ffRound || popQuiz),
       preparing: showWaiting,
@@ -886,7 +894,12 @@ export default function WatchPartyLayout({
                 <span style={styles.sessionDivider}>•</span>
                 {cohortId ? "YouTube cohort" : "Watch party"}
               </span>
-              {hasPlaylist && (
+              {hasPlaylist && solo && (
+                <span style={styles.hostBadge(true)} title="Everyone watches at their own pace — see who's where in the Playlist tab">
+                  🏁 Self-paced race
+                </span>
+              )}
+              {hasPlaylist && !solo && (
                 <span style={styles.hostBadge(hostState.amHost)} title={hostState.amHost ? "You control playback for the room" : "Playback is controlled by the host"}>
                   {hostState.amHost ? "🎛 You're hosting" : `👁 ${hostState.hostName || "Host"} is hosting`}
                 </span>
@@ -904,7 +917,7 @@ export default function WatchPartyLayout({
                 🔊 Tap to enable voice & sound
               </button>
             )}
-            {hasPlaylist && hostState.amHost && hostState.pendingRequest && (
+            {hasPlaylist && !solo && hostState.amHost && hostState.pendingRequest && (
               <div style={styles.controlRequestBanner}>
                 <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   <strong>{hostState.pendingRequest.name}</strong> wants to control playback
@@ -942,6 +955,9 @@ export default function WatchPartyLayout({
               onCurrentVideoId={setCurrentVideoId}
               onHostState={setHostState}
               onRemoteControl={pushControlToast}
+              syncMode={syncMode}
+              myPosition={myPosition}
+              trackPresence={isCohortMember}
             />
 
             {/* Always-on presence — see your crew is here, even cameras off. */}
@@ -1284,7 +1300,7 @@ export default function WatchPartyLayout({
               title={focusMode ? "Turn off Focus mode" : "Focus mode — pause the video & surprise quizzes"}
             />
             <Control icon={Smile} active={showReactions} onClick={() => setShowReactions((v) => !v)} title="React" />
-            {cohortId && (
+            {cohortId && !solo && (
               <Control
                 icon={Brain}
                 active={Boolean(popQuiz || popQuizLoading)}
@@ -1344,16 +1360,18 @@ export default function WatchPartyLayout({
                 watchedSet={watchedSet}
                 currentVideoId={currentVideoId}
                 amHost={hostState.amHost}
+                solo={solo}
+                liveBoard={liveBoard}
                 progress={courseProgress}
                 skipped={playlistSkipped}
                 onPick={(vid) => ytControlsRef.current?.jumpTo(vid)}
                 onRequestControl={() => ytControlsRef.current?.requestControl()}
-                onEndSession={handleEndSession}
+                onEndSession={solo ? null : handleEndSession}
                 endingSession={endingSession}
-                onLaunchFf={launchFastestFinger}
+                onLaunchFf={solo ? null : launchFastestFinger}
                 ffBusy={Boolean(ffRound)}
                 surpriseOn={surpriseOn}
-                onToggleSurprise={isCreator ? toggleSurpriseQuiz : null}
+                onToggleSurprise={isCreator && !solo ? toggleSurpriseQuiz : null}
               />
             ) : tab === "notes" && hasNotes ? (
               <div style={styles.notesPanel}>
@@ -1421,8 +1439,10 @@ function StatPill({ icon: Icon, label, value }) {
   );
 }
 
-function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, progress, skipped, onPick, onRequestControl, onEndSession, endingSession, onLaunchFf, ffBusy, surpriseOn, onToggleSurprise }) {
+function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, solo = false, liveBoard = null, progress, skipped, onPick, onRequestControl, onEndSession, endingSession, onLaunchFf, ffBusy, surpriseOn, onToggleSurprise }) {
   const [showSkipped, setShowSkipped] = useState(false);
+  // Who is on which video right now (live members only) — the live tracker.
+  const onVideo = membersByVideo(liveBoard);
   const pct = progress?.percent ?? 0;
   const eta = progress?.etaDays ?? 0;
   const hasSkipped = Array.isArray(skipped) && skipped.length > 0;
@@ -1436,7 +1456,7 @@ function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, progress, s
               {progress.completedCount}/{progress.totalCount} videos
             </span>
             <span style={{ color: "var(--text-muted)" }}>
-              {pct}% · {eta > 0 ? `≈${eta} day${eta === 1 ? "" : "s"} left` : "complete 🎉"}
+              {solo ? `${pct}% · your progress` : `${pct}% · ${eta > 0 ? `≈${eta} day${eta === 1 ? "" : "s"} left` : "complete 🎉"}`}
             </span>
           </div>
           <div style={styles.courseBarTrack}>
@@ -1445,7 +1465,14 @@ function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, progress, s
         </div>
       )}
 
-      {amHost ? (
+      {/* Live tracker — study time + who's on which video, ranked. */}
+      <LiveRaceList board={liveBoard} />
+
+      {solo ? (
+        <p style={{ ...styles.playlistHint, margin: 0 }}>
+          Self-paced — pick any video; only your player changes. Green avatars show where your crew is right now.
+        </p>
+      ) : amHost ? (
         <div style={styles.playlistHostRow}>
           <p style={{ ...styles.playlistHint, margin: 0 }}>
             You're hosting — pick any video and the whole room jumps to it together.
@@ -1485,7 +1512,7 @@ function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, progress, s
         </div>
       )}
 
-      {!amHost && (
+      {!amHost && !solo && (
         <div style={styles.playlistLockedNote}>
           <span>Only the host can change the video. Following along.</span>
           <button type="button" style={styles.requestControlBtn} onClick={onRequestControl}>
@@ -1525,6 +1552,7 @@ function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, progress, s
       {videos.map((v, i) => {
         const isCurrent = v.ytVideoId === currentVideoId;
         const watched = watchedSet.has(v.ytVideoId);
+        const here = onVideo[v.ytVideoId] || [];
         return (
           <button
             key={v.ytVideoId || i}
@@ -1537,7 +1565,19 @@ function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, progress, s
             <span style={styles.playlistIndex(isCurrent)}>
               {isCurrent ? <Play size={12} fill="currentColor" /> : i + 1}
             </span>
-            <span style={styles.playlistTitle(isCurrent)}>{v.title}</span>
+            <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={styles.playlistTitle(isCurrent)}>{v.title}</span>
+              {here.length > 0 && (
+                <span style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+                  {here.map((m) => (
+                    <span key={m.userId} title={`${m.name}${m.isMe ? " (you)" : ""} · ${m.playing ? "watching" : "paused"} at ${fmtClock(m.watching.positionSec)}`} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "1px 6px 1px 1px", borderRadius: 999, background: "rgba(34,197,94,0.12)", fontSize: 10.5, fontWeight: 700, color: "#16a34a" }}>
+                      <Avatar member={m} size={16} />
+                      {m.isMe ? "You" : m.name.split(" ")[0]} · {fmtClock(m.watching.positionSec)}
+                    </span>
+                  ))}
+                </span>
+              )}
+            </span>
             {watched && <Check size={14} color="#22c55e" style={{ flexShrink: 0 }} />}
           </button>
         );

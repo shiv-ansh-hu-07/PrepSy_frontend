@@ -307,6 +307,8 @@ export default function RoomPage() {
             cohortId={cohortPlayback?.cohortId || cohortPlaylist?.cohortId || null}
             cohortSessionId={cohortPlayback?.id || null}
             cohortTopic={cohortPlayback?.topic || null}
+            syncMode={cohortPlaylist?.syncMode || "SYNC"}
+            myPosition={cohortPlaylist?.myPosition || null}
           />
         ) : (
           <>

@@ -62,6 +62,8 @@ export default function LearnPage() {
   const [creatingCohort, setCreatingCohort] = useState(false);
   const [cohortError, setCohortError] = useState(null);
   const [startMode, setStartMode] = useState("NOW");
+  const [cohortVisibility, setCohortVisibility] = useState("PUBLIC"); // PUBLIC | PRIVATE
+  const [cohortSyncMode, setCohortSyncMode] = useState("SYNC"); // SYNC | SOLO
   const [cohortStart, setCohortStart] = useState("");
 
   // --- study schedule ---
@@ -150,6 +152,8 @@ export default function LearnPage() {
         name: cohortName.trim(),
         maxSize: cohortMaxSize,
         startMode,
+        visibility: cohortVisibility,
+        syncMode: cohortSyncMode,
         sessions,
         ...(reformFrom ? { reformFromCohortId: reformFrom } : {}),
       };
@@ -762,6 +766,24 @@ export default function LearnPage() {
                     />
                   )}
                 </div>
+                <CohortOptionRow
+                  label="Who can join"
+                  value={cohortVisibility}
+                  onChange={setCohortVisibility}
+                  options={[
+                    { value: "PUBLIC", title: "🌍 Public", hint: "Listed in cohort recommendations — anyone can join." },
+                    { value: "PRIVATE", title: "🔒 Private", hint: "Unlisted — only people with your invite link can join." },
+                  ]}
+                />
+                <CohortOptionRow
+                  label="How you watch"
+                  value={cohortSyncMode}
+                  onChange={setCohortSyncMode}
+                  options={[
+                    { value: "SYNC", title: "🔗 In sync", hint: "One shared player — everyone watches the same video together." },
+                    { value: "SOLO", title: "🏁 Self-paced race", hint: "Everyone watches any video at their own pace, with a live tracker of who's where." },
+                  ]}
+                />
                 <p style={{ margin: "8px 0 0", fontSize: 12, color: schedule?.days?.length ? "var(--text-secondary)" : "var(--text-muted)" }}>
                   {schedule?.days?.length
                     ? `${schedule.days.length} daily sessions will be created from your schedule; members join the same room each day.`
@@ -779,6 +801,36 @@ export default function LearnPage() {
             </>
           )}
         </main>
+      </div>
+    </div>
+  );
+}
+
+// A labelled pair of option cards (privacy / watch mode) for cohort creation.
+function CohortOptionRow({ label, value, onChange, options }) {
+  return (
+    <div style={{ marginTop: 14 }}>
+      <span style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#4f5fa8", marginBottom: 8 }}>{label}</span>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
+        {options.map((o) => {
+          const on = value === o.value;
+          return (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => onChange(o.value)}
+              aria-pressed={on}
+              style={{
+                textAlign: "left", padding: "10px 12px", borderRadius: 12, cursor: "pointer",
+                border: `1.5px solid ${on ? "var(--accent)" : "rgba(138,155,214,0.4)"}`,
+                background: on ? "rgba(138,155,214,0.16)" : "var(--card-bg)",
+              }}
+            >
+              <span style={{ display: "block", fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{o.title}</span>
+              <span style={{ display: "block", marginTop: 3, fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.4 }}>{o.hint}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

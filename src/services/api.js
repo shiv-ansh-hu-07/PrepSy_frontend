@@ -137,4 +137,17 @@ export async function markVideoWatched(roomId, videoId) {
   return data;
 }
 
+// Cohort-room heartbeat: what I'm watching now (feeds the live scoreboard and,
+// in self-paced cohorts, my personal resume point). No-ops for non-members.
+export async function postCohortPresence(roomId, state) {
+  const { data } = await api.post(`/cohorts/by-room/${roomId}/presence`, state);
+  return data;
+}
+
+// Live scoreboard: per member study time, current video, progress, live flag.
+export async function fetchCohortLive(cohortId) {
+  const { data } = await api.get(`/cohorts/${cohortId}/live`);
+  return data;
+}
+
 export default api;
