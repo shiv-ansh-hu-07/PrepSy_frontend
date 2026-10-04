@@ -142,7 +142,13 @@ export default function ChatDrawer({ onClose, currentUser, embedded = false }) {
 
       fetch(`${import.meta.env.VITE_API_BASE_URL}/messages`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          // Server stores signed-in senders as their own account (guests stay guests).
+          ...(localStorage.getItem("token")
+            ? { Authorization: `Bearer ${localStorage.getItem("token")}` }
+            : {}),
+        },
         body: JSON.stringify({
           roomId: livekitRoomId,
           text: input,

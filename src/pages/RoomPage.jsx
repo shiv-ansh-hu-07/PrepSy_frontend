@@ -31,7 +31,8 @@ export default function RoomPage() {
   const [chatOpen, setChatOpen] = useState(false);
   const [joinError, setJoinError] = useState(null);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
-  const [guestIdentity] = useState(() => crypto.randomUUID());
+  // `guest-` prefix matches the identity the backend assigns anonymous callers.
+  const [guestIdentity] = useState(() => `guest-${crypto.randomUUID()}`);
 
   const identity = user?.id ?? guestIdentity;
   const name = user?.name || user?.email?.split("@")[0] || "Guest";
@@ -46,7 +47,9 @@ export default function RoomPage() {
     let cancelled = false;
 
     api
-      .get(`/livekit/token?room=${roomId}&user=${identity}&name=${name}`)
+      .get(
+        `/livekit/token?room=${encodeURIComponent(roomId)}&user=${encodeURIComponent(identity)}&name=${encodeURIComponent(name)}`
+      )
       .then((res) => {
         if (!cancelled) {
           setToken(res.data.token);
