@@ -1,4 +1,4 @@
-import { Mic, MicOff, Video, VideoOff, LogOut, Copy, X, Play, Flame, Target, Sparkles, Eye, Check, Download, Upload, Smile, Brain, Users, MonitorUp } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, LogOut, Copy, X, Play, Flame, Target, Sparkles, Eye, Check, Download, Upload, Smile, Brain, Users, MonitorUp, Focus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useParticipants, useTracks, VideoTrack, useRoomContext, useLocalParticipant } from "@livekit/components-react";
@@ -145,6 +145,21 @@ export default function WatchPartyLayout({
   // Reactions are hidden until you tap the reaction button in the control bar.
   const [showReactions, setShowReactions] = useState(false);
 
+  // Shared "Focus mode": anyone can toggle it; while on, the whole room goes
+  // heads-down — the video freezes (locked) and surprise fastest-finger rounds
+  // are suppressed, so people can practice/solve without interruptions.
+  const [focusMode, setFocusMode] = useState(false);
+  const focusModeRef = useRef(false);
+  useEffect(() => { focusModeRef.current = focusMode; }, [focusMode]);
+  const toggleFocus = () => {
+    setFocusMode((on) => {
+      const next = !on;
+      publish({ type: "FOCUS_STATE", on: next });
+      pushToast(next ? "🎯 Focus mode on — distractions paused" : "▶ Focus mode off — back to the session");
+      return next;
+    });
+  };
+
   // Shared-control alerts: everyone can play/pause/seek/change speed, and the
   // room is told who did what ("Aman paused the video"). Also join/leave notices.
   const TOAST_MS = 5200; // stays a little longer so it's easy to read
@@ -170,10 +185,14 @@ export default function WatchPartyLayout({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screenShareError]);
 
-  // Everyone already in the room is told when someone joins or leaves.
+  // Everyone already in the room is told when someone joins or leaves. Also, if
+  // we're in Focus mode, re-announce it to a joiner so they sync into it.
   useEffect(() => {
     if (!room) return undefined;
-    const onJoin = (p) => pushToast(`👋  ${p?.name || p?.identity || "Someone"} joined the room`);
+    const onJoin = (p) => {
+      pushToast(`👋  ${p?.name || p?.identity || "Someone"} joined the room`);
+      if (focusModeRef.current) setTimeout(() => publish({ type: "FOCUS_STATE", on: true }), 1500);
+    };
     const onLeave = (p) => pushToast(`↩  ${p?.name || p?.identity || "Someone"} left the room`);
     room.on("participantConnected", onJoin);
     room.on("participantDisconnected", onLeave);
@@ -183,6 +202,23 @@ export default function WatchPartyLayout({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room]);
+
+  // Sync Focus mode across the room.
+  useEffect(() => {
+    if (!room) return undefined;
+    const handler = (payload, participant) => {
+      if (participant?.identity === localParticipant?.identity) return;
+      let msg;
+      try { msg = JSON.parse(new TextDecoder().decode(payload)); } catch { return; }
+      if (msg?.type === "FOCUS_STATE") {
+        setFocusMode(Boolean(msg.on));
+        pushToast(Boolean(msg.on) ? "🎯 Focus mode on — distractions paused" : "▶ Focus mode off");
+      }
+    };
+    room.on("dataReceived", handler);
+    return () => room.off("dataReceived", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room, localParticipant]);
 
   // Cameras live in the People tab, not over the video. When anyone turns their
   // camera ON (the count rises), open the People tab for everyone at once — every
@@ -769,7 +805,7 @@ export default function WatchPartyLayout({
   const ffCondRef = useRef({});
   useEffect(() => {
     ffCondRef.current = {
-      enabled: surpriseOn && Boolean(cohortId),
+      enabled: surpriseOn && Boolean(cohortId) && !focusMode, // Focus mode suppresses surprise rounds
       amHost: hostState.amHost,
       busy: Boolean(ffRound || popQuiz),
       preparing: showWaiting,
@@ -895,7 +931,7 @@ export default function WatchPartyLayout({
               roomId={roomId}
               videoId={youtubeVideoId}
               playlistId={youtubePlaylistId}
-              locked={playbackLocked || Boolean(popQuiz) || Boolean(popQuizLoading) || Boolean(ffRound) || screenSharing}
+              locked={playbackLocked || Boolean(popQuiz) || Boolean(popQuizLoading) || Boolean(ffRound) || screenSharing || focusMode}
               restrictVideoIds={restrictVideoIds}
               segment={segment}
               segmentPart={segmentPart}
@@ -922,6 +958,18 @@ export default function WatchPartyLayout({
                 );
               })}
             </div>
+
+            {/* Focus mode — distractions paused for the whole room */}
+            {focusMode && !screenSharing && (
+              <div style={styles.focusOverlay}>
+                <div style={styles.focusCard}>
+                  <Focus size={30} color="#a78bfa" />
+                  <p style={styles.focusTitle}>Focus mode</p>
+                  <p style={styles.focusSub}>Video paused · no surprise quizzes — heads down and practice.</p>
+                  <button type="button" style={styles.focusBtn} onClick={toggleFocus}>End focus</button>
+                </div>
+              </div>
+            )}
 
             {/* Screen share takes over the stage (video is paused meanwhile) */}
             {screenSharing && (
@@ -1229,6 +1277,12 @@ export default function WatchPartyLayout({
               title={screenEnabled ? "Stop sharing screen" : "Share your screen"}
             />
             <Control icon={Users} active={tab === "people"} onClick={() => setTab("people")} title={`People (${participantCount})`} />
+            <Control
+              icon={Focus}
+              active={focusMode}
+              onClick={toggleFocus}
+              title={focusMode ? "Turn off Focus mode" : "Focus mode — pause the video & surprise quizzes"}
+            />
             <Control icon={Smile} active={showReactions} onClick={() => setShowReactions((v) => !v)} title="React" />
             {cohortId && (
               <Control
@@ -1712,6 +1766,23 @@ const styles = {
     borderRadius: "50%", border: "2px solid #05070b",
     background: micOn ? "#22c55e" : "#94a3b8",
   }),
+  focusOverlay: {
+    position: "absolute", inset: 0, zIndex: 34,
+    display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+    background: "radial-gradient(circle at 50% 45%, rgba(30,27,75,0.92), rgba(8,10,20,0.95))",
+    backdropFilter: "blur(10px)",
+  },
+  focusCard: {
+    display: "flex", flexDirection: "column", alignItems: "center", gap: 8, textAlign: "center",
+    maxWidth: 340,
+  },
+  focusTitle: { margin: 0, fontSize: 20, fontWeight: 800, color: "#e0e7ff", letterSpacing: 0.5 },
+  focusSub: { margin: 0, fontSize: 13, color: "#a5b4fc", lineHeight: 1.5 },
+  focusBtn: {
+    marginTop: 8, height: 40, padding: "0 20px", borderRadius: 999, border: "none",
+    background: "linear-gradient(135deg,#7c3aed,#8b5cf6)", color: "#fff", fontWeight: 700,
+    fontSize: 13.5, cursor: "pointer", boxShadow: "0 10px 26px rgba(124,58,237,0.4)",
+  },
   screenShareLayer: {
     position: "absolute", inset: 0, zIndex: 33, background: "#000",
     display: "flex", alignItems: "center", justifyContent: "center",
