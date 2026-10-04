@@ -1187,6 +1187,11 @@ export default function CohortPage() {
                             {new Date(post.createdAt).toLocaleDateString()}
                           </span>
                         </div>
+                        {post.videoId && (
+                          <p style={{ margin: "0 0 6px", fontSize: 12, color: "#d97706", fontWeight: 700 }}>
+                            🚩 Flag at {fmtFlagTime(post.timeSec)} · {cohort.playlist?.videos?.find((v) => v.ytVideoId === post.videoId)?.title || "a video"}
+                          </p>
+                        )}
                         {post.content && <p style={{ margin: 0, fontSize: 14, color: "var(--text-primary)", lineHeight: 1.6 }}>{post.content}</p>}
                         <DiscussionAttachment post={post} />
 
@@ -1836,6 +1841,14 @@ export default function CohortPage() {
       </div>
     </div>
   );
+}
+
+function fmtFlagTime(sec) {
+  const t = Math.max(0, Math.round(sec || 0));
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  const r = String(t % 60).padStart(2, "0");
+  return h ? `${h}:${String(m).padStart(2, "0")}:${r}` : `${m}:${r}`;
 }
 
 const modeBadge = {

@@ -79,6 +79,16 @@ export default function YouTubeRoom({
   const savedStateRef = useRef(null);   // persisted playback memory for this room
   const receivedSyncRef = useRef(false); // a live participant has synced us this session
   const didResumeRef = useRef(false);    // resumed from saved memory this session
+  // "Settled" = this client has decided where it should be (resumed, synced by
+  // a peer, or found nothing to resume). Until then it must NOT write its spot
+  // anywhere or answer sync requests — its player is still on the default
+  // video at 0:00, and saving that is exactly what wiped people's progress.
+  const settledRef = useRef(false);
+  const savedLoadedRef = useRef(false);  // saved spot fetched (or known absent)
+  const mountedAtRef = useRef(0); // set when the resume gate starts
+  // A resume target that is CUED but not yet played: YouTube reports 0:00 for
+  // a cued video, so report this position instead until playback starts.
+  const pendingSpotRef = useRef(null);   // { videoId, positionSec }
   const watchedRef = useRef(new Set());  // videoIds this client already marked watched
   const amHostRef = useRef(false);       // is THIS client the current driver?
 
@@ -118,6 +128,17 @@ export default function YouTubeRoom({
       onCurrentVideoId?.(data.video_id);
     }
   }, [onCurrentVideoId]);
+
+  // Where this player really is. A cued resume target reads as 0:00 until it
+  // plays, so fall back to the target position for that video.
+  const currentSpot = useCallback(() => {
+    const player = playerRef.current;
+    const vid = player?.getVideoData?.()?.video_id || null;
+    let pos = player?.getCurrentTime?.() || 0;
+    const p = pendingSpotRef.current;
+    if (p && p.videoId === vid && pos < p.positionSec - 1) pos = p.positionSec;
+    return { videoId: vid, positionSec: pos };
+  }, []);
 
   // Cohort rooms restrict playback to the day's content. The data can arrive
   // after the player is ready, so keep the latest in a ref and apply it both on
@@ -161,6 +182,9 @@ export default function YouTubeRoom({
   const broadcastState = useCallback((action, extra = {}) => {
     const player = playerRef.current;
     if (!player || soloRef.current) return; // self-paced: never move anyone else's player
+    // Not settled = still on the default video; broadcasting it would pull the
+    // whole room back to video 1.
+    if (!settledRef.current) return;
     // Report the video actually playing now (the playlist may have advanced),
     // not the static `videoId` prop — which is null in cohort/playlist mode.
     const nowPlaying = player.getVideoData?.()?.video_id;
@@ -176,7 +200,7 @@ export default function YouTubeRoom({
       type: SYNC_TYPE,
       action,
       videoId: nowPlaying || videoId || null,
-      currentTime: player.getCurrentTime?.() ?? 0,
+      currentTime: currentSpot().positionSec,
       // Carry the playback rate on EVERY sync so speed stays consistent across
       // play/pause/seek, the drift heartbeat, and new joiners.
       rate: player.getPlaybackRate?.() ?? 1,
@@ -185,7 +209,7 @@ export default function YouTubeRoom({
       ...extra,
       announce,
     });
-  }, [broadcast, videoId, localParticipant]);
+  }, [broadcast, videoId, localParticipant, currentSpot]);
 
   // ── Persist playback memory (so an empty room resumes, not restarts) ───────
 
@@ -224,14 +248,15 @@ export default function YouTubeRoom({
   const persistState = useCallback(() => {
     const player = playerRef.current;
     // SOLO has no shared pointer — each member's spot is saved via presence.
-    if (!player || !roomId || soloRef.current) return;
-    const data = player.getVideoData?.();
+    if (!player || !roomId || soloRef.current || !settledRef.current) return;
+    const spot = currentSpot();
+    if (!spot.videoId) return;
     saveRoomVideoState(roomId, {
-      videoId: data?.video_id || null,
-      positionSec: Math.round(player.getCurrentTime?.() || 0),
+      videoId: spot.videoId,
+      positionSec: Math.round(spot.positionSec),
       playing: player.getPlayerState?.() === 1,
     }).catch(() => {});
-  }, [roomId]);
+  }, [roomId, currentSpot]);
 
   // Record (once) that THIS user finished a video — feeds per-member cohort
   // progress. Server no-ops for non-cohort rooms / non-members.
@@ -246,31 +271,36 @@ export default function YouTubeRoom({
   // the gaps between beats. Throttled so state-change bursts send one beat.
   const lastPresenceAtRef = useRef(0);
   const sendPresence = useCallback((force = false) => {
-    if (!trackPresence || !roomId) return;
+    // Not settled yet = still on the default video; reporting it would also
+    // overwrite this member's saved resume point.
+    if (!trackPresence || !roomId || !settledRef.current) return;
     const player = playerRef.current;
     const now = Date.now();
     if (!force && now - lastPresenceAtRef.current < 3000) return;
     lastPresenceAtRef.current = now;
+    const spot = currentSpot();
     postCohortPresence(roomId, {
-      videoId: player?.getVideoData?.()?.video_id || null,
-      positionSec: Math.round(player?.getCurrentTime?.() || 0),
+      videoId: spot.videoId,
+      positionSec: Math.round(spot.positionSec),
       playing: player?.getPlayerState?.() === 1,
     }).catch(() => {});
-  }, [trackPresence, roomId]);
+  }, [trackPresence, roomId, currentSpot]);
 
   // ── Jump to any video in the playlist (Playlist panel) ─────────────────────
   // The room is shared, so a jump loads the video locally and broadcasts it —
   // everyone in the room follows to the picked video (existing sync protocol).
-  const jumpTo = useCallback((vid) => {
+  const jumpTo = useCallback((vid, startSec = 0) => {
     const player = playerRef.current;
     if (!player || !vid) return;
     if (!amHostRef.current) return; // only the host changes the room's video
+    pendingSpotRef.current = null;
+    settledRef.current = true; // an explicit pick is a decided position
     if (soloRef.current) {
       // Self-paced: switch only MY player, and tell the scoreboard right away.
       const list = player.getPlaylist?.() || fullListRef.current || null;
       const idx = Array.isArray(list) ? list.indexOf(vid) : -1;
-      if (idx >= 0) player.loadPlaylist?.({ playlist: list, index: idx, startSeconds: 0 });
-      else player.loadVideoById?.({ videoId: vid, startSeconds: 0 });
+      if (idx >= 0) player.loadPlaylist?.({ playlist: list, index: idx, startSeconds: startSec });
+      else player.loadVideoById?.({ videoId: vid, startSeconds: startSec });
       if (lockedRef.current) player.pauseVideo?.();
       captureVideoMeta(player);
       setTimeout(() => sendPresence(true), 1200);
@@ -280,9 +310,9 @@ export default function YouTubeRoom({
     const list = player.getPlaylist?.() || fullListRef.current || null;
     const idx = Array.isArray(list) ? list.indexOf(vid) : -1;
     if (idx >= 0) {
-      player.loadPlaylist?.({ playlist: list, index: idx, startSeconds: 0 });
+      player.loadPlaylist?.({ playlist: list, index: idx, startSeconds: startSec });
     } else {
-      player.loadVideoById?.({ videoId: vid, startSeconds: 0 });
+      player.loadVideoById?.({ videoId: vid, startSeconds: startSec });
     }
     if (lockedRef.current) player.pauseVideo?.();
     captureVideoMeta(player);
@@ -320,9 +350,21 @@ export default function YouTubeRoom({
     playerRef.current?.pauseVideo?.();
   }, []);
 
+  // Seek within the current video (video flags). In a synced room the seek
+  // poll picks the jump up and moves everyone, like any member's seek.
+  const seekTo = useCallback((sec) => {
+    const player = playerRef.current;
+    if (!player) return;
+    pendingSpotRef.current = null;
+    settledRef.current = true;
+    player.seekTo?.(Math.max(0, sec), true);
+  }, []);
+  const getTime = useCallback(() => currentSpot().positionSec, [currentSpot]);
+  const getDuration = useCallback(() => playerRef.current?.getDuration?.() || 0, []);
+
   useEffect(() => {
-    onRegisterControls?.({ jumpTo, requestControl, giveControl, dismissRequest, pause });
-  }, [onRegisterControls, jumpTo, requestControl, giveControl, dismissRequest, pause]);
+    onRegisterControls?.({ jumpTo, requestControl, giveControl, dismissRequest, pause, seekTo, getTime, getDuration });
+  }, [onRegisterControls, jumpTo, requestControl, giveControl, dismissRequest, pause, seekTo, getTime, getDuration]);
 
   // ── Apply incoming sync (with drift correction) ───────────────────────────
 
@@ -331,6 +373,8 @@ export default function YouTubeRoom({
     if (!player) return;
 
     receivedSyncRef.current = true; // a live peer is driving our position now
+    settledRef.current = true;
+    pendingSpotRef.current = null;
     const networkDelay = (Date.now() - msg.ts) / 1000;
     const targetTime = msg.currentTime + networkDelay;
 
@@ -415,6 +459,9 @@ export default function YouTubeRoom({
     const player = playerRef.current;
     if (!player) return;
     if (requesterIdentity && requesterIdentity === localParticipant?.identity) return; // don't answer myself
+    // A peer that hasn't resumed yet is still on video 1 at 0:00 — answering
+    // would drag the joiner there too. Let a settled peer (or saved state) win.
+    if (!settledRef.current) return;
 
     // The host answers joiners (it's the single source of truth for the room's
     // position). But if the HOST is the one rejoining, the host can't answer its
@@ -569,44 +616,42 @@ export default function YouTubeRoom({
 
   useEffect(() => {
     if (!roomId) return;
+    const mine = myPosition?.videoId
+      ? { videoId: myPosition.videoId, positionSec: myPosition.positionSec || 0, playing: false }
+      : null;
     if (syncMode === "SOLO") {
       // My own resume point (last heartbeat), not the room's shared pointer.
-      savedStateRef.current = myPosition?.videoId
-        ? { videoId: myPosition.videoId, positionSec: myPosition.positionSec || 0, playing: false }
-        : null;
+      // It arrives with the playlist, so it's "loaded" once the playlist is.
+      savedStateRef.current = mine;
+      if (fullListRef.current) savedLoadedRef.current = true;
       return;
     }
+    let cancelled = false;
     fetchRoomVideoState(roomId)
-      .then((s) => { savedStateRef.current = s || null; })
-      .catch(() => {});
-  }, [roomId, syncMode, myPosition?.videoId, myPosition?.positionSec]);
+      // The room's shared spot; if the room has none yet, fall back to mine.
+      .then((st) => { if (!cancelled) savedStateRef.current = st?.videoId ? st : mine; })
+      .catch(() => { if (!cancelled) savedStateRef.current = mine; })
+      .finally(() => { if (!cancelled) savedLoadedRef.current = true; });
+    return () => { cancelled = true; };
+  }, [roomId, syncMode, myPosition?.videoId, myPosition?.positionSec, playlistVideos]);
 
   // ── Resume where the cohort left off if nobody synced us (empty-room case) ──
 
-  // Decide the best resume target and load it. Rules (no live peer present):
-  //  • No saved memory → keep the onReady default (today's scheduled session).
-  //  • Saved video is BEFORE today's scheduled session → the cohort has moved
-  //    on; keep today's session (don't drag the room back to a finished day).
-  //  • Saved video is AT/AFTER today's session → resume it at its saved position
-  //    (this is "continue where we left off"). If that video is already fully
-  //    watched, jump to the next unwatched one instead.
+  // Resume where we left off (no live peer present). Rules:
+  //  • No saved spot → keep the onReady default.
+  //  • Saved spot → resume that video at its saved position — "continue where
+  //    we left off", even if the schedule says another day's video. If that
+  //    video is already fully watched, go to the next unwatched one instead.
+  // Returns true once resumed (or there was nothing to resume).
   const resumeFromSaved = useCallback(() => {
-    if (didResumeRef.current || receivedSyncRef.current) return;
+    if (didResumeRef.current || receivedSyncRef.current) return true;
     const player = playerRef.current;
     const saved = savedStateRef.current;
-    if (!player || !saved?.videoId) return;
+    if (!player) return false;
+    if (!saved?.videoId) return true; // nothing saved — the default is right
 
     const full = fullListRef.current;
-    const dayId =
-      restrictRef.current?.segment?.videoId ||
-      restrictRef.current?.restrictVideoIds?.[0] ||
-      null;
     const savedIdx = full ? full.indexOf(saved.videoId) : -1;
-    const dayIdx = dayId && full ? full.indexOf(dayId) : -1;
-
-    // Cohort advanced past the saved point → keep today's session default.
-    // (Self-paced: your own spot always wins — there's no shared "today".)
-    if (!soloRef.current && full && savedIdx >= 0 && dayIdx >= 0 && savedIdx < dayIdx) return;
 
     let targetVid = saved.videoId;
     let targetPos = saved.positionSec || 0;
@@ -619,23 +664,44 @@ export default function YouTubeRoom({
     isSyncingRef.current = true;
     const list = full || restrictRef.current?.restrictVideoIds;
     const li = list?.length ? list.indexOf(targetVid) : -1;
+    const autoplay = saved.playing && !lockedRef.current;
+    // CUE (not load+pause): load-then-pause raced the buffer and saved 0:00.
+    // A cued video plays from startSeconds when someone presses play.
     if (li >= 0) {
-      player.loadPlaylist?.({ playlist: list, index: li, startSeconds: targetPos });
+      const opts = { playlist: list, index: li, startSeconds: targetPos };
+      if (autoplay) player.loadPlaylist?.(opts); else player.cuePlaylist?.(opts);
     } else {
-      player.loadVideoById?.({ videoId: targetVid, startSeconds: targetPos });
+      const opts = { videoId: targetVid, startSeconds: targetPos };
+      if (autoplay) player.loadVideoById?.(opts); else player.cueVideoById?.(opts);
     }
-    if (lockedRef.current || !saved.playing) player.pauseVideo?.();
+    pendingSpotRef.current = targetPos > 1 ? { videoId: targetVid, positionSec: targetPos } : null;
     captureVideoMeta(player);
-    setTimeout(() => { isSyncingRef.current = false; }, 600);
+    setTimeout(() => { isSyncingRef.current = false; }, 800);
+    return true;
   }, [captureVideoMeta]);
 
+  // Resume gate — waits until it can decide correctly instead of firing once
+  // on a timer (the old 3.5s one-shot silently gave up whenever the iframe,
+  // the saved spot or the playlist was slower than that → back to video 1).
   useEffect(() => {
     if (!room) return undefined;
-    // Wait past a couple of sync-request retries + a response window. If a live
-    // peer synced us we skip; otherwise resume the room's last saved position.
-    const id = setTimeout(resumeFromSaved, 3500);
-    return () => clearTimeout(id);
-  }, [room, resumeFromSaved]);
+    settledRef.current = false;
+    mountedAtRef.current = Date.now();
+    const GIVE_UP_MS = 25000;
+    const id = setInterval(() => {
+      const waited = Date.now() - mountedAtRef.current;
+      if (receivedSyncRef.current) { settledRef.current = true; clearInterval(id); return; }
+      const playlistKnown = Boolean(fullListRef.current) || waited > 6000;
+      // Give a live peer a moment to answer first (synced rooms only).
+      const peerWindowOver = soloRef.current || waited > 3500;
+      const ready = playerRef.current && savedLoadedRef.current && playlistKnown && peerWindowOver;
+      if ((ready && resumeFromSaved()) || waited > GIVE_UP_MS) {
+        settledRef.current = true;
+        clearInterval(id);
+      }
+    }, 400);
+    return () => clearInterval(id);
+  }, [room, resumeFromSaved, playerKey]);
 
   // ── Persist the spot when leaving (tab close / navigate / unmount) ────────
   // Passive watch-party users often just close the tab, so the pause/end
@@ -747,6 +813,21 @@ export default function YouTubeRoom({
     // Keep attribution in sync as the playlist advances to a new video.
     if (e.data === YT_PLAYING || e.data === YT_PAUSED) sendPresence();
 
+    if (e.data === YT_PLAYING && pendingSpotRef.current) {
+      const p = pendingSpotRef.current;
+      const vid = e.target.getVideoData?.()?.video_id;
+      if (p.videoId === vid) {
+        const cur = e.target.getCurrentTime?.() || 0;
+        if (Math.abs(cur - p.positionSec) > 3) {
+          isSyncingRef.current = true;
+          e.target.seekTo?.(p.positionSec, true);
+          lastPosRef.current = { t: p.positionSec, at: Date.now() };
+          setTimeout(() => { isSyncingRef.current = false; }, 600);
+        }
+      }
+      pendingSpotRef.current = null;
+    }
+
     if (e.data === YT_PLAYING) {
       captureVideoMeta(e.target);
       // Playback recovered — clear any error and re-arm the one-shot auto-retry
@@ -792,6 +873,8 @@ export default function YouTubeRoom({
     playerRef.current = null;
     receivedSyncRef.current = false;
     didResumeRef.current = false;
+    settledRef.current = false;
+    pendingSpotRef.current = null;
     setErrorCode(null);
     setPlayerKey((k) => k + 1);
     // The mount-time sync request only fires once for the component; after a

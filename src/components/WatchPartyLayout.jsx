@@ -7,6 +7,7 @@ import YouTubeRoom from "./YouTubeRoom";
 import ChatDrawer from "./ChatDrawer";
 import Whiteboard from "./Whiteboard";
 import { useCohortLive, membersByVideo, LiveRaceList, Avatar, fmtClock } from "./CohortLiveBoard";
+import VideoFlags, { fmtTime } from "./VideoFlags";
 import api, { fetchMyAnalytics, fetchFocusSummary, fetchVideoSummary } from "../services/api";
 
 const PREP_MS = 60_000;
@@ -217,6 +218,10 @@ export default function WatchPartyLayout({
         setFocusMode(Boolean(msg.on));
         pushToast(Boolean(msg.on) ? "🎯 Focus mode on — distractions paused" : "▶ Focus mode off");
       }
+      if (msg?.type === "FLAG_CHANGED") {
+        loadFlags.current();
+        if (msg.added) pushToast(`🚩 ${participant?.name || "Someone"} flagged ${fmtTime(msg.timeSec)}: ${String(msg.text || "").slice(0, 80)}`);
+      }
     };
     room.on("dataReceived", handler);
     return () => room.off("dataReceived", handler);
@@ -245,6 +250,20 @@ export default function WatchPartyLayout({
   // Signed-in cohort members send presence + see the live tracker.
   const isCohortMember = Boolean(cohortId && currentUser?.id);
   const liveBoard = useCohortLive(isCohortMember ? cohortId : null, { intervalMs: 8000 });
+
+  // ── Video flags: notes pinned to a moment in a video, shared with the cohort ──
+  const [flags, setFlags] = useState([]);
+  const loadFlags = useRef(() => {});
+  loadFlags.current = () => {
+    if (!isCohortMember) return;
+    api.get(`/cohorts/${cohortId}/flags`).then(({ data }) => setFlags(Array.isArray(data) ? data : [])).catch(() => {});
+  };
+  useEffect(() => {
+    if (!isCohortMember) return undefined;
+    loadFlags.current();
+    const id = setInterval(() => { if (document.visibilityState !== "hidden") loadFlags.current(); }, 20000);
+    return () => clearInterval(id);
+  }, [isCohortMember, cohortId]);
   // Notes are available for any cohort room. A scheduled day uses its session id;
   // a cohort without a day schedule uses a shared "general" pad.
   const hasNotes = Boolean(cohortId);
@@ -294,6 +313,56 @@ export default function WatchPartyLayout({
     e.target.value = ""; // allow re-selecting the same file
   };
   const watchedSet = new Set(Array.isArray(watchedVideoIds) ? watchedVideoIds : []);
+
+  const currentFlags = flags.filter((f) => f.videoId === currentVideoId);
+  const createFlag = async ({ videoId, timeSec, content }) => {
+    await api.post(`/cohorts/${cohortId}/flags`, { videoId, timeSec, content });
+    loadFlags.current();
+    publish({ type: "FLAG_CHANGED", added: true, timeSec, text: content });
+    pushToast(`🚩 Flag added at ${fmtTime(timeSec)}`);
+  };
+  const replyToFlag = async (flagId, text) => {
+    await api.post(`/cohorts/${cohortId}/discussions`, { content: text, parentId: flagId });
+    loadFlags.current();
+    publish({ type: "FLAG_CHANGED" });
+  };
+  const deleteFlag = async (flagId) => {
+    if (!window.confirm("Remove this flag and its replies?")) return;
+    try {
+      await api.delete(`/cohorts/${cohortId}/flags/${flagId}`);
+      loadFlags.current();
+      publish({ type: "FLAG_CHANGED" });
+    } catch (err) {
+      pushToast(err?.response?.data?.message || "Couldn't remove the flag");
+    }
+  };
+  const seekToFlag = (videoId, timeSec) => {
+    const c = ytControlsRef.current;
+    if (!c) return;
+    if (videoId === currentVideoId) { c.seekTo?.(timeSec); return; }
+    if (!solo && !hostState.amHost) { pushToast("Only the host can switch the room to another video."); return; }
+    c.jumpTo?.(videoId, timeSec);
+  };
+
+  // Toast when playback reaches a flag ("🚩 20:00 · Aman: important formula").
+  const flagWatchRef = useRef({ videoId: null, t: 0 });
+  useEffect(() => {
+    if (!currentFlags.length) return undefined;
+    const id = setInterval(() => {
+      const t = ytControlsRef.current?.getTime?.() || 0;
+      const prev = flagWatchRef.current;
+      if (prev.videoId === currentVideoId && t > prev.t && t - prev.t < 3) {
+        for (const f of currentFlags) {
+          if (f.timeSec > prev.t && f.timeSec <= t) {
+            pushToast(`🚩 ${fmtTime(f.timeSec)} · ${f.author?.name || "Member"}: ${String(f.content).slice(0, 90)}`);
+          }
+        }
+      }
+      flagWatchRef.current = { videoId: currentVideoId, t };
+    }, 1000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentVideoId, flags]);
   const [shareStatus, setShareStatus] = useState("");
   const [leaving, setLeaving] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
@@ -1333,6 +1402,16 @@ export default function WatchPartyLayout({
                 Playlist <span style={styles.tabCount}>{playlistVideos.length}</span>
               </button>
             )}
+            {isCohortMember && hasPlaylist && (
+              <button
+                type="button"
+                style={styles.tabBtn(tab === "flags")}
+                onClick={() => setTab("flags")}
+                title="Flags — notes pinned to moments in the video"
+              >
+                🚩 Flags{currentFlags.length ? <span style={styles.tabCount}>{currentFlags.length}</span> : null}
+              </button>
+            )}
             {hasNotes && (
               <button
                 type="button"
@@ -1372,6 +1451,20 @@ export default function WatchPartyLayout({
                 ffBusy={Boolean(ffRound)}
                 surpriseOn={surpriseOn}
                 onToggleSurprise={isCreator && !solo ? toggleSurpriseQuiz : null}
+              />
+            ) : tab === "flags" && isCohortMember ? (
+              <VideoFlags
+                flags={flags}
+                videos={playlistVideos || []}
+                currentVideoId={currentVideoId}
+                currentUserId={currentUser?.id}
+                isCreator={isCreator}
+                getTime={() => ytControlsRef.current?.getTime?.() || 0}
+                getDuration={() => ytControlsRef.current?.getDuration?.() || 0}
+                onSeek={seekToFlag}
+                onCreate={createFlag}
+                onReply={replyToFlag}
+                onDelete={deleteFlag}
               />
             ) : tab === "notes" && hasNotes ? (
               <div style={styles.notesPanel}>
