@@ -25,8 +25,9 @@ export default function Register() {
       await register(name, email, password);
       alert("Account created! Please login.");
       navigate("/login");
-    } catch {
-      setError("Registration failed. Please try again.");
+    } catch (err) {
+      const msg = err?.response?.data?.message;
+      setError(typeof msg === "string" ? msg : "Registration failed. Please try again.");
     }
   }
 
@@ -186,6 +187,8 @@ export default function Register() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={8}
+              maxLength={72}
               style={{
                 width: "100%",
                 padding: "14px 16px",
