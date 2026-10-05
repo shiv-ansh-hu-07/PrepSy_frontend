@@ -89,6 +89,12 @@ export default function YouTubeRoom({
   // A resume target that is CUED but not yet played: YouTube reports 0:00 for
   // a cued video, so report this position instead until playback starts.
   const pendingSpotRef = useRef(null);   // { videoId, positionSec }
+  // When WE (not the user) last told the player to play. A pause that lands
+  // shortly after is the browser blocking autoplay / a lock / buffering — not
+  // a person pausing — and must never be broadcast (it stopped the whole room
+  // whenever someone refreshed).
+  const programmaticPlayAtRef = useRef(0);
+  const [needsUnmute, setNeedsUnmute] = useState(false);
   const watchedRef = useRef(new Set());  // videoIds this client already marked watched
   const amHostRef = useRef(false);       // is THIS client the current driver?
 
@@ -168,6 +174,47 @@ export default function YouTubeRoom({
     },
     [captureVideoMeta],
   );
+
+  // Start playback on our own (sync / resume / lock release). Browsers block
+  // autoplay WITH sound until the page gets a click — after a refresh that's
+  // the norm — so if it didn't start, fall back to muted autoplay (always
+  // allowed) and offer a one-tap unmute, instead of sitting paused.
+  const autoPlay = useCallback((player) => {
+    if (!player) return;
+    programmaticPlayAtRef.current = Date.now();
+    player.playVideo?.();
+    setTimeout(() => {
+      const p = playerRef.current;
+      if (!p || lockedRef.current) return;
+      const st = p.getPlayerState?.();
+      if (st !== 1 && st !== 3 && st !== 0) {
+        programmaticPlayAtRef.current = Date.now();
+        p.mute?.();
+        p.playVideo?.();
+        setNeedsUnmute(true);
+      }
+    }, 2500);
+  }, []);
+
+  const unmute = useCallback(() => {
+    const p = playerRef.current;
+    if (!p) return;
+    p.unMute?.();
+    if (p.getPlayerState?.() !== 1) {
+      programmaticPlayAtRef.current = Date.now();
+      p.playVideo?.();
+    }
+    setNeedsUnmute(false);
+  }, []);
+
+  // Hide the unmute prompt if they unmute from YouTube's own controls.
+  useEffect(() => {
+    if (!needsUnmute) return undefined;
+    const id = setInterval(() => {
+      if (playerRef.current && playerRef.current.isMuted?.() === false) setNeedsUnmute(false);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [needsUnmute]);
 
   // ── Broadcast helpers ─────────────────────────────────────────────────────
 
@@ -410,7 +457,7 @@ export default function YouTubeRoom({
       if (lockedRef.current || msg.action === "PAUSE") {
         player.pauseVideo?.();
       } else {
-        player.playVideo?.();
+        autoPlay(player);
       }
       captureVideoMeta(player);
       // A video load takes longer to settle than a seek — hold the lock a bit
@@ -435,8 +482,8 @@ export default function YouTubeRoom({
       // play until the local prep countdown has finished.
       if (lockedRef.current) {
         player.pauseVideo();
-      } else {
-        player.playVideo();
+      } else if (player.getPlayerState?.() !== 1) {
+        autoPlay(player);
       }
     } else if (msg.action === "SEEK") {
       player.seekTo(targetTime, true);
@@ -451,7 +498,7 @@ export default function YouTubeRoom({
       lastAppliedSyncAtRef.current = Date.now();
       lastPosRef.current = { t: playerRef.current?.getCurrentTime?.() ?? 0, at: Date.now() };
     }, 300);
-  }, [captureVideoMeta]);
+  }, [captureVideoMeta, autoPlay]);
 
   // ── Respond to new-joiner sync request ────────────────────────────────────
 
@@ -547,13 +594,19 @@ export default function YouTubeRoom({
     if (wasLockedRef.current && !locked) {
       if (playerRef.current) {
         isSyncingRef.current = true;
-        playerRef.current.playVideo?.();
+        autoPlay(playerRef.current);
         setTimeout(() => { isSyncingRef.current = false; }, 500);
+        // We sat paused behind the lock while others kept watching — ask the
+        // room where it is now instead of dragging everyone back to our spot.
+        if (!soloRef.current && participants.length > 1) {
+          setTimeout(() => broadcast({ type: REQUEST_TYPE }), 600);
+        }
       } else {
         pendingAutoplayRef.current = true;
       }
     }
     wasLockedRef.current = locked;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locked]);
 
   // ── Seek detection (no native onSeek) + speed changes ─────────────────────
@@ -782,11 +835,11 @@ export default function YouTubeRoom({
       // before this iframe finished loading) — start playback now.
       pendingAutoplayRef.current = false;
       isSyncingRef.current = true;
-      e.target.playVideo?.();
+      autoPlay(e.target);
       setTimeout(() => { isSyncingRef.current = false; }, 500);
     }
     captureVideoMeta(e.target);
-  }, [videoId, playlistId, captureVideoMeta, applyRestriction]);
+  }, [videoId, playlistId, captureVideoMeta, applyRestriction, autoPlay]);
 
   // Apply (or re-apply) the day's restriction if it arrives / changes after the
   // player is already up. Skipped for full-playlist cohort rooms — there the
@@ -851,6 +904,10 @@ export default function YouTubeRoom({
       lastPosRef.current = { t: e.target.getCurrentTime?.() ?? 0, at: Date.now() };
     }
     if (e.data === YT_PAUSED) {
+      // Not a person pausing: our lock (prep/quiz/share) or the browser blocking
+      // an autoplay we started. Broadcasting these is what froze the whole room
+      // when someone refreshed. Real pauses still sync as before.
+      if (lockedRef.current || Date.now() - programmaticPlayAtRef.current < 4000) return;
       broadcastState("PAUSE", { announce: true });
       persistState(); // remember exactly where we paused
       lastPosRef.current = { t: e.target.getCurrentTime?.() ?? 0, at: Date.now() };
@@ -935,6 +992,12 @@ export default function YouTubeRoom({
           onError={onError}
         />
 
+        {needsUnmute && (
+          <button type="button" onClick={unmute} style={styles.unmuteBtn}>
+            🔊 Tap to unmute — you're synced with the room
+          </button>
+        )}
+
         {/* Only surface our own overlay once an auto-retry has already failed,
             so a recoverable blip just reloads silently. */}
         {errorCode !== null && autoRetriedRef.current ? (
@@ -973,6 +1036,12 @@ export default function YouTubeRoom({
 }
 
 const styles = {
+  unmuteBtn: {
+    position: "absolute", left: "50%", bottom: 64, transform: "translateX(-50%)", zIndex: 5,
+    padding: "10px 18px", borderRadius: 999, border: "none", cursor: "pointer",
+    background: "rgba(124,58,237,0.95)", color: "#fff", fontSize: 13, fontWeight: 700,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.35)", whiteSpace: "nowrap",
+  },
   shell: {
     width: "100%",
     height: "100%",

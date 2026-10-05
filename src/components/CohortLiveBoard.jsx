@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Play, Pause, Trophy, Radio, ChevronDown } from "lucide-react";
 import { fetchCohortLive } from "../services/api";
 
@@ -8,7 +8,8 @@ import { fetchCohortLive } from "../services/api";
 // card on the cohort home page and the compact race list inside the room.
 
 export function useCohortLive(cohortId, { enabled = true, intervalMs = 10000 } = {}) {
-  const [board, setBoard] = useState(null);
+  const [raw, setRaw] = useState(null); // { data, fetchedAt } — fetchedAt is client time
+  const [now, setNow] = useState(0);
   useEffect(() => {
     if (!cohortId || !enabled) return undefined;
     let cancelled = false;
@@ -16,7 +17,7 @@ export function useCohortLive(cohortId, { enabled = true, intervalMs = 10000 } =
       // Skip polls while the tab is hidden; refresh as soon as it's visible.
       if (document.visibilityState === "hidden") return;
       fetchCohortLive(cohortId)
-        .then((data) => { if (!cancelled) setBoard(data); })
+        .then((data) => { if (!cancelled) setRaw({ data, fetchedAt: Date.now() }); })
         .catch(() => {});
     };
     load();
@@ -28,7 +29,34 @@ export function useCohortLive(cohortId, { enabled = true, intervalMs = 10000 } =
       document.removeEventListener("visibilitychange", load);
     };
   }, [cohortId, enabled, intervalMs]);
-  return board;
+
+  // Tick once a second while anyone is playing, so positions move live.
+  const anyPlaying = Boolean(raw?.data?.members?.some((m) => m.playing && m.watching));
+  useEffect(() => {
+    if (!anyPlaying) return undefined;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [anyPlaying]);
+
+  return useMemo(() => {
+    if (!raw?.data) return null;
+    // Each position is that member's LAST heartbeat (sent every ~15s, each on
+    // their own schedule), so shown raw a perfectly synced room looked 10-20s
+    // apart. For someone playing, project it to "now": time since their beat
+    // (both server clocks) + time since we fetched (our clock). Capped so a
+    // stale beat can't run away.
+    const { data, fetchedAt } = raw;
+    const genAt = data.generatedAt ? new Date(data.generatedAt).getTime() : null;
+    const sinceFetch = Math.max(0, ((now || fetchedAt) - fetchedAt) / 1000);
+    const members = (data.members || []).map((m) => {
+      if (!m.playing || !m.watching || !m.lastSeenAt || genAt == null) return m;
+      const sinceBeat = Math.max(0, (genAt - new Date(m.lastSeenAt).getTime()) / 1000);
+      let positionSec = m.watching.positionSec + Math.min(90, sinceBeat + sinceFetch);
+      if (m.watching.durationSec) positionSec = Math.min(positionSec, m.watching.durationSec);
+      return { ...m, watching: { ...m.watching, positionSec } };
+    });
+    return { ...data, members };
+  }, [raw, now]);
 }
 
 export function initialsOf(name) {
