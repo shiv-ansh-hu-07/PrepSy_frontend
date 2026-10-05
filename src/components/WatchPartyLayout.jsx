@@ -1541,78 +1541,74 @@ function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, solo = fals
   const hasSkipped = Array.isArray(skipped) && skipped.length > 0;
   return (
     <div style={styles.playlistPanel}>
-      {/* Shared course progress — derived from the cohort pointer (no LLM). */}
-      {progress && progress.totalCount > 0 && (
-        <div style={styles.courseProgress}>
-          <div style={styles.courseProgressTop}>
-            <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>
-              {progress.completedCount}/{progress.totalCount} videos
-            </span>
-            <span style={{ color: "var(--text-muted)" }}>
-              {solo ? `${pct}% · your progress` : `${pct}% · ${eta > 0 ? `≈${eta} day${eta === 1 ? "" : "s"} left` : "complete 🎉"}`}
-            </span>
-          </div>
-          <div style={styles.courseBarTrack}>
-            <div style={{ ...styles.courseBarFill, width: `${pct}%` }} />
-          </div>
+      {/* One compact card: course progress + (host) session tools. */}
+      {(progress?.totalCount > 0 || amHost || !solo) && (
+        <div
+          style={styles.courseProgress}
+          title={solo
+            ? "Self-paced: pick any video — only your player changes"
+            : amHost
+              ? "You're hosting: pick any video and the whole room jumps to it"
+              : "The host controls the video"}
+        >
+          {progress?.totalCount > 0 && (
+            <>
+              <div style={styles.courseProgressTop}>
+                <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                  {progress.completedCount}/{progress.totalCount} videos
+                </span>
+                <span style={{ color: "var(--text-muted)" }}>
+                  {solo ? `${pct}% yours` : `${pct}% · ${eta > 0 ? `≈${eta}d left` : "done 🎉"}`}
+                </span>
+              </div>
+              <div style={styles.courseBarTrack}>
+                <div style={{ ...styles.courseBarFill, width: `${pct}%` }} />
+              </div>
+            </>
+          )}
+          {amHost && !solo && (onEndSession || onLaunchFf || onToggleSurprise) && (
+            <div style={styles.toolRow}>
+              {onLaunchFf && (
+                <button type="button" style={styles.toolBtnPrimary} onClick={onLaunchFf} disabled={ffBusy} title="Start a fastest-finger round now">
+                  ⚡ {ffBusy ? "Live…" : "Quiz"}
+                </button>
+              )}
+              {onToggleSurprise && (
+                <button
+                  type="button"
+                  style={styles.toolBtn(surpriseOn)}
+                  onClick={onToggleSurprise}
+                  title="Surprise fastest-finger quizzes fire at random during a session"
+                >
+                  Surprise {surpriseOn ? "on" : "off"}
+                </button>
+              )}
+              {onEndSession && (
+                <button
+                  type="button"
+                  style={styles.toolBtn(false)}
+                  onClick={onEndSession}
+                  disabled={endingSession}
+                  title="Wrap up: mark videos completed/started/skipped and update the schedule"
+                >
+                  {endingSession ? "Ending…" : "End session"}
+                </button>
+              )}
+            </div>
+          )}
+          {!amHost && !solo && (
+            <div style={{ ...styles.toolRow, justifyContent: "space-between" }}>
+              <span style={{ fontSize: 11.5, color: "var(--text-muted)" }}>Following the host</span>
+              <button type="button" style={styles.toolBtn(false)} onClick={onRequestControl}>
+                Request control
+              </button>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Live tracker — study time + who's on which video, ranked. */}
+      {/* Live tracker — collapsed to one line; expands to the ranked list. */}
       <LiveRaceList board={liveBoard} />
-
-      {solo ? (
-        <p style={{ ...styles.playlistHint, margin: 0 }}>
-          Self-paced — pick any video; only your player changes. Green avatars show where your crew is right now.
-        </p>
-      ) : amHost ? (
-        <div style={styles.playlistHostRow}>
-          <p style={{ ...styles.playlistHint, margin: 0 }}>
-            You're hosting — pick any video and the whole room jumps to it together.
-          </p>
-          {onEndSession && (
-            <button
-              type="button"
-              style={styles.endSessionBtn}
-              onClick={onEndSession}
-              disabled={endingSession}
-              title="Wrap up: mark videos completed/started/skipped and update the schedule"
-            >
-              {endingSession ? "Ending…" : "End session"}
-            </button>
-          )}
-        </div>
-      ) : null}
-
-      {/* Fastest-finger controls (host): fire one now + the surprise toggle. */}
-      {amHost && (onLaunchFf || onToggleSurprise) && (
-        <div style={styles.ffControls}>
-          {onLaunchFf && (
-            <button type="button" style={styles.ffLaunchBtn} onClick={onLaunchFf} disabled={ffBusy} title="Start a fastest-finger round now">
-              ⚡ {ffBusy ? "Round live…" : "Fastest finger"}
-            </button>
-          )}
-          {onToggleSurprise && (
-            <button
-              type="button"
-              style={styles.ffToggleBtn(surpriseOn)}
-              onClick={onToggleSurprise}
-              title="Surprise fastest-finger quizzes fire at random during a session"
-            >
-              Surprise: {surpriseOn ? "On" : "Off"}
-            </button>
-          )}
-        </div>
-      )}
-
-      {!amHost && !solo && (
-        <div style={styles.playlistLockedNote}>
-          <span>Only the host can change the video. Following along.</span>
-          <button type="button" style={styles.requestControlBtn} onClick={onRequestControl}>
-            Request control
-          </button>
-        </div>
-      )}
 
       {/* Skipped videos (left out at creation or jumped past in a session) — not
           on the shared stage or the schedule; watchable as optional catch-up. */}
@@ -1870,14 +1866,6 @@ const styles = {
   dismissBtn: {
     height: 28, padding: "0 10px", borderRadius: 8, cursor: "pointer",
     background: "transparent", color: "#cbd5e1", border: "1px solid rgba(148,163,184,0.4)", fontSize: 12,
-  },
-  playlistLockedNote: {
-    display: "flex", flexDirection: "column", gap: 8, marginBottom: 8, padding: "10px 12px",
-    borderRadius: 10, background: "var(--accent-soft)", fontSize: 11.5, color: "var(--text-secondary)", lineHeight: 1.4,
-  },
-  requestControlBtn: {
-    alignSelf: "flex-start", height: 30, padding: "0 14px", borderRadius: 8, cursor: "pointer",
-    border: "1px solid var(--accent)", background: "var(--card-bg)", color: "var(--accent)", fontWeight: 700, fontSize: 12,
   },
   liveDot: { width: 7, height: 7, borderRadius: "50%", background: "#22c55e" },
   sessionDivider: { color: "#94A3B8" },
@@ -2146,17 +2134,24 @@ const styles = {
   }),
   tabBar: {
     display: "flex", borderBottom: "1px solid var(--accent-soft)", flexShrink: 0,
+    // Never wrap; if a narrow panel can't fit every tab, scroll sideways
+    // inside the bar (scrollbar hidden) instead of breaking the layout.
+    overflowX: "auto", scrollbarWidth: "none", padding: "0 4px",
   },
   tabBtn: (active) => ({
-    flex: 1, padding: "14px 10px", border: "none", background: "transparent",
-    fontSize: 13, fontWeight: 600, cursor: "pointer",
+    flex: "1 0 auto", padding: "12px 8px", border: "none", background: "transparent",
+    fontSize: 12.5, fontWeight: active ? 700 : 600, cursor: "pointer", whiteSpace: "nowrap",
+    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4,
     color: active ? "#6f3bd6" : "var(--text-secondary)",
     borderBottom: active ? "2px solid #6f3bd6" : "2px solid transparent",
   }),
   tabCount: {
-    display: "inline-block", marginLeft: 4, fontSize: 11, color: "var(--text-muted)",
+    display: "inline-flex", alignItems: "center", justifyContent: "center",
+    minWidth: 16, height: 16, padding: "0 5px", borderRadius: 999,
+    fontSize: 10, fontWeight: 700, lineHeight: 1,
+    background: "var(--accent-soft)", color: "var(--text-muted)",
   },
-  tabBody: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column" },
+  tabBody: { flex: 1, minHeight: 0, minWidth: 0, display: "flex", flexDirection: "column", overflowX: "hidden" },
   notesPanel: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", padding: 12, gap: 8 },
   notesHeader: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 },
   notesArea: {
@@ -2173,14 +2168,23 @@ const styles = {
     color: "var(--text-secondary)", fontSize: 12.5, fontWeight: 700,
   },
   peopleList: { padding: 12, display: "flex", flexDirection: "column", gap: 8, overflowY: "auto" },
-  playlistPanel: { padding: 12, display: "flex", flexDirection: "column", gap: 6, overflowY: "auto" },
-  playlistHint: {
-    margin: "0 0 6px", fontSize: 11.5, color: "var(--text-muted)", lineHeight: 1.4,
-  },
+  playlistPanel: { padding: 10, display: "flex", flexDirection: "column", gap: 6, overflowY: "auto", overflowX: "hidden", minWidth: 0 },
   courseProgress: {
-    padding: "10px 12px", borderRadius: 12, border: "1px solid var(--card-border)",
-    background: "var(--card-bg)", marginBottom: 4, display: "flex", flexDirection: "column", gap: 8,
+    padding: "9px 11px", borderRadius: 12, border: "1px solid var(--card-border)",
+    background: "var(--card-bg)", display: "flex", flexDirection: "column", gap: 7,
   },
+  toolRow: { display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" },
+  toolBtnPrimary: {
+    height: 26, padding: "0 10px", borderRadius: 999, border: "none", cursor: "pointer",
+    background: "linear-gradient(135deg, #7c3aed, #a855f7)", color: "#fff",
+    fontSize: 11.5, fontWeight: 700, whiteSpace: "nowrap",
+  },
+  toolBtn: (on) => ({
+    height: 26, padding: "0 10px", borderRadius: 999, cursor: "pointer", whiteSpace: "nowrap",
+    border: `1px solid ${on ? "var(--accent)" : "var(--card-border)"}`,
+    background: on ? "var(--accent-soft)" : "transparent",
+    color: on ? "var(--accent)" : "var(--text-secondary)", fontSize: 11.5, fontWeight: 700,
+  }),
   courseProgressTop: {
     display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12,
   },
@@ -2208,29 +2212,8 @@ const styles = {
   skippedLink: {
     color: "var(--accent)", textDecoration: "none", fontWeight: 600,
   },
-  playlistHostRow: {
-    display: "flex", alignItems: "center", justifyContent: "space-between",
-    gap: 10, marginBottom: 6,
-  },
-  endSessionBtn: {
-    flexShrink: 0, padding: "6px 12px", borderRadius: 999, border: "1px solid var(--accent)",
-    background: "var(--accent-soft)", color: "var(--accent)", fontSize: 11.5, fontWeight: 700,
-    cursor: "pointer", whiteSpace: "nowrap",
-  },
-  ffControls: { display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap" },
-  ffLaunchBtn: {
-    flex: 1, minWidth: 130, padding: "8px 12px", borderRadius: 10, border: "none",
-    background: "linear-gradient(135deg, #7c3aed, #a855f7)", color: "#fff",
-    fontSize: 12.5, fontWeight: 700, cursor: "pointer",
-  },
-  ffToggleBtn: (on) => ({
-    flexShrink: 0, padding: "8px 12px", borderRadius: 10, cursor: "pointer",
-    border: `1px solid ${on ? "var(--accent)" : "var(--card-border)"}`,
-    background: on ? "var(--accent-soft)" : "transparent",
-    color: on ? "var(--accent)" : "var(--text-muted)", fontSize: 11.5, fontWeight: 700,
-  }),
   playlistRow: (current) => ({
-    display: "flex", alignItems: "center", gap: 10, padding: "9px 10px",
+    display: "flex", alignItems: "center", gap: 9, padding: "7px 9px", minWidth: 0,
     borderRadius: 10, cursor: "pointer", textAlign: "left", width: "100%",
     border: current ? "1px solid var(--accent)" : "1px solid var(--card-border)",
     background: current ? "var(--accent-soft)" : "var(--card-bg)",

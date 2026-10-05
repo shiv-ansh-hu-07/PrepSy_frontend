@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useEffect, useState } from "react";
-import { Play, Pause, Trophy, Radio } from "lucide-react";
+import { Play, Pause, Trophy, Radio, ChevronDown } from "lucide-react";
 import { fetchCohortLive } from "../services/api";
 
 // Live cohort scoreboard — who has studied the most, who is in the room right
@@ -210,31 +210,74 @@ export function CohortScoreboard({ board, isMobile = false, onEnterRoom = null }
 }
 
 // ── Compact race list for the room's Playlist panel ─────────────────────────
+// Collapsed (default): ONE line — overlapping avatars (green ring = live) and a
+// summary. Expanded: a tight ranked list. Remembered per browser.
+const RACE_OPEN_KEY = "prepsy_race_open";
+
 export function LiveRaceList({ board }) {
-  if (!board?.members?.length) return null;
+  const [open, setOpen] = useState(() => {
+    try { return localStorage.getItem(RACE_OPEN_KEY) === "1"; } catch { return false; }
+  });
+  const toggle = () => {
+    setOpen((v) => {
+      try { localStorage.setItem(RACE_OPEN_KEY, v ? "0" : "1"); } catch { /* ignore */ }
+      return !v;
+    });
+  };
+  const members = board?.members || [];
+  if (!members.length) return null;
+  const me = members.find((m) => m.isMe);
+  const leader = members[0];
+  const summary = me
+    ? me.rank === 1 ? `You lead · ${fmtStudy(me.studySeconds)}` : `You #${me.rank} · ${fmtStudy(me.studySeconds)}`
+    : `${leader.name.split(" ")[0]} leads`;
+
   return (
-    <div style={{ border: "1px solid var(--card-border)", borderRadius: 12, padding: "10px 10px 6px", background: "var(--card-bg)" }}>
-      <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 6 }}>
-        <Trophy size={12} /> Live tracker
-      </p>
-      {board.members.map((m) => (
-        <div key={m.userId} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", minWidth: 0 }}>
-          <span style={{ width: 18, fontSize: 11, fontWeight: 800, color: "var(--text-muted)", textAlign: "center" }}>{MEDALS[m.rank - 1] || m.rank}</span>
-          <Avatar member={m} size={22} ring={m.live} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {m.name}{m.isMe ? " (you)" : ""}
-            </p>
-            <p style={{ margin: 0, fontSize: 11, color: m.live ? "#16a34a" : "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {m.live && m.watching ? `${m.playing ? "▶" : "❚❚"} #${m.watching.index} · ${fmtClock(m.watching.positionSec)}` : m.live ? "In the room" : "Away"}
-            </p>
-          </div>
-          <span style={{ fontSize: 11.5, fontWeight: 800, color: "var(--text-secondary)", flexShrink: 0 }}>{fmtStudy(m.studySeconds)}</span>
+    <div style={race.wrap}>
+      <button type="button" onClick={toggle} style={race.header} aria-expanded={open} title="Live tracker — study time and who's on which video">
+        <Trophy size={12} style={{ flexShrink: 0, color: "var(--text-muted)" }} />
+        <span style={race.stack}>
+          {members.slice(0, 5).map((m, i) => (
+            <span key={m.userId} style={{ marginLeft: i ? -3 : 0, zIndex: 10 - i, display: "inline-flex" }}>
+              <Avatar member={m} size={20} ring={m.live} />
+            </span>
+          ))}
+        </span>
+        <span style={race.summary}>
+          {board.liveCount ? <strong style={{ color: "#16a34a" }}>{board.liveCount} live</strong> : "No one live"} · {summary}
+        </span>
+        <ChevronDown size={14} style={{ flexShrink: 0, color: "var(--text-muted)", transform: open ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
+      </button>
+      {open && (
+        <div style={race.list}>
+          {members.map((m) => (
+            <div key={m.userId} style={race.row}>
+              <span style={race.rank}>{MEDALS[m.rank - 1] || m.rank}</span>
+              <span style={race.name(m.isMe)}>{m.isMe ? "You" : m.name}</span>
+              <span style={race.status(m.live)}>
+                {m.live && m.watching ? `${m.playing ? "▶" : "❚❚"} #${m.watching.index} ${fmtClock(m.watching.positionSec)}` : m.live ? "here" : "away"}
+              </span>
+              <span style={race.time}>{fmtStudy(m.studySeconds)}</span>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
 }
+
+const race = {
+  wrap: { border: "1px solid var(--card-border)", borderRadius: 12, background: "var(--card-bg)", overflow: "hidden", flexShrink: 0 },
+  header: { display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "7px 10px", border: "none", background: "transparent", cursor: "pointer", textAlign: "left", minWidth: 0 },
+  stack: { display: "inline-flex", alignItems: "center", flexShrink: 0, paddingLeft: 2 },
+  summary: { flex: 1, minWidth: 0, fontSize: 11.5, color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+  list: { borderTop: "1px solid var(--card-border)", padding: "4px 10px 6px" },
+  row: { display: "flex", alignItems: "center", gap: 8, padding: "3px 0", minWidth: 0, fontSize: 11.5 },
+  rank: { width: 16, flexShrink: 0, textAlign: "center", fontWeight: 800, color: "var(--text-muted)", fontSize: 11 },
+  name: (me) => ({ flex: 1, minWidth: 0, fontWeight: me ? 800 : 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }),
+  status: (live) => ({ flexShrink: 0, color: live ? "#16a34a" : "var(--text-muted)", fontSize: 11 }),
+  time: { width: 42, flexShrink: 0, textAlign: "right", fontWeight: 800, color: "var(--text-secondary)" },
+};
 
 const card = {
   background: "var(--card-bg)",
