@@ -127,8 +127,61 @@ function ProgressBar({ percent, color = "var(--accent)" }) {
   );
 }
 
+// ── Race helpers ────────────────────────────────────────────────────────────
+
+// Members ordered for a mode, with that mode's rank + time attached.
+export function rankedFor(board, mode = "week") {
+  const list = [...(board?.members || [])];
+  if (mode === "week") {
+    list.sort((a, b) => (a.weekRank || 99) - (b.weekRank || 99));
+    return list.map((m) => ({ ...m, r: m.weekRank || m.rank, secs: m.weekSeconds || 0 }));
+  }
+  list.sort((a, b) => a.rank - b.rank);
+  return list.map((m) => ({ ...m, r: m.rank, secs: m.studySeconds || 0 }));
+}
+
+// The personal line: where you stand this week and the next person to catch.
+export function raceTargetText(board) {
+  const me = board?.me;
+  const n = board?.members?.length || 0;
+  if (!me || n <= 1) return null;
+  const first = (name) => (name || "Someone").split(" ")[0];
+  if (me.rank === 1) {
+    if (!me.weekSec) return { tone: "go", text: "The board is empty this week. First one in takes #1." };
+    if (me.below) {
+      return me.below.gapSec < 1800
+        ? { tone: "warn", text: `You lead, but ${first(me.below.name)} is only ${fmtStudy(me.below.gapSec)} behind. Defend it.` }
+        : { tone: "good", text: `You lead this week by ${fmtStudy(me.below.gapSec)}. Keep it that way.` };
+    }
+    return { tone: "good", text: "You lead this week." };
+  }
+  if (me.above) {
+    return me.above.gapSec === 0
+      ? { tone: "go", text: `You're tied with ${first(me.above.name)} at #${me.rank - 1}. Any session breaks the tie.` }
+      : { tone: "go", text: `You're #${me.rank}. ${fmtStudy(me.above.gapSec)} more and you pass ${first(me.above.name)}.` };
+  }
+  return { tone: "go", text: `You're #${me.rank} this week.` };
+}
+
+function RankDelta({ delta }) {
+  if (!delta) return null;
+  const up = delta > 0;
+  return (
+    <span title={up ? "Climbed since yesterday" : "Dropped since yesterday"} style={{ fontSize: 11, fontWeight: 800, color: up ? "#16a34a" : "#dc2626", marginLeft: 6 }}>
+      {up ? "▲" : "▼"}{Math.abs(delta)}
+    </span>
+  );
+}
+
+const TONE = {
+  go: { bg: "rgba(124,58,237,0.10)", fg: "#6d28d9" },
+  warn: { bg: "rgba(245,158,11,0.14)", fg: "#b45309" },
+  good: { bg: "rgba(34,197,94,0.12)", fg: "#15803d" },
+};
+
 // ── Big card for the cohort home page ──────────────────────────────────────
 export function CohortScoreboard({ board, isMobile = false, onEnterRoom = null }) {
+  const [mode, setMode] = useState("week");
   if (!board) {
     return (
       <div style={card}>
@@ -137,11 +190,12 @@ export function CohortScoreboard({ board, isMobile = false, onEnterRoom = null }
     );
   }
   const solo = board.syncMode === "SOLO";
-  const members = board.members || [];
-  const top = Math.max(1, ...members.map((m) => m.studySeconds || 0));
+  const members = rankedFor(board, mode);
+  const top = Math.max(1, ...members.map((m) => m.secs));
+  const target = raceTargetText(board);
   return (
     <div style={{ ...card, border: "1px solid var(--accent)", background: "linear-gradient(135deg, var(--accent-soft), var(--card-bg) 60%)" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
           <span style={{ width: 36, height: 36, borderRadius: 12, background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <Trophy size={18} color="#fff" />
@@ -151,15 +205,35 @@ export function CohortScoreboard({ board, isMobile = false, onEnterRoom = null }
               {solo ? "Live race" : "Crew scoreboard"}
             </p>
             <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--text-secondary)" }}>
-              {solo ? "Everyone moves at their own pace. Who's furthest?" : "Study time in the cohort room, and what everyone is watching."}
+              {mode === "week" ? "This week's race. Resets every Monday, so everyone gets a fresh shot." : "All-time study time in the cohort room."}
             </p>
           </div>
         </div>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 999, fontSize: 12, fontWeight: 800, background: board.liveCount ? "rgba(34,197,94,0.14)" : "var(--accent-soft)", color: board.liveCount ? "#16a34a" : "var(--text-muted)" }}>
-          <span style={{ width: 8, height: 8, borderRadius: "50%", background: board.liveCount ? "#22c55e" : "var(--text-muted)", animation: board.liveCount ? "cohortLivePulse 1.4s ease-in-out infinite" : "none" }} />
-          {board.liveCount ? `${board.liveCount} studying now` : "Nobody in the room"}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <div style={{ display: "inline-flex", borderRadius: 999, border: "1px solid var(--card-border)", overflow: "hidden" }}>
+            {[["week", "This week"], ["all", "All time"]].map(([k, label]) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setMode(k)}
+                style={{ padding: "5px 12px", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, background: mode === k ? "var(--accent)" : "transparent", color: mode === k ? "#fff" : "var(--text-secondary)" }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 999, fontSize: 12, fontWeight: 800, background: board.liveCount ? "rgba(34,197,94,0.14)" : "var(--accent-soft)", color: board.liveCount ? "#16a34a" : "var(--text-muted)" }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: board.liveCount ? "#22c55e" : "var(--text-muted)", animation: board.liveCount ? "cohortLivePulse 1.4s ease-in-out infinite" : "none" }} />
+            {board.liveCount ? `${board.liveCount} studying now` : "Nobody in the room"}
+          </span>
+        </div>
       </div>
+
+      {mode === "week" && target && (
+        <div style={{ margin: "0 0 12px", padding: "9px 12px", borderRadius: 12, background: TONE[target.tone].bg, color: TONE[target.tone].fg, fontSize: 13, fontWeight: 700 }}>
+          🎯 {target.text}
+        </div>
+      )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {members.map((m) => (
@@ -167,19 +241,21 @@ export function CohortScoreboard({ board, isMobile = false, onEnterRoom = null }
             key={m.userId}
             style={{
               display: "grid",
-              gridTemplateColumns: isMobile ? "28px 34px minmax(0,1fr)" : "28px 38px minmax(0,1.3fr) minmax(0,1fr) 90px",
+              gridTemplateColumns: isMobile ? "28px 34px minmax(0,1fr)" : "28px 38px minmax(0,1.3fr) minmax(0,1fr) 96px",
               alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 14,
               background: m.isMe ? "var(--accent-soft)" : "var(--card-bg)",
               border: `1px solid ${m.live ? "rgba(34,197,94,0.45)" : "var(--card-border)"}`,
             }}
           >
-            <span style={{ fontSize: m.rank <= 3 ? 18 : 13, fontWeight: 800, color: "var(--text-muted)", textAlign: "center" }}>
-              {MEDALS[m.rank - 1] || `#${m.rank}`}
+            <span style={{ fontSize: m.r <= 3 ? 18 : 13, fontWeight: 800, color: "var(--text-muted)", textAlign: "center" }}>
+              {MEDALS[m.r - 1] || `#${m.r}`}
             </span>
             <Avatar member={m} size={isMobile ? 34 : 38} ring={m.live} />
             <div style={{ minWidth: 0 }}>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {m.isChampion && <span title="Last week's champion">👑 </span>}
                 {m.name}{m.isMe ? " (you)" : ""}
+                {mode === "week" && <RankDelta delta={m.rankDelta} />}
               </p>
               <p style={{ margin: "2px 0 0", fontSize: 12, color: m.live ? "#16a34a" : "var(--text-muted)", display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
                 {m.live && m.watching ? (
@@ -199,7 +275,7 @@ export function CohortScoreboard({ board, isMobile = false, onEnterRoom = null }
               </p>
               {isMobile && (
                 <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--text-secondary)" }}>
-                  ⏱ <strong>{fmtStudy(m.studySeconds)}</strong> · {m.videosWatched}/{board.totalVideos} videos
+                  ⏱ <strong>{fmtStudy(m.secs)}</strong>{m.todaySeconds ? ` · +${fmtStudy(m.todaySeconds)} today` : ""} · {m.videosWatched}/{board.totalVideos} videos
                 </p>
               )}
             </div>
@@ -214,15 +290,23 @@ export function CohortScoreboard({ board, isMobile = false, onEnterRoom = null }
             )}
             {!isMobile && (
               <div style={{ textAlign: "right" }}>
-                <p style={{ margin: 0, fontSize: 17, fontWeight: 900, color: "var(--text-primary)" }}>{fmtStudy(m.studySeconds)}</p>
+                <p style={{ margin: 0, fontSize: 17, fontWeight: 900, color: "var(--text-primary)" }}>{fmtStudy(m.secs)}</p>
+                {mode === "week" && m.todaySeconds > 0 && (
+                  <p style={{ margin: 0, fontSize: 11, color: "#16a34a", fontWeight: 700 }}>+{fmtStudy(m.todaySeconds)} today</p>
+                )}
                 <div style={{ marginTop: 4 }}>
-                  <ProgressBar percent={((m.studySeconds || 0) / top) * 100} color="#f59e0b" />
+                  <ProgressBar percent={(m.secs / top) * 100} color="#f59e0b" />
                 </div>
               </div>
             )}
           </div>
         ))}
       </div>
+      {board.champion && (
+        <p style={{ margin: "12px 0 0", fontSize: 12, color: "var(--text-muted)" }}>
+          👑 Last week's champion: <strong>{board.champion.name}</strong> ({fmtStudy(board.champion.seconds)})
+        </p>
+      )}
       {onEnterRoom && (
         <button
           type="button"
@@ -252,12 +336,15 @@ export function LiveRaceList({ board }) {
       return !v;
     });
   };
-  const members = board?.members || [];
+  const members = rankedFor(board, "week");
   if (!members.length) return null;
   const me = members.find((m) => m.isMe);
   const leader = members[0];
+  const gapUp = board?.me?.above?.gapSec;
   const summary = me
-    ? me.rank === 1 ? `You lead · ${fmtStudy(me.studySeconds)}` : `You #${me.rank} · ${fmtStudy(me.studySeconds)}`
+    ? me.r === 1
+      ? `You lead the week · ${fmtStudy(me.secs)}`
+      : `You #${me.r} · ${gapUp ? `${fmtStudy(gapUp)} to #${me.r - 1}` : fmtStudy(me.secs)}`
     : `${leader.name.split(" ")[0]} leads`;
 
   return (
@@ -280,12 +367,12 @@ export function LiveRaceList({ board }) {
         <div style={race.list}>
           {members.map((m) => (
             <div key={m.userId} style={race.row}>
-              <span style={race.rank}>{MEDALS[m.rank - 1] || m.rank}</span>
-              <span style={race.name(m.isMe)}>{m.isMe ? "You" : m.name}</span>
+              <span style={race.rank}>{MEDALS[m.r - 1] || m.r}</span>
+              <span style={race.name(m.isMe)}>{m.isChampion ? "👑 " : ""}{m.isMe ? "You" : m.name}<RankDelta delta={m.rankDelta} /></span>
               <span style={race.status(m.live)}>
                 {m.live && m.watching ? `${m.playing ? "▶" : "❚❚"} #${m.watching.index} ${fmtClock(m.watching.positionSec)}` : m.live ? "here" : "away"}
               </span>
-              <span style={race.time}>{fmtStudy(m.studySeconds)}</span>
+              <span style={race.time}>{fmtStudy(m.secs)}</span>
             </div>
           ))}
         </div>

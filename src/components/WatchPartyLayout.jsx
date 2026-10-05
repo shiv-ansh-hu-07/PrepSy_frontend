@@ -6,7 +6,7 @@ import useMediaControls from "../hooks/useMediaControl";
 import YouTubeRoom from "./YouTubeRoom";
 import ChatDrawer from "./ChatDrawer";
 import Whiteboard from "./Whiteboard";
-import { useCohortLive, membersByVideo, LiveRaceList, Avatar, fmtClock } from "./CohortLiveBoard";
+import { useCohortLive, membersByVideo, LiveRaceList, Avatar, fmtClock, fmtStudy } from "./CohortLiveBoard";
 import VideoFlags, { fmtTime } from "./VideoFlags";
 import api, { fetchMyAnalytics, fetchFocusSummary, fetchVideoSummary } from "../services/api";
 
@@ -250,6 +250,26 @@ export default function WatchPartyLayout({
   // Signed-in cohort members send presence + see the live tracker.
   const isCohortMember = Boolean(cohortId && currentUser?.id);
   const liveBoard = useCohortLive(isCohortMember ? cohortId : null, { intervalMs: 8000 });
+
+  // Overtake alerts — the moment you pass someone (or get passed) this week.
+  const prevWeekRankRef = useRef(null);
+  const myWeekRank = liveBoard?.me?.rank ?? null;
+  useEffect(() => {
+    const me = liveBoard?.me;
+    if (!me || myWeekRank == null) return;
+    const prev = prevWeekRankRef.current;
+    prevWeekRankRef.current = myWeekRank;
+    if (prev == null || prev === myWeekRank || (liveBoard.members?.length || 0) < 2) return;
+    const first = (n) => (n || "Someone").split(" ")[0];
+    if (myWeekRank < prev) {
+      pushToast(myWeekRank === 1
+        ? "👑 You just took #1 this week!"
+        : `🔥 You passed ${first(me.below?.name)}, now #${myWeekRank} this week`);
+    } else {
+      pushToast(`⚡ ${first(me.above?.name)} just passed you. You're #${myWeekRank}${me.above?.gapSec ? `, ${fmtStudy(me.above.gapSec)} behind` : ""}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myWeekRank]);
 
   // ── Video flags: notes pinned to a moment in a video, shared with the cohort ──
   const [flags, setFlags] = useState([]);
