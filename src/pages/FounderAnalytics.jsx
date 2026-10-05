@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { fetchEventsSummary, fetchEventsTesters } from "../services/api";
+import { fetchEventsSummary, fetchEventsTesters, fetchCohortRetention } from "../services/api";
 
 // Founder-only analytics dashboard. Not linked anywhere in the app — reachable
 // via /founder. Access is enforced server-side (ANALYTICS_ADMIN_EMAILS); if the
@@ -15,6 +15,7 @@ const FUNNEL = [
 export default function FounderAnalytics() {
   const [data, setData] = useState(null);
   const [testers, setTesters] = useState([]);
+  const [retention, setRetention] = useState(null);
   const [status, setStatus] = useState("loading"); // loading | ok | denied | error
 
   const load = useCallback(async () => {
@@ -24,6 +25,7 @@ export default function FounderAnalytics() {
       setData(res);
       setStatus("ok");
       fetchEventsTesters().then(setTesters).catch(() => setTesters([]));
+      fetchCohortRetention().then(setRetention).catch(() => setRetention({ cohorts: [] }));
     } catch (err) {
       const code = err?.response?.status;
       setStatus(code === 401 || code === 403 ? "denied" : "error");
@@ -154,6 +156,18 @@ export default function FounderAnalytics() {
         )}
       </div>
 
+      {/* Cohort retention — do crews come back week after week? */}
+      <SectionTitle>
+        Cohort retention <span style={{ fontWeight: 400, color: "var(--text-secondary)", fontSize: 13 }}>· time studied in the cohort room (a day counts at 5+ min) · data since Oct 5, 2026</span>
+      </SectionTitle>
+      {!retention ? (
+        <div style={cardStyle}><p style={{ color: "var(--text-secondary)", fontSize: 14 }}>Loading…</p></div>
+      ) : retention.cohorts.length === 0 ? (
+        <div style={cardStyle}><p style={{ color: "var(--text-secondary)", fontSize: 14 }}>No cohort study time logged yet.</p></div>
+      ) : (
+        retention.cohorts.map((c) => <CohortRetentionCard key={c.id} cohort={c} today={retention.today} />)
+      )}
+
       {/* Testers — per-person activity (the September view) */}
       <SectionTitle>
         Testers <span style={{ fontWeight: 400, color: "var(--text-secondary)", fontSize: 13 }}>· did each person sign up → join a room → finish a session → come back</span>
@@ -194,6 +208,109 @@ export default function FounderAnalytics() {
             </table>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── Cohort retention card ─────────────────────────────────────────────────────
+const DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+function weekLabel(key) {
+  return new Date(key + "T12:00:00Z").toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" });
+}
+
+function fmtMins(m) {
+  if (!m) return "0m";
+  return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ""}`;
+}
+
+// 0 = empty, then light to strong by minutes studied that day.
+function dayColor(min) {
+  if (!min) return "var(--accent-soft, #eef0fb)";
+  if (min < 5) return "rgba(124,58,237,0.18)";
+  if (min < 30) return "rgba(124,58,237,0.40)";
+  if (min < 60) return "rgba(124,58,237,0.65)";
+  return "rgba(124,58,237,0.95)";
+}
+
+function CohortRetentionCard({ cohort, today }) {
+  const weeks = cohort.perWeek;
+  const cur = weeks.length - 1;
+  // The first week with anyone active is the baseline for the curve.
+  const firstActive = weeks.findIndex((w) => w.activeMembers > 0);
+  const base = firstActive >= 0 ? weeks[firstActive].activeMembers : 0;
+  return (
+    <div style={cardStyle}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+        <div>
+          <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: 15 }}>{cohort.name}</div>
+          <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>
+            {cohort.memberCount} members · {cohort.syncMode === "SOLO" ? "self-paced" : "in sync"} · {cohort.visibility === "PRIVATE" ? "private" : "public"}
+          </div>
+        </div>
+        <div style={{ fontSize: 13, color: "var(--text-primary)" }}>
+          This week: <strong>{weeks[cur].activeMembers}/{cohort.memberCount}</strong> active · <strong>{weeks[cur].threePlusDays}</strong> on 3+ days · <strong>{fmtMins(weeks[cur].minutes)}</strong>
+        </div>
+      </div>
+
+      {/* Weekly active members — the retention curve. */}
+      {/* Weeks before the cohort's first active week are just empty bars — skip them. */}
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.max(weeks.length - Math.max(0, firstActive), 1)}, minmax(0, 72px))`, gap: 8, alignItems: "end", marginBottom: 16 }}>
+        {weeks.map((w, i) => i < firstActive ? null : (() => {
+          const pct = cohort.memberCount ? (w.activeMembers / cohort.memberCount) * 100 : 0;
+          const vsBase = base && i > firstActive ? Math.round((w.activeMembers / base) * 100) : null;
+          return (
+            <div key={w.weekStart} style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{w.activeMembers}</div>
+              <div style={{ height: 64, display: "flex", alignItems: "flex-end", justifyContent: "center", margin: "4px 0" }}>
+                <div
+                  title={`${w.activeMembers} active · ${w.threePlusDays} on 3+ days · ${fmtMins(w.minutes)}`}
+                  style={{ width: "70%", height: `${Math.max(4, pct)}%`, borderRadius: 6, background: "var(--accent, #6d6af8)", opacity: w.partial ? 0.6 : 1 }}
+                />
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>{weekLabel(w.weekStart)}{w.partial ? " (now)" : ""}</div>
+              <div style={{ fontSize: 10.5, color: "var(--text-secondary)" }}>{fmtMins(w.minutes)}{vsBase != null ? ` · ${vsBase}% of wk 1` : ""}</div>
+            </div>
+          );
+        })())}
+      </div>
+
+      {/* Per member: this week day by day, plus last week. */}
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 560 }}>
+          <thead>
+            <tr style={{ textAlign: "left", color: "var(--text-secondary)", fontSize: 12 }}>
+              <th style={{ padding: "6px 8px 6px 0" }}>Member</th>
+              {DOW.map((d) => <th key={d} style={{ padding: "6px 2px", textAlign: "center", fontWeight: 500 }}>{d}</th>)}
+              <th style={{ padding: "6px 8px", textAlign: "right" }}>This week</th>
+              <th style={{ padding: "6px 8px", textAlign: "right" }}>Last week</th>
+              <th style={{ padding: "6px 0 6px 8px", textAlign: "right" }}>Last active</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cohort.members.map((m) => {
+              const tw = m.perWeek[cur];
+              const lw = m.perWeek[cur - 1];
+              return (
+                <tr key={m.userId} style={{ borderTop: "1px solid var(--card-border, #eee)" }}>
+                  <td style={{ padding: "8px 8px 8px 0", color: "var(--text-primary)", fontWeight: 600, whiteSpace: "nowrap" }}>{m.name}</td>
+                  {m.daily.map((d) => (
+                    <td key={d.day} style={{ padding: "6px 2px", textAlign: "center" }}>
+                      <span
+                        title={`${d.day}: ${fmtMins(d.minutes)}`}
+                        style={{ display: "inline-block", width: 22, height: 22, borderRadius: 6, background: d.day > today ? "transparent" : dayColor(d.minutes), border: d.day === today ? "1.5px solid var(--accent, #6d6af8)" : "1px solid var(--card-border, #eee)" }}
+                      />
+                    </td>
+                  ))}
+                  <td style={{ padding: 8, textAlign: "right", color: "var(--text-primary)" }}>{tw.days}d · {fmtMins(tw.minutes)}</td>
+                  <td style={{ padding: 8, textAlign: "right", color: "var(--text-secondary)" }}>{lw ? `${lw.days}d · ${fmtMins(lw.minutes)}` : "—"}</td>
+                  <td style={{ padding: "8px 0 8px 8px", textAlign: "right", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{m.lastActiveDay ? weekLabel(m.lastActiveDay) : "never"}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );

@@ -27,6 +27,12 @@ export async function fetchEventsSummary() {
   return data;
 }
 
+// Founder-only cohort retention: weekly active members + per-member day grid.
+export async function fetchCohortRetention() {
+  const { data } = await api.get("/events/cohorts");
+  return data;
+}
+
 // Founder-only per-tester activity table (September view).
 export async function fetchEventsTesters() {
   const { data } = await api.get("/events/testers");

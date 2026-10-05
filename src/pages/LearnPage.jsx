@@ -723,7 +723,9 @@ export default function LearnPage() {
                     onChange={(e) => setCohortMaxSize(Number(e.target.value))}
                     style={{ height: 46, borderRadius: 12, border: "1.5px solid rgba(138,155,214,0.4)", background: "var(--card-bg)", padding: "0 14px", fontSize: 14, color: "var(--text-primary)", outline: "none" }}
                   >
-                    {[5, 10, 15, 20, 30].map((n) => (
+                    {/* A cohort is a small crew: the backend caps it at 6, and the
+                        shared video room holds 6 people, so offer only real sizes. */}
+                    {[2, 3, 4, 5, 6].map((n) => (
                       <option key={n} value={n}>
                         {n} members max
                       </option>
