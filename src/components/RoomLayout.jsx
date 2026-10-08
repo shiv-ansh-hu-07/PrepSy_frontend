@@ -331,7 +331,7 @@ export default function RoomLayout({
               </div>
               {roomPlan && (
                 <div style={{ ...styles.railPane, display: railTab === "plan" ? "flex" : "none" }}>
-                  <RoomPlanPanel roomPlan={roomPlan} />
+                  <RoomPlanPanel roomId={roomId} roomPlan={roomPlan} />
                 </div>
               )}
               <div style={{ ...styles.railPane, display: railTab === "notes" ? "flex" : "none" }}>
