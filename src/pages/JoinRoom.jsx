@@ -325,6 +325,16 @@ function RoomCard({ room, now, isMobile, onJoin }) {
         {room.name}
       </h3>
 
+      {room.femaleOnly && (
+        <span style={{
+          display: "inline-flex", alignItems: "center", gap: 3, alignSelf: "flex-start",
+          fontSize: 10, fontWeight: 700, color: "#be185d", background: "rgba(236,72,153,0.12)",
+          padding: "2px 8px", borderRadius: 999, marginBottom: 8,
+        }}>
+          🌸 Women only
+        </span>
+      )}
+
       {room.isCohortRoom && (
         <span style={{
           display: "inline-flex", alignItems: "center", gap: 3, alignSelf: "flex-start",

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useWindowWidth } from "../hooks/useBreakpoint";
 import { useNavigate } from "react-router-dom";
-import api from "../services/api";
+import api, { fetchMyProfile } from "../services/api";
 import RoomsTabs from "../components/RoomsTabs";
 
 // Display font for headings + section labels (loaded in index.html).
@@ -213,6 +213,19 @@ export default function CreateRoom() {
   const [languages, setLanguages] = useState([]);
   const [visibilityMode, setVisibilityMode] = useState(() => (prefill.get("public") === "1" ? "PUBLIC" : "PRIVATE")); // PRIVATE | PUBLIC
   const [femaleOnly, setFemaleOnly] = useState(false);
+  // Women-only rooms can only be created by women (profile gender). The server
+  // enforces this too; here we just don't show the option to anyone else.
+  const [isWoman, setIsWoman] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    fetchMyProfile()
+      .then((p) => {
+        const g = p?.profile?.gender ?? p?.gender ?? "";
+        if (!cancelled) setIsWoman(/^\s*(woman|women|female|girl)\b/i.test(g));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
   const [expertise, setExpertise] = useState("learning");
   const [collaborationStyle, setCollaborationStyle] = useState("quiet-focus");
   const [customTags, setCustomTags] = useState(() =>
@@ -249,7 +262,7 @@ export default function CreateRoom() {
         description: description.trim(),
         tags: finalTags,
         visibility,
-        femaleOnly,
+        femaleOnly: isWoman && femaleOnly,
         preferredLanguages: languages,
         collaborationStyle,
         durationMinutes: parsedDuration,
@@ -362,7 +375,8 @@ export default function CreateRoom() {
             })}
           </div>
 
-          {/* Female Only toggle */}
+          {/* Female Only toggle — women only */}
+          {isWoman && (
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "12px 16px",
@@ -376,11 +390,12 @@ export default function CreateRoom() {
                 🌸 Female participants only
               </p>
               <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--text-muted)" }}>
-                Restricts access to female members — works with both Private and Public
+                Only women can see and join this room, whether it's Private or Public
               </p>
             </div>
             <Toggle value={femaleOnly} onChange={setFemaleOnly} />
           </div>
+          )}
 
           {/* ── Tags ── */}
           <SectionHeader>Tags</SectionHeader>
