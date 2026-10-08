@@ -31,10 +31,11 @@ const FIELD_LABELS = {
 const REQUIRED = ["subject", "currentLevel", "goal", "deadline", "hoursPerDay", "daysPerWeek"];
 
 const TYPE_STYLE = {
-  learn: { label: "Learn", bg: "rgba(99,102,241,0.12)", fg: "#4f46e5" },
-  practice: { label: "Practice", bg: "rgba(34,197,94,0.12)", fg: "#15803d" },
-  revise: { label: "Revise", bg: "rgba(245,158,11,0.14)", fg: "#b45309" },
-  test: { label: "Test", bg: "rgba(239,68,68,0.12)", fg: "#b91c1c" },
+  // Mid-tone colours so the badges read on both light and dark cards.
+  learn: { label: "Learn", bg: "rgba(99,102,241,0.16)", fg: "#6366f1" },
+  practice: { label: "Practice", bg: "rgba(34,197,94,0.16)", fg: "#16a34a" },
+  revise: { label: "Revise", bg: "rgba(245,158,11,0.18)", fg: "#d97706" },
+  test: { label: "Test", bg: "rgba(239,68,68,0.16)", fg: "#dc2626" },
 };
 
 function fmtDate(iso) {
@@ -49,7 +50,9 @@ export default function Planner() {
   const { id } = useParams();
   const { isMobile, isTablet } = useBreakpoint();
   return (
-    <div style={{ minHeight: "calc(100vh - 76px)", padding: isMobile ? "20px 16px 48px" : "32px 24px 56px" }}>
+    // Themed page background like every other inner page (it was missing, so
+    // dark mode showed dark cards on a white page).
+    <div style={{ minHeight: "calc(100vh - 76px)", background: "var(--page-bg)", fontFamily: "'Inter', system-ui, sans-serif", padding: isMobile ? "20px 16px 48px" : "32px 24px 56px" }}>
       <div style={{ width: "100%", maxWidth: 1360, margin: "0 auto", display: "grid", gridTemplateColumns: isTablet ? "minmax(0, 1fr)" : "288px minmax(0, 1fr)", gap: 24, alignItems: "start" }}>
         {!isTablet && <AppSideNav />}
         <main style={{ minWidth: 0 }}>{id ? <PlanView id={id} isMobile={isMobile} /> : <PlannerChat isMobile={isMobile} />}</main>
@@ -394,7 +397,7 @@ function PlanView({ id, isMobile }) {
                   );
                 })}
                 {w.milestone && (
-                  <div style={{ marginTop: 6, padding: "9px 12px", borderRadius: 12, background: "rgba(34,197,94,0.10)", color: "#15803d", fontSize: 13, fontWeight: 700 }}>
+                  <div style={{ marginTop: 6, padding: "9px 12px", borderRadius: 12, background: "rgba(34,197,94,0.12)", color: "#16a34a", fontSize: 13, fontWeight: 700 }}>
                     🎯 Milestone: {w.milestone}
                   </div>
                 )}
