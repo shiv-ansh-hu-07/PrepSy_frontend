@@ -387,6 +387,7 @@ function buildMobileLinks({ user, isHomePage, isFeaturePage }) {
     links.push({ label: "Home", path: "/dashboard", active: false });
     links.push({ label: "Rooms", path: "/join-room", active: false });
     links.push({ label: "Profile", path: "/profile", active: false });
+    links.push({ label: "Study Planner", path: "/planner", active: false });
     links.push({ label: "Leaderboard", path: "/leaderboard", active: false });
     links.push({ label: "Analytics", path: "/analytics", active: false });
     links.push({ label: "Find your people", path: "/people", active: false });

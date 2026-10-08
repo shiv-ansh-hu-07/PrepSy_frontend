@@ -11,6 +11,7 @@ import {
   Sun,
   Sparkles,
   Trophy,
+  CalendarCheck,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -24,6 +25,7 @@ const navItems = [
   { label: "Home", path: "/dashboard", icon: Home },
   { label: "Rooms", path: "/join-room", icon: DoorOpen, requiresUser: true, match: ["/join-room", "/myRooms", "/create-room"], tour: "nav-rooms" },
   { label: "Profile", path: "/profile", icon: UserRound, requiresUser: true },
+  { label: "Study Planner", path: "/planner", icon: CalendarCheck, requiresUser: true, prefix: true },
   { label: "Leaderboard", path: "/leaderboard", icon: Trophy, requiresUser: true },
   { label: "Analytics", path: "/analytics", icon: BarChart3, requiresUser: true, tour: "nav-analytics" },
   { label: "Find your people", path: "/people", icon: Sparkles, requiresUser: true },
@@ -75,7 +77,8 @@ export default function AppSideNav() {
           const Icon = item.icon;
           const active = item.match
             ? item.match.includes(location.pathname)
-            : location.pathname === item.path;
+            : location.pathname === item.path ||
+              (item.prefix && location.pathname.startsWith(`${item.path}/`));
           const disabled = Boolean(item.requiresUser && !user);
 
           return (
