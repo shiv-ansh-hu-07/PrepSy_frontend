@@ -81,19 +81,25 @@ export default function WatchPartyLayout({
     setFloats((f) => [...f, { id, emoji, left }]);
     setTimeout(() => setFloats((f) => f.filter((x) => x.id !== id)), 2600);
   };
+  const lastReactionAtRef = useRef(0);
   const sendReaction = (emoji) => {
     // A parent-page gesture — also a good moment to unblock suspended audio.
     room?.startAudio?.().catch(() => {});
+    // Light rate limit so mashing the button can't flood the room.
+    const now = Date.now();
+    if (now - lastReactionAtRef.current < 250) return;
+    lastReactionAtRef.current = now;
     spawnFloat(emoji); // show mine instantly
     if (room?.state === "connected" && localParticipant) {
-      try {
-        localParticipant.publishData(
+      // Reliable, like chat/quiz/sync. These went over the lossy channel,
+      // which silently dropped them (notably for people not publishing a mic
+      // or camera — most of a study room) — so others never saw reactions.
+      Promise.resolve()
+        .then(() => localParticipant.publishData(
           new TextEncoder().encode(JSON.stringify({ type: "YT_REACTION", emoji })),
-          { reliable: false },
-        );
-      } catch {
-        /* best effort */
-      }
+          { reliable: true },
+        ))
+        .catch(() => { /* best effort */ });
     }
   };
   // Reliable broadcast of a small JSON payload to the whole room (pop quiz, etc.).
@@ -1940,7 +1946,9 @@ const styles = {
     background: "#ef4444", color: "#fff", fontSize: 11.5, fontWeight: 700, cursor: "pointer",
   },
   floatsLayer: {
-    position: "absolute", inset: 0, zIndex: 27, pointerEvents: "none", overflow: "hidden",
+    // Above the Focus-mode overlay (34) so reactions still show; quizzes and the
+    // waiting screen (40+) stay on top.
+    position: "absolute", inset: 0, zIndex: 35, pointerEvents: "none", overflow: "hidden",
   },
   controlToastLayer: {
     position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 32,
@@ -1960,7 +1968,7 @@ const styles = {
     filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.4))",
   },
   reactionPill: {
-    position: "absolute", bottom: 14, left: "50%", transform: "translateX(-50%)", zIndex: 30,
+    position: "absolute", bottom: 14, left: "50%", transform: "translateX(-50%)", zIndex: 36,
     display: "flex", gap: 2, padding: "4px 6px", borderRadius: 999,
     background: "rgba(8,10,20,0.72)", border: "1px solid rgba(148,163,184,0.28)",
     backdropFilter: "blur(8px)", boxShadow: "0 8px 22px rgba(0,0,0,0.35)",
