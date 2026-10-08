@@ -335,7 +335,7 @@ function PlanView({ id, isMobile }) {
         </div>
       </div>
 
-      <StudyTogether subject={record.profile?.subject || plan.title} planTitle={plan.title} isMobile={isMobile} />
+      <StudyTogether planId={id} subject={record.profile?.subject || plan.title} planTitle={plan.title} isMobile={isMobile} />
 
       {plan.phases?.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(${isMobile ? 160 : 200}px, 1fr))`, gap: 10 }}>
@@ -424,7 +424,7 @@ function PlanView({ id, isMobile }) {
 // "Study this with others": live/recurring rooms and cohorts on the plan's
 // subject (same search as the Rooms page), with a one-tap join — or create a
 // public room for it (prefilled) / start a YouTube cohort.
-function StudyTogether({ subject, planTitle, isMobile }) {
+function StudyTogether({ planId, subject, planTitle, isMobile }) {
   const navigate = useNavigate();
   const [found, setFound] = useState(null);
   const query = String(subject || "").slice(0, 120);
@@ -450,6 +450,7 @@ function StudyTogether({ subject, planTitle, isMobile }) {
     description: `Studying together for: ${planTitle || query}`.slice(0, 280),
     tags,
     public: "1",
+    plan: planId,
   }).toString()}`;
 
   const join = (r) => navigate(r.isCohortRoom && r.cohortId ? `/cohort/${r.cohortId}` : `/room/${r.roomId}`);
@@ -461,10 +462,27 @@ function StudyTogether({ subject, planTitle, isMobile }) {
           <Users size={17} color="var(--accent)" />
         </span>
         <div style={{ minWidth: 0 }}>
-          <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "var(--text-primary)" }}>Study this with others</p>
-          <p style={{ margin: "2px 0 0", fontSize: 12.5, color: "var(--text-secondary)" }}>People who study together stick to their plan. Join a room or start one.</p>
+          <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "var(--text-primary)" }}>Next step: start studying it</p>
+          <p style={{ margin: "2px 0 0", fontSize: 12.5, color: "var(--text-secondary)" }}>Your plan is saved. People who study together stick to their plan, so pick how you'll study it.</p>
         </div>
       </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "minmax(0,1fr)" : "repeat(2, minmax(0,1fr))", gap: 10, marginBottom: 14 }}>
+        <button type="button" onClick={() => navigate(createUrl)} style={choiceTile}>
+          <DoorOpen size={20} color="var(--accent)" />
+          <span style={{ fontSize: 14, fontWeight: 800, color: "var(--text-primary)" }}>Create my own study room</span>
+          <span style={{ fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.45 }}>A fresh room that follows this plan: its Plan tab shows this week's topics. Invite friends to join you.</span>
+        </button>
+        <button type="button" onClick={() => document.getElementById("plan-rooms")?.scrollIntoView({ behavior: "smooth", block: "center" })} style={choiceTile}>
+          <Users size={20} color="var(--accent)" />
+          <span style={{ fontSize: 14, fontWeight: 800, color: "var(--text-primary)" }}>Join an existing room or cohort</span>
+          <span style={{ fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.45 }}>
+            {rooms == null ? "Looking for rooms on this…" : rooms.length ? `${rooms.length} open on “${query}” right now. See them below.` : `None on “${query}” yet. Browse all rooms or start a YouTube cohort.`}
+          </span>
+        </button>
+      </div>
+
+      <p id="plan-rooms" style={{ ...sideTitle, marginBottom: 8 }}>Matching rooms & cohorts</p>
 
       {rooms == null ? (
         <p style={muted}>Finding rooms…</p>
@@ -490,7 +508,6 @@ function StudyTogether({ subject, planTitle, isMobile }) {
       )}
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <button type="button" onClick={() => navigate(createUrl)} style={ghostBtn}><DoorOpen size={14} /> Create a room for this plan</button>
         <button type="button" onClick={() => navigate("/learn")} style={ghostBtn}><Youtube size={14} /> Start a YouTube cohort</button>
         <button type="button" onClick={() => navigate("/join-room")} style={ghostBtn}>Browse all rooms →</button>
       </div>
@@ -525,6 +542,11 @@ const card = {
 };
 const sideTitle = { margin: "0 0 8px", fontSize: 11, fontWeight: 800, letterSpacing: 0.6, textTransform: "uppercase", color: "var(--text-muted)" };
 const muted = { margin: 0, fontSize: 13, color: "var(--text-muted)" };
+const choiceTile = {
+  display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6, textAlign: "left",
+  padding: "14px 16px", borderRadius: 16, cursor: "pointer",
+  border: "1.5px solid var(--accent)", background: "linear-gradient(135deg, var(--accent-soft), var(--card-bg) 75%)",
+};
 const chip = { padding: "6px 12px", borderRadius: 999, border: "1px solid var(--accent)", background: "var(--card-bg)", color: "var(--accent)", fontSize: 12.5, fontWeight: 700, cursor: "pointer" };
 const ghostBtn = { height: 34, padding: "0 12px", borderRadius: 10, border: "1px solid var(--card-border)", background: "var(--card-bg)", color: "var(--text-secondary)", fontSize: 12.5, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", flexShrink: 0 };
 const primaryBtn = (disabled) => ({ height: 42, padding: "0 18px", borderRadius: 12, border: "none", background: disabled ? "var(--card-border)" : "var(--accent-gradient, var(--accent))", color: "#fff", fontWeight: 700, fontSize: 14, cursor: disabled ? "default" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" });

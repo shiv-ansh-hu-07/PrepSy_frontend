@@ -8,7 +8,7 @@ import ChatDrawer from "./ChatDrawer";
 import Whiteboard from "./Whiteboard";
 import { useCohortLive, membersByVideo, LiveRaceList, Avatar, fmtClock, fmtStudy } from "./CohortLiveBoard";
 import VideoFlags, { fmtTime } from "./VideoFlags";
-import api, { fetchMyAnalytics, fetchFocusSummary, fetchVideoSummary } from "../services/api";
+import api, { fetchMyAnalytics, fetchFocusSummary, fetchVideoSummary, markVideoWatched } from "../services/api";
 
 const PREP_MS = 60_000;
 
@@ -43,6 +43,7 @@ export default function WatchPartyLayout({
   cohortTopic = null,
   syncMode = "SYNC",
   myPosition = null,
+  catchUp = null,
 }) {
   const { toggleMic, micEnabled, toggleCamera, camEnabled, toggleScreenShare, screenEnabled, screenShareError } = useMediaControls();
   const navigate = useNavigate();
@@ -1469,6 +1470,8 @@ export default function WatchPartyLayout({
                 liveBoard={liveBoard}
                 progress={courseProgress}
                 skipped={playlistSkipped}
+                catchUp={catchUp}
+                roomId={roomId}
                 onPick={(vid) => ytControlsRef.current?.jumpTo(vid)}
                 onRequestControl={() => ytControlsRef.current?.requestControl()}
                 onEndSession={solo ? null : handleEndSession}
@@ -1558,7 +1561,7 @@ function StatPill({ icon: Icon, label, value }) {
   );
 }
 
-function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, solo = false, liveBoard = null, progress, skipped, onPick, onRequestControl, onEndSession, endingSession, onLaunchFf, ffBusy, surpriseOn, onToggleSurprise }) {
+function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, solo = false, liveBoard = null, progress, skipped, catchUp = null, roomId = null, onPick, onRequestControl, onEndSession, endingSession, onLaunchFf, ffBusy, surpriseOn, onToggleSurprise }) {
   const [showSkipped, setShowSkipped] = useState(false);
   // Who is on which video right now (live members only) — the live tracker.
   const onVideo = membersByVideo(liveBoard);
@@ -1636,6 +1639,9 @@ function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, solo = fals
       {/* Live tracker — collapsed to one line; expands to the ranked list. */}
       <LiveRaceList board={liveBoard} />
 
+      {/* Late joiner? What the group covered before you, to catch up on. */}
+      <CatchUpList items={catchUp} roomId={roomId} />
+
       {/* Skipped videos (left out at creation or jumped past in a session) — not
           on the shared stage or the schedule; watchable as optional catch-up. */}
       {hasSkipped && (
@@ -1697,6 +1703,54 @@ function PlaylistPanel({ videos, watchedSet, currentVideoId, amHost, solo = fals
           </button>
         );
       })}
+    </div>
+  );
+}
+
+// Personal catch-up for synced cohorts: plan videos before the group's point
+// that you haven't watched (e.g. you joined late). Watching happens outside
+// the shared player (YouTube, new tab) so the room isn't moved; "Done" records
+// it for your own progress.
+function CatchUpList({ items, roomId }) {
+  const [open, setOpen] = useState(false);
+  const [done, setDone] = useState(() => new Set());
+  const list = (Array.isArray(items) ? items : []).filter((v) => !done.has(v.ytVideoId));
+  if (!list.length) return null;
+  const markDone = (vid) => {
+    setDone((d) => new Set(d).add(vid));
+    markVideoWatched(roomId, vid).catch(() => {});
+  };
+  return (
+    <div style={styles.skippedNote}>
+      <button type="button" style={styles.skippedToggle} onClick={() => setOpen((s) => !s)}>
+        <span>📚 {list.length} to catch up · covered before you joined</span>
+        <span>{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <ul style={styles.skippedList}>
+          {list.map((v) => (
+            <li key={v.ytVideoId} style={{ ...styles.skippedItem, display: "flex", alignItems: "center", gap: 8 }}>
+              <a
+                href={`https://www.youtube.com/watch?v=${v.ytVideoId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ ...styles.skippedLink, flex: 1, minWidth: 0 }}
+                title="Watch on YouTube (doesn't change the room)"
+              >
+                ▶ {v.title}
+              </a>
+              <button
+                type="button"
+                onClick={() => markDone(v.ytVideoId)}
+                title="I've watched this"
+                style={{ flexShrink: 0, border: "1px solid var(--card-border)", background: "transparent", borderRadius: 8, padding: "2px 8px", fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", cursor: "pointer" }}
+              >
+                ✓ Done
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

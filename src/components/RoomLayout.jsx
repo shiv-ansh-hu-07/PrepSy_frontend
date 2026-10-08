@@ -24,6 +24,7 @@ import { useNavigate } from "react-router-dom";
 import AmbientBackground from "./AmbientBackground";
 import { SCENE_LIST } from "./ambientScenes";
 import PomodoroTimer from "./PomodoroTimer";
+import RoomPlanPanel from "./RoomPlanPanel";
 import { useParticipants } from "@livekit/components-react";
 import { useEffect, useRef, useState } from "react";
 import api, { fetchMyProfile, saveFocusSession } from "../services/api";
@@ -68,7 +69,17 @@ export default function RoomLayout({
   const participantCount = participants.length;
 
   const [notes, setNotes] = useState("");
-  const [railTab, setRailTab] = useState("pomodoro"); // "pomodoro" | "notes"
+  const [railTab, setRailTab] = useState("pomodoro"); // "pomodoro" | "notes" | "plan"
+  // The study plan this room follows (rooms created from the AI planner).
+  const [roomPlan, setRoomPlan] = useState(null);
+  useEffect(() => {
+    if (!roomId || !localStorage.getItem("token")) return undefined;
+    let cancelled = false;
+    api.get(`/planner/by-room/${roomId}`)
+      .then(({ data }) => { if (!cancelled && data?.plan) setRoomPlan(data); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [roomId]);
   const [shareStatus, setShareStatus] = useState("");
   const [leaving, setLeaving] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
@@ -301,6 +312,15 @@ export default function RoomLayout({
               >
                 Notes
               </button>
+              {roomPlan && (
+                <button
+                  type="button"
+                  onClick={() => setRailTab("plan")}
+                  style={{ ...styles.railTab, ...(railTab === "plan" ? styles.railTabActive : null) }}
+                >
+                  Plan
+                </button>
+              )}
             </div>
 
             {/* Both panes stay MOUNTED — only visibility toggles — so switching
@@ -309,6 +329,11 @@ export default function RoomLayout({
               <div style={{ ...styles.railPane, display: railTab === "pomodoro" ? "flex" : "none" }}>
                 <PomodoroTimer onLeaveRoom={handleLeave} roomDurationMinutes={roomDurationMinutes} />
               </div>
+              {roomPlan && (
+                <div style={{ ...styles.railPane, display: railTab === "plan" ? "flex" : "none" }}>
+                  <RoomPlanPanel roomPlan={roomPlan} />
+                </div>
+              )}
               <div style={{ ...styles.railPane, display: railTab === "notes" ? "flex" : "none" }}>
                 <NotesPanel
                   notes={notes}

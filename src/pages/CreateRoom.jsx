@@ -244,6 +244,8 @@ export default function CreateRoom() {
       const res = await api.post("/rooms/create", {
         name: roomName.trim(),
         roomId,
+        // Room created from a study plan follows it (shows its weekly topics).
+        ...(prefill.get("plan") ? { studyPlanId: prefill.get("plan") } : {}),
         description: description.trim(),
         tags: finalTags,
         visibility,
