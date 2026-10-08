@@ -383,8 +383,8 @@ function buildMobileLinks({ user, isHomePage, isFeaturePage }) {
 
   if (user) {
     // Same order as the sidebar: core study surfaces first.
-    links.push({ label: "Home", path: "/dashboard", active: false });
     links.push({ label: "YouTube Cohort", path: "/cohorts", active: false });
+    links.push({ label: "Home", path: "/dashboard", active: false });
     links.push({ label: "Rooms", path: "/join-room", active: false });
     links.push({ label: "Profile", path: "/profile", active: false });
     links.push({ label: "Leaderboard", path: "/leaderboard", active: false });

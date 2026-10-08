@@ -20,8 +20,8 @@ import api from "../services/api";
 
 const navItems = [
   // Core study surfaces first (cohort, rooms, profile), then the rest.
-  { label: "Home", path: "/dashboard", icon: Home },
   { label: "YouTube Cohort", path: "/cohorts", icon: Youtube, requiresUser: true, tour: "nav-cohort" },
+  { label: "Home", path: "/dashboard", icon: Home },
   { label: "Rooms", path: "/join-room", icon: DoorOpen, requiresUser: true, match: ["/join-room", "/myRooms", "/create-room"], tour: "nav-rooms" },
   { label: "Profile", path: "/profile", icon: UserRound, requiresUser: true },
   { label: "Leaderboard", path: "/leaderboard", icon: Trophy, requiresUser: true },
