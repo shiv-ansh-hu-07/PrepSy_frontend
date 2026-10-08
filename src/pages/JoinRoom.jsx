@@ -294,6 +294,7 @@ export default function JoinRoom() {
 }
 
 function RoomCard({ room, now, isMobile, onJoin }) {
+  const navigate = useNavigate();
   const status = getRoomStatus(room, now);
   const { icon, bg, accent } = roomIcon(room);
   const tags = (room.tags || []).slice(0, isMobile ? 3 : 4);
@@ -366,6 +367,10 @@ function RoomCard({ room, now, isMobile, onJoin }) {
           <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{userCount > 0 ? `${userCount}` : "0"}</span>
         </div>
 
+        <div style={{ display: "flex", gap: 6 }}>
+        <button onClick={() => navigate(room.isCohortRoom && room.cohortId ? `/cohort/${room.cohortId}` : `/rooms/${room.roomId}`)} style={{ padding: "7px 12px", borderRadius: 10, border: "1px solid rgba(190,200,235,0.7)", background: "var(--card-bg)", color: "var(--text-secondary)", fontWeight: 600, fontSize: 11, cursor: "pointer" }}>
+          Details
+        </button>
         {status.live ? (
           <button onClick={onJoin} style={{ padding: "7px 15px", borderRadius: 10, border: "none", background: "var(--accent-gradient)", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", boxShadow: "0 4px 12px rgba(124,58,237,0.28)" }}>
             Join Now
@@ -375,6 +380,7 @@ function RoomCard({ room, now, isMobile, onJoin }) {
             Notify me
           </button>
         )}
+        </div>
       </div>
     </div>
   );

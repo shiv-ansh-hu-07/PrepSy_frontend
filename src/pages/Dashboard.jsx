@@ -416,8 +416,9 @@ function SessionRow({ room, isMobile, onJoin }) {
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-        {room.isCohortRoom && room.cohortId ? (
-          <button onClick={() => navigate(`/cohort/${room.cohortId}`)} style={{
+        {/* Every room has a details page: cohorts their cohort page, normal rooms /rooms/:id. */}
+        {room.roomId ? (
+          <button onClick={() => navigate(room.isCohortRoom && room.cohortId ? `/cohort/${room.cohortId}` : `/rooms/${room.roomId}`)} style={{
             padding: isMobile ? "6px 12px" : "7px 14px", borderRadius: 10,
             border: "1px solid var(--card-border)", background: "transparent",
             color: "var(--text-secondary)", fontWeight: 600, fontSize: 12,

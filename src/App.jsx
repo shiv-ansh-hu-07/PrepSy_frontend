@@ -30,6 +30,7 @@ const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const MyCohorts = lazy(() => import("./pages/MyCohorts"));
 const FounderAnalytics = lazy(() => import("./pages/FounderAnalytics"));
 const Planner = lazy(() => import("./pages/Planner"));
+const RoomDetails = lazy(() => import("./pages/RoomDetails"));
 
 export default function App() {
   return (
@@ -207,6 +208,14 @@ export default function App() {
             }
           />
 
+          <Route
+            path="/rooms/:roomId"
+            element={
+              <ProtectedRoute>
+                <RoomDetails />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/planner"
             element={
