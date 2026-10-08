@@ -73,8 +73,13 @@ export default function RoomPage() {
       })
       .catch((error) => {
         if (!cancelled) {
+          const data = error?.response?.data;
+          const at = (iso) =>
+            new Date(iso).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });
           setJoinError(
-            error?.response?.data?.error || "Unable to join this classroom right now."
+            data?.opensAt
+              ? `This room opens at ${at(data.opensAt)}, 15 minutes before it starts (${at(data.startTime)}). Come back then.`
+              : data?.error || "Unable to join this classroom right now."
           );
         }
       });
