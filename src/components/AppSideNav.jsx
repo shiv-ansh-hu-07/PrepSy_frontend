@@ -19,14 +19,15 @@ import { useGuardedNavigate } from "../context/NavGuardContext";
 import api from "../services/api";
 
 const navItems = [
+  // Core study surfaces first (cohort, rooms, profile), then the rest.
   { label: "Home", path: "/dashboard", icon: Home },
-  { label: "Find your people", path: "/people", icon: Sparkles, requiresUser: true },
-  { label: "Leaderboard", path: "/leaderboard", icon: Trophy, requiresUser: true },
   { label: "YouTube Cohort", path: "/cohorts", icon: Youtube, requiresUser: true, tour: "nav-cohort" },
-  { label: "Community", path: "/community", icon: MessageCircle },
   { label: "Rooms", path: "/join-room", icon: DoorOpen, requiresUser: true, match: ["/join-room", "/myRooms", "/create-room"], tour: "nav-rooms" },
-  { label: "Analytics", path: "/analytics", icon: BarChart3, requiresUser: true, tour: "nav-analytics" },
   { label: "Profile", path: "/profile", icon: UserRound, requiresUser: true },
+  { label: "Leaderboard", path: "/leaderboard", icon: Trophy, requiresUser: true },
+  { label: "Analytics", path: "/analytics", icon: BarChart3, requiresUser: true, tour: "nav-analytics" },
+  { label: "Find your people", path: "/people", icon: Sparkles, requiresUser: true },
+  { label: "Community", path: "/community", icon: MessageCircle },
 ];
 
 export default function AppSideNav() {
