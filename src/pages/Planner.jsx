@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Sparkles, Send, CheckCircle2, Circle, Trash2, Plus, CalendarDays, Clock, Target, ChevronDown } from "lucide-react";
+import { Sparkles, Send, CheckCircle2, Circle, Trash2, Plus, CalendarDays, Clock, Target, ChevronDown, Users, DoorOpen, Youtube } from "lucide-react";
 import AppSideNav from "../components/AppSideNav";
 import RichText from "../components/RichText";
 import { useBreakpoint } from "../hooks/useBreakpoint";
@@ -335,6 +335,8 @@ function PlanView({ id, isMobile }) {
         </div>
       </div>
 
+      <StudyTogether subject={record.profile?.subject || plan.title} planTitle={plan.title} isMobile={isMobile} />
+
       {plan.phases?.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(${isMobile ? 160 : 200}px, 1fr))`, gap: 10 }}>
           {plan.phases.map((ph, i) => {
@@ -415,6 +417,83 @@ function PlanView({ id, isMobile }) {
           </ul>
         </div>
       )}
+    </div>
+  );
+}
+
+// "Study this with others": live/recurring rooms and cohorts on the plan's
+// subject (same search as the Rooms page), with a one-tap join — or create a
+// public room for it (prefilled) / start a YouTube cohort.
+function StudyTogether({ subject, planTitle, isMobile }) {
+  const navigate = useNavigate();
+  const [found, setFound] = useState(null);
+  const query = String(subject || "").slice(0, 120);
+  const rooms = query ? found : [];
+
+  useEffect(() => {
+    if (!query) return undefined;
+    let cancelled = false;
+    api.get("/rooms/search", { params: { q: query } })
+      .then(({ data }) => { if (!cancelled) setFound((data?.rooms || []).slice(0, 4)); })
+      .catch(() => { if (!cancelled) setFound([]); });
+    return () => { cancelled = true; };
+  }, [query]);
+
+  const tags = query
+    .split(/[+,&/]| and /i)
+    .map((t) => t.trim())
+    .filter((t) => t && t.length <= 24)
+    .slice(0, 4)
+    .join(",");
+  const createUrl = `/create-room?${new URLSearchParams({
+    name: `${query.split(/[+,]/)[0].trim().slice(0, 40) || "Study"} study room`,
+    description: `Studying together for: ${planTitle || query}`.slice(0, 280),
+    tags,
+    public: "1",
+  }).toString()}`;
+
+  const join = (r) => navigate(r.isCohortRoom && r.cohortId ? `/cohort/${r.cohortId}` : `/room/${r.roomId}`);
+
+  return (
+    <div style={card}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+        <span style={{ width: 34, height: 34, borderRadius: 11, background: "var(--accent-soft)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <Users size={17} color="var(--accent)" />
+        </span>
+        <div style={{ minWidth: 0 }}>
+          <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "var(--text-primary)" }}>Study this with others</p>
+          <p style={{ margin: "2px 0 0", fontSize: 12.5, color: "var(--text-secondary)" }}>People who study together stick to their plan. Join a room or start one.</p>
+        </div>
+      </div>
+
+      {rooms == null ? (
+        <p style={muted}>Finding rooms…</p>
+      ) : rooms.length === 0 ? (
+        <p style={{ ...muted, marginBottom: 12 }}>No open rooms for “{query}” yet. Be the first to start one.</p>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "minmax(0,1fr)" : "repeat(2, minmax(0,1fr))", gap: 10, marginBottom: 12 }}>
+          {rooms.map((r) => (
+            <div key={r.roomId} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 14, border: "1px solid var(--card-border)", background: "var(--card-bg)", minWidth: 0 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={r.name}>{r.name}</p>
+                <p style={{ margin: "3px 0 0", fontSize: 11.5, color: "var(--text-muted)", display: "flex", gap: 8, alignItems: "center" }}>
+                  {r.isCohortRoom ? <span style={{ color: "#ef4444", fontWeight: 700 }}>▶ Cohort</span> : <span>Room</span>}
+                  {r.activeUsers > 0 ? <span style={{ color: "#16a34a", fontWeight: 700 }}>● {r.activeUsers} studying now</span> : null}
+                </p>
+              </div>
+              <button type="button" onClick={() => join(r)} style={{ ...primaryBtn(false), height: 34, padding: "0 14px", fontSize: 12.5, flexShrink: 0 }}>
+                {r.isCohortRoom ? "View cohort" : "Join"}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <button type="button" onClick={() => navigate(createUrl)} style={ghostBtn}><DoorOpen size={14} /> Create a room for this plan</button>
+        <button type="button" onClick={() => navigate("/learn")} style={ghostBtn}><Youtube size={14} /> Start a YouTube cohort</button>
+        <button type="button" onClick={() => navigate("/join-room")} style={ghostBtn}>Browse all rooms →</button>
+      </div>
     </div>
   );
 }

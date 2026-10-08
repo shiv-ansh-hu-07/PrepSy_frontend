@@ -202,17 +202,22 @@ function TagInput({ tags, onChange }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function CreateRoom() {
   const navigate = useNavigate();
+  // Optional prefill (e.g. "Create a room for this plan" from the Study Planner):
+  // ?name=…&description=…&tags=a,b&public=1
+  const [prefill] = useState(() => new URLSearchParams(window.location.search));
 
-  const [roomName, setRoomName] = useState("");
+  const [roomName, setRoomName] = useState(() => (prefill.get("name") || "").slice(0, 80));
   const [roomId] = useState(crypto.randomUUID());
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(() => (prefill.get("description") || "").slice(0, 300));
   const [goals, setGoals] = useState([]);
   const [languages, setLanguages] = useState([]);
-  const [visibilityMode, setVisibilityMode] = useState("PRIVATE"); // PRIVATE | PUBLIC
+  const [visibilityMode, setVisibilityMode] = useState(() => (prefill.get("public") === "1" ? "PUBLIC" : "PRIVATE")); // PRIVATE | PUBLIC
   const [femaleOnly, setFemaleOnly] = useState(false);
   const [expertise, setExpertise] = useState("learning");
   const [collaborationStyle, setCollaborationStyle] = useState("quiet-focus");
-  const [customTags, setCustomTags] = useState([]);
+  const [customTags, setCustomTags] = useState(() =>
+    (prefill.get("tags") || "").split(",").map((t) => t.trim().toLowerCase()).filter(Boolean).slice(0, 6),
+  );
   const [scheduleEnabled, setScheduleEnabled] = useState(true);
   const [scheduleTime, setScheduleTime] = useState("19:00");
   const [durationMinutes, setDurationMinutes] = useState("90");
