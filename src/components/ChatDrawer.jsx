@@ -2,6 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import { useRoomContext, useLocalParticipant } from "@livekit/components-react";
 import { DataPacket_Kind } from "livekit-client";
 import EmojiPicker from "./EmojiPicker";
+import RichText from "./RichText";
+import ChatComposer from "./ChatComposer";
 
 export default function ChatDrawer({ onClose, currentUser, embedded = false }) {
   const room = useRoomContext();
@@ -231,7 +233,7 @@ export default function ChatDrawer({ onClose, currentUser, embedded = false }) {
                 )}
 
                 {/* Text */}
-                <div className="text-sm">{msg.text}</div>
+                <RichText text={msg.text} dark={isMe} style={{ fontSize: 14, lineHeight: 1.5 }} />
 
                 {/* Time + reply action */}
                 <div
@@ -267,15 +269,15 @@ export default function ChatDrawer({ onClose, currentUser, embedded = false }) {
             <button type="button" onClick={() => setReplyTo(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: 16, lineHeight: 1, flexShrink: 0 }} title="Cancel reply">✕</button>
           </div>
         )}
-        <div className="flex items-center gap-2">
+        <div className="flex items-end gap-2">
           <EmojiPicker onPick={(e) => setInput((t) => t + e)} />
-          <input
+          <ChatComposer
             ref={inputRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-            placeholder="Type your message..."
-            className="flex-1 px-4 py-2 rounded-full border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"
+            onChange={setInput}
+            onSubmit={sendMessage}
+            placeholder="Message… (Shift+Enter for a new line)"
+            className="px-4 py-2 rounded-2xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"
           />
           <button
             style={styles.saveBtn}

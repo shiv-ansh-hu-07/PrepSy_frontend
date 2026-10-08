@@ -35,6 +35,8 @@ const isSticker = (t) => {
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import AppSideNav from "../components/AppSideNav";
+import RichText from "../components/RichText";
+import ChatComposer from "../components/ChatComposer";
 
 const initialsOf = (name = "") => {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -170,8 +172,9 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
   }, [messages.length, activeId]);
 
   const send = async () => {
-    const body = text.trim();
-    if (!body || sending) return;
+    // Keep the first line's indentation (pasted code); drop only blank edges.
+    const body = text.replace(/^\s*\n/, "").trimEnd();
+    if (!body.trim() || sending) return;
     setSending(true);
     try {
       const res = await api.post(`/friends/${activeId}/messages`, { text: body });
@@ -365,9 +368,9 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
                             ) : isSticker(m.text) ? (
                               <div style={{ fontSize: 44, lineHeight: 1.1, padding: "2px 4px" }}>{m.text}</div>
                             ) : (
-                              <div style={{ padding: "8px 12px", borderRadius: 14, fontSize: 13.5, lineHeight: 1.45, whiteSpace: "pre-wrap", wordBreak: "break-word",
+                              <div style={{ padding: "8px 12px", borderRadius: 14, fontSize: 13.5, lineHeight: 1.45, minWidth: 0,
                                 background: mine ? "var(--accent-gradient, #7c3aed)" : "var(--accent-soft)", color: mine ? "#fff" : "var(--text-primary)" }}>
-                                {m.text}
+                                <RichText text={m.text} dark={mine} />
                               </div>
                             )}
                             <p style={{ margin: "2px 4px 0", fontSize: 10, color: "var(--text-muted)", textAlign: mine ? "right" : "left" }}>{timeLabel(m.createdAt)}</p>
@@ -383,7 +386,7 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
                     </div>
                   ) : null}
 
-                  <div style={{ padding: 12, borderTop: "1px solid var(--card-border)", display: "flex", gap: 8, alignItems: "center", position: "relative" }}>
+                  <div style={{ padding: 12, borderTop: "1px solid var(--card-border)", display: "flex", gap: 8, alignItems: "flex-end", position: "relative" }}>
                     <input ref={fileRef} type="file" onChange={onFileChange} style={{ display: "none" }} />
                     <button onClick={() => fileRef.current?.click()} disabled={uploading} title="Attach a photo or file" style={{ width: 40, height: 42, borderRadius: 12, border: "1px solid var(--card-border)", background: "transparent", color: "var(--text-secondary)", cursor: uploading ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       <Paperclip size={17} />
@@ -398,12 +401,12 @@ export default function Messages({ embedded = false, activeId: activeIdProp = nu
                         ))}
                       </div>
                     )}
-                    <input
+                    <ChatComposer
                       value={text}
-                      onChange={(e) => { setText(e.target.value); notifyTyping(); }}
-                      onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-                      placeholder={uploading ? "Uploading…" : "Message…"}
-                      style={{ flex: 1, height: 42, borderRadius: 12, border: "1px solid var(--card-border)", background: "var(--card-bg)", color: "var(--text-primary)", padding: "0 14px", fontSize: 14, outline: "none" }}
+                      onChange={(v) => { setText(v); notifyTyping(); }}
+                      onSubmit={send}
+                      placeholder={uploading ? "Uploading…" : "Message… (Shift+Enter for a new line)"}
+                      style={{ minHeight: 42, borderRadius: 12, border: "1px solid var(--card-border)", background: "var(--card-bg)", color: "var(--text-primary)", padding: "10px 14px", fontSize: 14, outline: "none" }}
                     />
                     <button onClick={send} disabled={sending || !text.trim()} style={{ width: 46, height: 42, borderRadius: 12, border: "none", background: "var(--accent-gradient, #7c3aed)", color: "#fff", cursor: sending || !text.trim() ? "default" : "pointer", opacity: sending || !text.trim() ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       <Send size={17} />

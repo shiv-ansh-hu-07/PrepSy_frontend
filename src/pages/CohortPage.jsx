@@ -6,6 +6,7 @@ import api from "../services/api";
 import { track } from "../services/analytics";
 import AppSideNav from "../components/AppSideNav";
 import { useCohortLive, CohortScoreboard } from "../components/CohortLiveBoard";
+import RichText from "../components/RichText";
 import { Users, BookOpen, MessageSquare, Brain, Calendar, ChevronDown, ChevronUp, Link2, TrendingUp, Layers, Lock, CheckCircle2, PlayCircle, Paperclip, X, FileText } from "lucide-react";
 
 const PAGE_BG = "var(--page-bg)";
@@ -1192,7 +1193,7 @@ export default function CohortPage() {
                             🚩 Flag at {fmtFlagTime(post.timeSec)} · {cohort.playlist?.videos?.find((v) => v.ytVideoId === post.videoId)?.title || "a video"}
                           </p>
                         )}
-                        {post.content && <p style={{ margin: 0, fontSize: 14, color: "var(--text-primary)", lineHeight: 1.6 }}>{post.content}</p>}
+                        {post.content && <RichText text={post.content} style={{ fontSize: 14, color: "var(--text-primary)", lineHeight: 1.6 }} />}
                         <DiscussionAttachment post={post} />
 
                         {cohort.isMember && (
@@ -1233,7 +1234,7 @@ export default function CohortPage() {
                                 </div>
                                 <span style={{ fontWeight: 700, fontSize: 12, color: "var(--text-primary)" }}>{reply.author?.name}</span>
                               </div>
-                              {reply.content && <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>{reply.content}</p>}
+                              {reply.content && <RichText text={reply.content} style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }} />}
                               <DiscussionAttachment post={reply} />
                             </div>
                           ))}

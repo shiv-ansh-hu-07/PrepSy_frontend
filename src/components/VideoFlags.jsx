@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useEffect, useState } from "react";
 import { Flag, Trash2, CornerDownRight } from "lucide-react";
+import RichText from "./RichText";
 
 // Video flags ("checkpointers"): notes pinned to a moment in a playlist video.
 // Anyone in the cohort can drop one at the current time; everyone sees it on
@@ -173,14 +174,15 @@ export default function VideoFlags({
             {showAll && f.videoId !== currentVideoId && (
               <p style={st.videoLabel}>#{indexOf(f.videoId)} {titleOf(f.videoId)}</p>
             )}
-            <p style={st.content}>{f.content}</p>
+            <RichText text={f.content} style={st.content} />
 
             {(f.replies || []).map((r) => (
               <div key={r.id} style={st.reply}>
                 <CornerDownRight size={12} style={{ flexShrink: 0, marginTop: 2, color: "var(--text-muted)" }} />
-                <p style={{ margin: 0, fontSize: 12, color: "var(--text-primary)", lineHeight: 1.45 }}>
-                  <strong>{r.author?.name || "Member"}</strong> {r.content}
-                </p>
+                <div style={{ minWidth: 0, fontSize: 12, color: "var(--text-primary)", lineHeight: 1.45 }}>
+                  <strong>{r.author?.name || "Member"}</strong>
+                  <RichText text={r.content} />
+                </div>
               </div>
             ))}
 
