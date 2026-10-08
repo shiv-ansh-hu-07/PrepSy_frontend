@@ -159,6 +159,9 @@ export default function Dashboard() {
           </p>
         </div>
 
+        {/* AI Study Planner — the entry point most users need first */}
+        {user && <PlannerPromo isMobile={isMobile} onOpen={(path) => navigate(path)} />}
+
         {/* Stat cards */}
         <div style={{
           display: "grid",
@@ -495,4 +498,56 @@ function fmt(ms) {
   const m = Math.floor((s % 3600) / 60);
   if (h > 0) return `${h}h ${String(m).padStart(2, "0")}m`;
   return `${m}m ${String(s % 60).padStart(2, "0")}s`;
+}
+
+// Dashboard entry to the AI Study Planner: start one, or continue your latest.
+function PlannerPromo({ isMobile, onOpen }) {
+  const [latest, setLatest] = useState(undefined); // undefined = loading, null = none
+  useEffect(() => {
+    let cancelled = false;
+    api.get("/planner/plans")
+      .then(({ data }) => { if (!cancelled) setLatest((data || [])[0] || null); })
+      .catch(() => { if (!cancelled) setLatest(null); });
+    return () => { cancelled = true; };
+  }, []);
+  if (latest === undefined) return null;
+
+  const total = latest ? (latest.plan?.weeks || []).reduce((a, w) => a + (w.topics?.length || 0), 0) : 0;
+  const done = latest ? Object.keys(latest.progress || {}).length : 0;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+
+  return (
+    <div style={{
+      marginBottom: isMobile ? 16 : 22, padding: isMobile ? 16 : "18px 20px", borderRadius: 20,
+      border: "1px solid var(--accent)", background: "linear-gradient(135deg, var(--accent-soft), var(--card-bg) 70%)",
+      display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
+    }}>
+      <span style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, background: "linear-gradient(135deg, #7c3aed, #a855f7)" }}>✨</span>
+      <div style={{ flex: 1, minWidth: 200 }}>
+        {latest ? (
+          <>
+            <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "var(--text-primary)" }}>Continue your plan: {latest.title}</p>
+            <p style={{ margin: "3px 0 8px", fontSize: 13, color: "var(--text-secondary)" }}>{done}/{total} topics done · {pct}%</p>
+            <div style={{ height: 6, borderRadius: 999, background: "var(--accent-soft)", overflow: "hidden", maxWidth: 420 }}>
+              <div style={{ width: `${pct}%`, height: "100%", background: "var(--accent)", borderRadius: 999 }} />
+            </div>
+          </>
+        ) : (
+          <>
+            <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "var(--text-primary)" }}>Build your study plan with AI</p>
+            <p style={{ margin: "3px 0 0", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+              Tell our planner what you're studying, your goal and your deadline. It builds a week-by-week schedule of every important topic.
+            </p>
+          </>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={() => onOpen(latest ? `/planner/${latest.id}` : "/planner")}
+        style={{ height: 42, padding: "0 18px", borderRadius: 12, border: "none", background: "var(--accent-gradient, var(--accent))", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
+      >
+        {latest ? "Open plan →" : "Start planning →"}
+      </button>
+    </div>
+  );
 }

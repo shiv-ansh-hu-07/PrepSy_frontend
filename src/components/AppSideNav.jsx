@@ -23,9 +23,9 @@ const navItems = [
   // Core study surfaces first (cohort, rooms, profile), then the rest.
   { label: "YouTube Cohort", path: "/cohorts", icon: Youtube, requiresUser: true, tour: "nav-cohort" },
   { label: "Home", path: "/dashboard", icon: Home },
+  { label: "Study Planner", path: "/planner", icon: CalendarCheck, requiresUser: true, prefix: true, isNew: true },
   { label: "Rooms", path: "/join-room", icon: DoorOpen, requiresUser: true, match: ["/join-room", "/myRooms", "/create-room"], tour: "nav-rooms" },
   { label: "Profile", path: "/profile", icon: UserRound, requiresUser: true },
-  { label: "Study Planner", path: "/planner", icon: CalendarCheck, requiresUser: true, prefix: true },
   { label: "Leaderboard", path: "/leaderboard", icon: Trophy, requiresUser: true },
   { label: "Analytics", path: "/analytics", icon: BarChart3, requiresUser: true, tour: "nav-analytics" },
   { label: "Find your people", path: "/people", icon: Sparkles, requiresUser: true },
@@ -98,6 +98,7 @@ export default function AppSideNav() {
               {item.path === "/people" && !disabled && newMsgUsers > 0 ? (
                 <span style={styles.navBadge}>{newMsgUsers}</span>
               ) : null}
+              {item.isNew && !disabled ? <span style={styles.newBadge}>New</span> : null}
               {disabled ? <Lock size={13} style={styles.lockIcon} /> : null}
             </button>
           );
@@ -231,6 +232,10 @@ const styles = {
   },
   lockIcon: {
     flexShrink: 0,
+  },
+  newBadge: {
+    marginLeft: "auto", padding: "1px 7px", borderRadius: 999, fontSize: 10, fontWeight: 800,
+    letterSpacing: 0.3, background: "linear-gradient(135deg, #7c3aed, #a855f7)", color: "#fff",
   },
   navBadge: {
     flexShrink: 0,
