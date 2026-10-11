@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocalParticipant } from "@livekit/components-react";
+import { assess, createFocusState, readSignals } from "./focusModel";
 
 // MediaPipe — 478 face landmarks + iris + 52 blendshapes, plus an object
 // detector to catch a phone in frame. WASM runtime + models load from CDN.
@@ -58,71 +59,10 @@ async function grabTrackFrame(mst) {
   }
 }
 
-// ── Tunable thresholds ────────────────────────────────────────────────────────
-const CALIB_SAMPLES = 3; // clean frames used to learn neutral pose
-const CALIB_MAX_ATTEMPTS = 15; // give up waiting for clean frames after this
-const CONFIRM = 2; // consecutive negatives before a soft negative is trusted
-const DOWN_MAX = 4; // heads-down frames (×interval) before note-taking decays
-const YAW_TURN = 0.11; // head turned left/right
-const PITCH_DOWN = 0.1; // head tilted down from baseline
-const GAZE_DOWN = 0.45; // eyes looking down (blendshape 0..1)
-const GAZE_SIDE = 0.4; // eyes looking left/right (blendshape 0..1)
-const BLINK_CLOSED = 0.55; // eyes closed / heavy droop
-const PHONE_MIN = 0.35; // object-detector confidence for a phone
-const NOTE_SCORE = 60; // note-taking is neutral, not a reward
-
-function readSignals(result) {
-  const faces = result?.faceLandmarks;
-  if (!faces || !faces.length) return null;
-  const lm = faces[0];
-  const map = {};
-  const bs = result.faceBlendshapes && result.faceBlendshapes[0];
-  if (bs) for (const c of bs.categories) map[c.categoryName] = c.score;
-  const g = (n) => map[n] || 0;
-
-  const gazeDown = (g("eyeLookDownLeft") + g("eyeLookDownRight")) / 2;
-  const gazeSide = Math.max(
-    (g("eyeLookInLeft") + g("eyeLookInRight")) / 2,
-    (g("eyeLookOutLeft") + g("eyeLookOutRight")) / 2,
-  );
-  const blink = (g("eyeBlinkLeft") + g("eyeBlinkRight")) / 2;
-
-  const nose = lm[1];
-  const lf = lm[234];
-  const rf = lm[454];
-  const eL = lm[33];
-  const eR = lm[263];
-  const faceW = Math.hypot(rf.x - lf.x, rf.y - lf.y) || 0.001;
-  const yawProxy = (nose.x - (lf.x + rf.x) / 2) / faceW;
-  const pitchProxy = (nose.y - (eL.y + eR.y) / 2) / faceW;
-
-  return { gazeDown, gazeSide, blink, yawProxy, pitchProxy };
-}
-
-// Rule out "looking away" before crediting "note-taking".
-function classify(sig, baseline) {
-  const yawDev = Math.abs(sig.yawProxy - baseline.yaw);
-  const pitchDev = sig.pitchProxy - baseline.pitch;
-
-  const headTurned = yawDev > YAW_TURN;
-  const eyesSide = sig.gazeSide > GAZE_SIDE;
-  if (headTurned || eyesSide) {
-    const mag = Math.max((yawDev - YAW_TURN) * 130, (sig.gazeSide - GAZE_SIDE) * 50, 0);
-    return { state: "distracted", rawScore: clamp(20 - mag), drowsy: false };
-  }
-
-  const headDown = pitchDev > PITCH_DOWN;
-  const eyesDown = sig.gazeDown > GAZE_DOWN;
-  if (headDown || eyesDown) {
-    return { state: "notetaking", rawScore: NOTE_SCORE, drowsy: false };
-  }
-
-  if (sig.blink > BLINK_CLOSED) {
-    return { state: "drowsy", rawScore: 50, drowsy: true };
-  }
-
-  return { state: "focused", rawScore: clamp(88 - sig.gazeSide * 22), drowsy: false };
-}
+// Pose/gaze rules live in focusModel.js; these are the monitor's own knobs.
+const CONFIRM = 3; // consecutive negatives (15s) before a soft negative is trusted
+const PHONE_MIN = 0.5; // object-detector confidence for a phone
+const PHONE_CONFIRM = 2; // consecutive phone sightings before it counts
 
 function labelFor(state, score) {
   switch (state) {
@@ -159,10 +99,10 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
   const objectDetectorRef = useRef(null);
   const activeRef = useRef(false);
 
-  const calibRef = useRef({ yaw: 0, pitch: 0, n: 0, attempts: 0, ready: false });
+  const modelRef = useRef(createFocusState());
   const prevScoreRef = useRef(null);
   const negStreakRef = useRef(0);
-  const downStreakRef = useRef(0);
+  const phoneStreakRef = useRef(0);
 
   // ── Audio analysis (background noise) ────────────────────────────────────
   const audioCtxRef = useRef(null);
@@ -280,40 +220,14 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
           facePresent = false;
         } else {
           facePresent = true;
-          const cal = calibRef.current;
-          if (!cal.ready) {
-            cal.attempts += 1;
-            // Only learn the baseline from frames where the user is actually
-            // looking at the screen — otherwise a crooked baseline makes
-            // everything look focused.
-            const clean = sig.gazeDown < 0.4 && sig.gazeSide < 0.4 && sig.blink < 0.5;
-            if (clean) {
-              cal.yaw = (cal.yaw * cal.n + sig.yawProxy) / (cal.n + 1);
-              cal.pitch = (cal.pitch * cal.n + sig.pitchProxy) / (cal.n + 1);
-              cal.n += 1;
-            }
-            if (cal.n >= CALIB_SAMPLES || cal.attempts >= CALIB_MAX_ATTEMPTS) cal.ready = true;
-            state = "calibrating";
-            rawScore = 70;
-          } else {
-            const r = classify(sig, cal);
-            state = r.state;
-            rawScore = r.rawScore;
-            drowsy = r.drowsy;
-            // Genuine note-taking has look-ups; staring down for 20s+ straight
-            // is more likely a phone/zoning — decay the score.
-            if (state === "notetaking") {
-              downStreakRef.current += 1;
-              if (downStreakRef.current > DOWN_MAX) {
-                rawScore = Math.max(32, rawScore - (downStreakRef.current - DOWN_MAX) * 7);
-              }
-            } else {
-              downStreakRef.current = 0;
-            }
-          }
+          const r = assess(sig, modelRef.current);
+          state = r.state;
+          rawScore = r.rawScore;
+          drowsy = r.drowsy;
         }
 
-        // Phone in frame → hard distraction, regardless of gaze/pose.
+        // Phone in frame → hard distraction, regardless of gaze/pose. One
+        // sighting can be a misread (a remote, a dark mug), so wait for two.
         if (objectDetectorRef.current) {
           try {
             const od = objectDetectorRef.current.detectForVideo(source, performance.now());
@@ -324,11 +238,12 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
           } catch {
             /* ignore a detector blip */
           }
+          phoneStreakRef.current = phone ? phoneStreakRef.current + 1 : 0;
+          phone = phoneStreakRef.current >= PHONE_CONFIRM;
           if (phone) {
             state = "phone";
             rawScore = 10;
             forceNeg = true;
-            downStreakRef.current = 0;
           }
         }
       }
@@ -362,8 +277,9 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
         score = prev == null ? rawScore : Math.round(prev * 0.4 + rawScore * 0.6);
       }
 
-      const noisePenalty = noiseLevel > 40 ? Math.min(15, Math.round((noiseLevel - 40) / 3)) : 0;
-      score = clamp(score - noisePenalty);
+      // Room noise is recorded for the summary but never costs focus points: a
+      // lecture playing on speakers is not a distraction.
+      score = clamp(score);
       prevScoreRef.current = score;
 
       const noteTaking = committedState === "notetaking";
@@ -423,10 +339,10 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
     landmarkerRef.current = models.landmarker;
     objectDetectorRef.current = models.objectDetector;
 
-    calibRef.current = { yaw: 0, pitch: 0, n: 0, attempts: 0, ready: false };
+    modelRef.current = createFocusState();
     prevScoreRef.current = null;
     negStreakRef.current = 0;
-    downStreakRef.current = 0;
+    phoneStreakRef.current = 0;
 
     if (video.readyState < 2) {
       await new Promise((res) => {
