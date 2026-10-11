@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useWindowWidth } from "../hooks/useBreakpoint";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api, { fetchStats, fetchMyAnalytics, fetchFocusSummary } from "../services/api";
 import AppSideNav from "../components/AppSideNav";
@@ -41,6 +41,8 @@ export default function Dashboard() {
   const [roomsLoaded, setRoomsLoaded] = useState(false);
   const [myAnalytics, setMyAnalytics] = useState(null);
   const [focusSummary, setFocusSummary] = useState(null);
+  // Shown in the empty sessions panel: a group to join beats an empty room.
+  const [suggestedCohort, setSuggestedCohort] = useState(null);
 
   const isGuestViewer = !user && guestSessionActive;
   const firstName = (user?.name || "there").split(" ")[0];
@@ -88,6 +90,11 @@ export default function Dashboard() {
     loadMyAnalytics();
     loadFocusSummary();
     loadRooms();
+    if (user?.id) {
+      api.get("/cohorts/recommended")
+        .then((res) => { if (!cancelled) setSuggestedCohort(Array.isArray(res.data) ? res.data[0] || null : null); })
+        .catch(() => { /* non-critical */ });
+    }
     return () => { cancelled = true; };
   }, [user?.id]);
 
@@ -108,6 +115,11 @@ export default function Dashboard() {
 
   if (!user && !guestSessionActive) {
     return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading...</div>;
+  }
+
+  // First-timers answer the short intent screen before seeing the dashboard.
+  if (user && user.hasSeenTour === false) {
+    return <Navigate to="/welcome" replace />;
   }
 
   const streak = myAnalytics?.currentStreakDays ?? 0;
@@ -205,8 +217,45 @@ export default function Dashboard() {
                 }}>
                   <p style={{ fontSize: 28, margin: "0 0 8px" }}>📚</p>
                   <p style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: 14, margin: "0 0 4px" }}>No live rooms right now</p>
-                  <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "0 0 16px", lineHeight: 1.5 }}>Be the first to start a session.</p>
-                  <button onClick={() => navigate("/create-room")} style={createRoomBtn}>Create a Room →</button>
+                  {user ? (
+                    <>
+                      <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "0 0 16px", lineHeight: 1.5 }}>
+                        Rooms fill up at set times. Join a group that meets daily, or schedule a session and invite friends.
+                      </p>
+                      {suggestedCohort && (
+                        <button
+                          onClick={() => navigate(`/cohort/${suggestedCohort.id}`)}
+                          style={{
+                            display: "block", width: "100%", maxWidth: 360, margin: "0 auto 14px", textAlign: "left",
+                            padding: "12px 14px", borderRadius: 14, border: "1px solid var(--card-border)",
+                            background: "var(--card-bg)", cursor: "pointer",
+                          }}
+                        >
+                          <span style={{ display: "block", fontSize: 13, fontWeight: 700, color: "var(--text-primary)", overflowWrap: "anywhere" }}>
+                            {suggestedCohort.name}
+                          </span>
+                          <span style={{ display: "block", fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>
+                            {suggestedCohort.memberCount} {suggestedCohort.memberCount === 1 ? "member" : "members"}
+                            {suggestedCohort.dailyTime ? ` · daily at ${suggestedCohort.dailyTime}` : ""} · View →
+                          </span>
+                        </button>
+                      )}
+                      <button onClick={() => navigate("/cohorts")} style={createRoomBtn}>Find a study cohort →</button>
+                      <div>
+                        <button
+                          onClick={() => navigate("/create-room")}
+                          style={{ marginTop: 10, border: "none", background: "transparent", color: "var(--text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
+                        >
+                          or schedule your own session
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "0 0 16px", lineHeight: 1.5 }}>Be the first to start a session.</p>
+                      <button onClick={() => navigate("/create-room")} style={createRoomBtn}>Create a Room →</button>
+                    </>
+                  )}
                 </div>
               ) : (
                 sessionRooms.map((room) => (
@@ -301,9 +350,9 @@ export default function Dashboard() {
       </main>
       </div>
 
-      {/* First-login guided tour (account-scoped: fires once per user, any device)
-          + replayable "Take a tour" launcher */}
-      <OnboardingTour autoStart={!!user && user.hasSeenTour === false} onSeen={markTourSeen} />
+      {/* Optional, replayable "Take a tour" launcher. New users get the /welcome
+          intent screen instead of an automatic tour. */}
+      <OnboardingTour onSeen={markTourSeen} />
     </div>
   );
 }

@@ -31,6 +31,7 @@ const MyCohorts = lazy(() => import("./pages/MyCohorts"));
 const FounderAnalytics = lazy(() => import("./pages/FounderAnalytics"));
 const Planner = lazy(() => import("./pages/Planner"));
 const RoomDetails = lazy(() => import("./pages/RoomDetails"));
+const Welcome = lazy(() => import("./pages/Welcome"));
 
 export default function App() {
   return (
@@ -104,6 +105,15 @@ export default function App() {
             element={
               <ProtectedRoute allowGuest>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/welcome"
+            element={
+              <ProtectedRoute>
+                <Welcome />
               </ProtectedRoute>
             }
           />

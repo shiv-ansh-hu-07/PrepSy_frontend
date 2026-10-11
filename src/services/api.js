@@ -46,8 +46,10 @@ export async function fetchMyAnalytics() {
 
 export async function saveFocusSession(payload) {
   const { data } = await api.post("/focus-analytics", payload);
-  // Choke point for a completed monitored study session — key core-loop event.
-  track("session_completed", {
+  // `session_completed` is recorded by the backend when the room session closes
+  // (POST /rooms/:id/leave), so it counts sessions without the camera monitor
+  // too. This event only marks that focus data was captured for one.
+  track("focus_session_saved", {
     roomId: payload?.roomId,
     durationMinutes: payload?.durationMinutes,
     focusScore: payload?.focusScore,
@@ -90,6 +92,19 @@ export async function setEmailNotifications(enabled) {
 // Mark the first-login product tour as seen (account-scoped, follows the user).
 export async function markTourSeen() {
   const { data } = await api.put("/profiles/me/tour-seen");
+  return data;
+}
+
+// Save the first-run intent answers (goals / study times / style) and mark
+// onboarding done. Works with any subset — a skip sends an empty object.
+export async function saveOnboarding(answers = {}) {
+  const { data } = await api.put("/profiles/me/onboarding", answers);
+  return data;
+}
+
+// "Notify me" on a scheduled room — subscribe to its reminder email.
+export async function notifyMeForRoom(roomId) {
+  const { data } = await api.post(`/rooms/${roomId}/notify`);
   return data;
 }
 

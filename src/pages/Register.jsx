@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../context/AuthContext";
+import api from "../services/api";
 import { track } from "../services/analytics";
 
 export default function Register() {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, loginWithToken } = useAuth();
 
   // Top of the signup funnel — pairs with signup_completed to give conversion.
   useEffect(() => {
@@ -16,18 +18,40 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // New accounts are signed in immediately and land on the dashboard, which
+  // sends first-timers through the short /welcome intent screen.
   async function handleRegister(e) {
     e.preventDefault();
+    if (isSubmitting) return;
     setError("");
+    setIsSubmitting(true);
 
     try {
-      await register(name, email, password);
-      alert("Account created! Please login.");
-      navigate("/login");
+      const signedIn = await register(name, email, password);
+      navigate(signedIn ? "/dashboard" : "/login", { replace: true });
     } catch (err) {
       const msg = err?.response?.data?.message;
       setError(typeof msg === "string" ? msg : "Registration failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleGoogle(credentialResponse) {
+    setError("");
+    setIsSubmitting(true);
+    try {
+      const res = await api.post("/auth/oauth/google", {
+        idToken: credentialResponse.credential,
+      });
+      await loginWithToken(res.data.token, res.data.user);
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError(err?.response?.data?.message || "Google sign-up failed");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -211,6 +235,7 @@ export default function Register() {
           {/* CTA */}
           <button
             type="submit"
+            disabled={isSubmitting}
             style={{
               display: "block",
               margin: "0 auto",
@@ -243,8 +268,26 @@ export default function Register() {
                 "0 18px 36px rgba(109,106,248,0.35), inset 0 1px 0 rgba(255,255,255,0.35)";
             }}
           >
-            Create Account
+            {isSubmitting ? "Creating account…" : "Create Account"}
           </button>
+
+          <div
+            style={{
+              marginTop: "18px",
+              display: "flex",
+              justifyContent: "center",
+            }}
+          >
+            <GoogleLogin
+              theme="outline"
+              size="large"
+              shape="pill"
+              text="signup_with"
+              width="360"
+              onSuccess={handleGoogle}
+              onError={() => setError("Google sign-up failed")}
+            />
+          </div>
 
           {/* Footer */}
           <div

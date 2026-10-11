@@ -128,10 +128,19 @@ export const AuthProvider = ({ children }) => {
     return res.data.user;
   };
 
-  // Register (no auto-login)
+  // Register — the backend signs the new account in, so there's no second
+  // trip through the login form.
   const register = async (name, email, password) => {
-    await api.post("/auth/register", { name, email, password });
+    const res = await api.post("/auth/register", { name, email, password });
     track("signup_completed", { method: "password" });
+    if (res.data?.token) {
+      localStorage.setItem("token", res.data.token);
+      persistUser(res.data.user);
+      setLoading(false);
+      persistGuestSession(false);
+    }
+    // false only against an older backend that doesn't sign new accounts in.
+    return Boolean(res.data?.token);
   };
 
   // ✅ ADD THIS (Google / OAuth login)

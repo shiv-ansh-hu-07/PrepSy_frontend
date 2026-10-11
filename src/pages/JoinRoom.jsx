@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useWindowWidth } from "../hooks/useBreakpoint";
 import { useNavigate } from "react-router-dom";
-import api from "../services/api";
+import api, { notifyMeForRoom } from "../services/api";
 import RoomsTabs from "../components/RoomsTabs";
 
 const BG = "var(--page-bg)";
@@ -86,8 +86,10 @@ export default function JoinRoom() {
   }, []);
 
   const handleJoin = () => {
-    if (!roomId.trim()) return alert("Enter a valid Room ID");
-    navigate(`/room/${roomId.trim()}`);
+    // Accept a pasted invite link as well as a bare room id.
+    const id = roomId.trim().replace(/^.*\/rooms?\//, "").split(/[?#/]/)[0];
+    if (!id) return alert("Enter a valid Room ID");
+    navigate(`/room/${id}`);
   };
 
   const handleTagSearch = async () => {
@@ -299,6 +301,19 @@ function RoomCard({ room, now, isMobile, onJoin }) {
   const { icon, bg, accent } = roomIcon(room);
   const tags = (room.tags || []).slice(0, isMobile ? 3 : 4);
   const userCount = room?.activeUsers ?? 0;
+  // "idle" | "saving" | "done" | "error" — subscribes to the room's reminder email.
+  const [notify, setNotify] = useState("idle");
+
+  const handleNotify = async () => {
+    if (notify === "saving" || notify === "done") return;
+    setNotify("saving");
+    try {
+      await notifyMeForRoom(room.roomId);
+      setNotify("done");
+    } catch {
+      setNotify("error");
+    }
+  };
 
   return (
     <div style={{
@@ -375,9 +390,21 @@ function RoomCard({ room, now, isMobile, onJoin }) {
           <button onClick={onJoin} style={{ padding: "7px 15px", borderRadius: 10, border: "none", background: "var(--accent-gradient)", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", boxShadow: "0 4px 12px rgba(124,58,237,0.28)" }}>
             Join Now
           </button>
-        ) : (
-          <button style={{ padding: "7px 12px", borderRadius: 10, border: "1px solid rgba(190,200,235,0.7)", background: "var(--card-bg)", color: "#7b88b8", fontWeight: 500, fontSize: 11, cursor: "default" }}>
-            Notify me
+        ) : !room.startTime ? null : (
+          <button
+            onClick={handleNotify}
+            disabled={notify === "saving" || notify === "done"}
+            title={notify === "done" ? "We'll email you 15 minutes before it starts" : "Email me 15 minutes before this room starts"}
+            style={{
+              padding: "7px 12px", borderRadius: 10, fontSize: 11,
+              border: notify === "done" ? "1px solid rgba(34,197,94,0.35)" : "1px solid rgba(190,200,235,0.7)",
+              background: notify === "done" ? "rgba(34,197,94,0.1)" : "var(--card-bg)",
+              color: notify === "done" ? "#16a34a" : notify === "error" ? "#dc2626" : "#7b88b8",
+              fontWeight: notify === "done" ? 700 : 500,
+              cursor: notify === "saving" || notify === "done" ? "default" : "pointer",
+            }}
+          >
+            {notify === "done" ? "✓ Reminder set" : notify === "saving" ? "Saving…" : notify === "error" ? "Try again" : "Notify me"}
           </button>
         )}
         </div>

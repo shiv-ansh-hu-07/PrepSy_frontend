@@ -495,8 +495,9 @@ export default function WatchPartyLayout({
   const copyRoomId = async () => {
     if (!roomId) return;
     try {
-      await navigator.clipboard.writeText(roomId);
-      setShareStatus("Room ID copied");
+      // A clickable invite link, not the bare id — a friend can just open it.
+      await navigator.clipboard.writeText(`${window.location.origin}/room/${roomId}`);
+      setShareStatus("Invite link copied");
     } catch {
       setShareStatus("Copy failed");
     }
