@@ -5,7 +5,6 @@ import App from "./App";
 import { BrowserRouter } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider } from "./context/AuthContext";
-import { SocketProvider } from "./context/SocketContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { NavGuardProvider } from "./context/NavGuardContext";
 
@@ -17,11 +16,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <BrowserRouter>
         <ThemeProvider>
           <AuthProvider>
-            <SocketProvider>
-              <NavGuardProvider>
-                <App />
-              </NavGuardProvider>
-            </SocketProvider>
+            <NavGuardProvider>
+              <App />
+            </NavGuardProvider>
           </AuthProvider>
         </ThemeProvider>
       </BrowserRouter>

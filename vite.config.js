@@ -24,8 +24,8 @@ export default defineConfig({
 
           if (id.includes('@livekit') || id.includes('livekit-client')) return 'livekit';
 
-          // socket.io-client is only ever invoked inside SocketContext's
-          // lazy useState initializer (a function body), never at module
+          // socket.io-client is only ever invoked inside the Messages page's
+          // DM-socket effect (a function body), never at module
           // top-level, so — unlike the earlier attempt to split React out
           // (reverted in 7d1f329 because vendor code called
           // React.createContext at its own top level before the react
