@@ -175,3 +175,58 @@ export function assess(sig, st) {
     drowsy: false,
   };
 }
+
+// ── Phone in frame ───────────────────────────────────────────────────────────
+// The object detector is unreliable on a hand-held phone: it's small, half
+// covered by fingers and often seen from the back, so its confidence is low and
+// it comes and goes between frames. One threshold can't work — set it high and
+// real phones are missed, set it low and a mug becomes a phone. So the weaker
+// the sighting, the more supporting evidence it needs:
+//   • strong sighting → a phone, immediately;
+//   • medium sighting → a phone if it was also seen just before, or the user
+//     isn't looking at their screen right now;
+//   • faint sighting  → a phone only if it keeps showing up AND they're looking
+//     down or away.
+// Once confirmed it stays "phone" for as long as any trace of it is in frame.
+export const PHONE = {
+  DETECT_MIN: 0.2, // detector floor; anything below is never reported
+  STRONG: 0.5,
+  MEDIUM: 0.3,
+  WINDOW: 3, // samples of history kept
+};
+
+// Categories the detector uses for a phone. Seen from the back, a phone is very
+// often labelled "remote".
+export function phoneConfidence(detections) {
+  let best = 0;
+  for (const d of detections || []) {
+    for (const c of d.categories || []) {
+      if (/cell phone|mobile phone|remote/i.test(c.categoryName || "") && c.score > best) best = c.score;
+    }
+  }
+  return best;
+}
+
+export function createPhoneState() {
+  return { recent: [], active: false };
+}
+
+// confidence: best phone confidence since the last sample (0 if none).
+// offScreen: the pose model says they're looking down or away right now.
+export function assessPhone(confidence, offScreen, st) {
+  const P = PHONE;
+  const prior = st.recent; // earlier samples, newest last
+  const seenBefore = prior.filter((c) => c >= P.DETECT_MIN).length;
+  const justSeen = prior.length > 0 && prior[prior.length - 1] >= P.DETECT_MIN;
+
+  let phone;
+  if (confidence < P.DETECT_MIN) phone = false;
+  else if (st.active) phone = true;
+  else if (confidence >= P.STRONG) phone = true;
+  else if (confidence >= P.MEDIUM) phone = justSeen || offScreen;
+  else phone = offScreen && seenBefore >= 1;
+
+  st.recent = [...prior, confidence].slice(-P.WINDOW);
+  st.active = phone;
+  return phone;
+}

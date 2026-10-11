@@ -557,6 +557,7 @@ function FocusSummarySection({ data }) {
           <p style={{ margin: "3px 0 0", fontSize: 12, color: "var(--text-secondary)" }}>
             Engagement {data.engagementScore}% · {data.distractionCount} distraction{data.distractionCount === 1 ? "" : "s"}
             {data.offScreenSeconds > 0 ? ` · ${data.offScreenSeconds}s off-screen` : ""}
+            {data.phonePercent > 0 ? ` · on phone ${data.phonePercent}%` : ""}
           </p>
         </div>
       </div>

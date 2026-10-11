@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocalParticipant } from "@livekit/components-react";
-import { assess, createFocusState, readSignals } from "./focusModel";
+import {
+  PHONE,
+  assess,
+  assessPhone,
+  createFocusState,
+  createPhoneState,
+  phoneConfidence,
+  readSignals,
+} from "./focusModel";
 
 // MediaPipe — 478 face landmarks + iris + 52 blendshapes, plus an object
 // detector to catch a phone in frame. WASM runtime + models load from CDN.
@@ -34,8 +42,9 @@ async function loadModels() {
       objectDetector = await vision.ObjectDetector.createFromOptions(fileset, {
         baseOptions: { modelAssetPath: OBJ_MODEL_URL, delegate: "CPU" },
         runningMode: "VIDEO",
-        scoreThreshold: 0.35,
-        maxResults: 5,
+        // Low floor on purpose: assessPhone() decides what counts.
+        scoreThreshold: PHONE.DETECT_MIN,
+        maxResults: 8,
       });
     } catch (e) {
       console.warn("[FocusMonitor] Object detector unavailable:", e?.message);
@@ -61,8 +70,6 @@ async function grabTrackFrame(mst) {
 
 // Pose/gaze rules live in focusModel.js; these are the monitor's own knobs.
 const CONFIRM = 3; // consecutive negatives (15s) before a soft negative is trusted
-const PHONE_MIN = 0.5; // object-detector confidence for a phone
-const PHONE_CONFIRM = 2; // consecutive phone sightings before it counts
 
 function labelFor(state, score) {
   switch (state) {
@@ -95,6 +102,7 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
   const samplesRef = useRef([]);
   const videoElRef = useRef(null);
   const timerRef = useRef(null);
+  const peekTimerRef = useRef(null);
   const landmarkerRef = useRef(null);
   const objectDetectorRef = useRef(null);
   const activeRef = useRef(false);
@@ -102,7 +110,8 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
   const modelRef = useRef(createFocusState());
   const prevScoreRef = useRef(null);
   const negStreakRef = useRef(0);
-  const phoneStreakRef = useRef(0);
+  const phoneRef = useRef(createPhoneState());
+  const phonePeekRef = useRef(0); // best phone confidence seen between samples
 
   // ── Audio analysis (background noise) ────────────────────────────────────
   const audioCtxRef = useRef(null);
@@ -176,6 +185,10 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+    if (peekTimerRef.current) {
+      clearInterval(peekTimerRef.current);
+      peekTimerRef.current = null;
+    }
     if (videoElRef.current) {
       videoElRef.current.srcObject = null;
       videoElRef.current.remove();
@@ -226,20 +239,19 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
           drowsy = r.drowsy;
         }
 
-        // Phone in frame → hard distraction, regardless of gaze/pose. One
-        // sighting can be a misread (a remote, a dark mug), so wait for two.
+        // Phone in frame → hard distraction, regardless of gaze/pose. Uses
+        // this frame plus anything the in-between peek caught.
         if (objectDetectorRef.current) {
+          let confidence = phonePeekRef.current;
+          phonePeekRef.current = 0;
           try {
             const od = objectDetectorRef.current.detectForVideo(source, performance.now());
-            phone = (od?.detections || []).some((d) => {
-              const c = d.categories && d.categories[0];
-              return c && /cell phone|phone/i.test(c.categoryName) && c.score > PHONE_MIN;
-            });
+            confidence = Math.max(confidence, phoneConfidence(od?.detections));
           } catch {
             /* ignore a detector blip */
           }
-          phoneStreakRef.current = phone ? phoneStreakRef.current + 1 : 0;
-          phone = phoneStreakRef.current >= PHONE_CONFIRM;
+          const offScreen = state === "notetaking" || state === "distracted";
+          phone = assessPhone(confidence, offScreen, phoneRef.current);
           if (phone) {
             state = "phone";
             rawScore = 10;
@@ -342,7 +354,8 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
     modelRef.current = createFocusState();
     prevScoreRef.current = null;
     negStreakRef.current = 0;
-    phoneStreakRef.current = 0;
+    phoneRef.current = createPhoneState();
+    phonePeekRef.current = 0;
 
     if (video.readyState < 2) {
       await new Promise((res) => {
@@ -354,6 +367,24 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
     activeRef.current = true;
     setStatus("active");
     timerRef.current = setInterval(runSample, intervalMs);
+    // A phone is often only in view for a moment, so also look for one
+    // halfway between samples (visible tab only — the <video> is stale otherwise).
+    const peek = () => {
+      const v = videoElRef.current;
+      if (!activeRef.current || !objectDetectorRef.current || !v || v.readyState < 2) return;
+      if (document.visibilityState === "hidden") return;
+      try {
+        const od = objectDetectorRef.current.detectForVideo(v, performance.now());
+        phonePeekRef.current = Math.max(phonePeekRef.current, phoneConfidence(od?.detections));
+      } catch {
+        /* ignore a detector blip */
+      }
+    };
+    // clearInterval() also cancels a pending timeout, so one ref covers both.
+    peekTimerRef.current = setTimeout(() => {
+      peek();
+      peekTimerRef.current = setInterval(peek, intervalMs);
+    }, intervalMs / 2);
   }, [syncVideo, runSample, intervalMs]);
 
   // ── React to enabled / cameraTrack changes ────────────────────────────────
