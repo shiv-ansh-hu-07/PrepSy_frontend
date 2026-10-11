@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   useLocalParticipant,
   useRoomContext,
 } from "@livekit/components-react";
+import MiniFocusTile from "./MiniFocusTile";
 
 const BREAK_DURATION = 5 * 60;
 const SETTLE_DURATION = 60;
@@ -17,7 +19,15 @@ function calcPomodoro(roomDurationMinutes) {
   return { sessions: N, sessionSeconds: sessionMinutes * 60 };
 }
 
-export default function PomodoroTimer({ onLeaveRoom, roomDurationMinutes = 90 }) {
+// miniContainer: DOM node inside the room's mini window (or null). The timer
+// state lives here, so this component also draws the mini tile into it.
+export default function PomodoroTimer({
+  onLeaveRoom,
+  roomDurationMinutes = 90,
+  miniContainer = null,
+  miniFocus = null,
+  roomName = "",
+}) {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
 
@@ -262,8 +272,25 @@ export default function PomodoroTimer({ onLeaveRoom, roomDurationMinutes = 90 })
       .toString()
       .padStart(2, "0")}`;
 
+  const onBreak = showBreakPrompt && !isRunning;
+  const settling = showSettlePrompt && !isRunning && !phaseStartedAt;
+  const miniTime = formatTime(onBreak ? breakSecondsLeft : settling ? settleSecondsLeft : timeLeft);
+  const miniPhase = onBreak ? "Break" : settling ? "Starting in" : isRunning ? "Focus time" : "Ready";
+
   return (
     <div style={styles.wrapper}>
+      {miniContainer
+        ? createPortal(
+            <MiniFocusTile
+              time={miniTime}
+              phase={miniPhase}
+              urgent={isRunning && isUrgent}
+              focus={miniFocus}
+              roomName={roomName}
+            />,
+            miniContainer,
+          )
+        : null}
       <div style={{ position: "relative", width: 208, height: 208, margin: "0 auto" }}>
         <svg width="208" height="208" viewBox="0 0 208 208">
           <circle

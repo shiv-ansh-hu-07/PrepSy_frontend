@@ -46,6 +46,18 @@ async function loadModels() {
 
 const clamp = (v) => Math.max(0, Math.min(100, Math.round(v)));
 
+// While the tab is in the background the browser stops painting <video>, so the
+// element can be holding a stale frame. Pull a fresh one straight off the
+// camera track instead. Returns null where that isn't possible.
+async function grabTrackFrame(mst) {
+  if (typeof ImageCapture === "undefined" || !mst || mst.readyState !== "live") return null;
+  try {
+    return await new ImageCapture(mst).grabFrame();
+  } catch {
+    return null;
+  }
+}
+
 // ── Tunable thresholds ────────────────────────────────────────────────────────
 const CALIB_SAMPLES = 3; // clean frames used to learn neutral pose
 const CALIB_MAX_ATTEMPTS = 15; // give up waiting for clean frames after this
@@ -239,18 +251,26 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
 
     const noiseLevel = getNoiseLevel();
 
-    try {
-      const tabHidden = typeof document !== "undefined" && document.visibilityState === "hidden";
+    // Studying in another tab or app (a course, docs, an IDE) is still studying:
+    // keep judging attention from the camera rather than marking the user away.
+    // If no fresh frame can be had in the background, skip the sample — no data
+    // is better than a made-up low score.
+    const tabHidden = typeof document !== "undefined" && document.visibilityState === "hidden";
+    let frame = null;
+    if (tabHidden) {
+      frame = await grabTrackFrame(video.srcObject?.getVideoTracks?.()[0]);
+      if (!frame || !activeRef.current || !landmarkerRef.current) {
+        frame?.close?.();
+        return;
+      }
+    }
+    const source = frame || video;
 
+    try {
       let state, rawScore, facePresent, drowsy = false, phone = false, forceNeg = false;
 
-      if (tabHidden) {
-        state = "away";
-        rawScore = 12;
-        facePresent = false;
-        forceNeg = true;
-      } else {
-        const result = landmarkerRef.current.detectForVideo(video, performance.now());
+      {
+        const result = landmarkerRef.current.detectForVideo(source, performance.now());
         const sig = readSignals(result);
 
         if (!sig) {
@@ -296,7 +316,7 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
         // Phone in frame → hard distraction, regardless of gaze/pose.
         if (objectDetectorRef.current) {
           try {
-            const od = objectDetectorRef.current.detectForVideo(video, performance.now());
+            const od = objectDetectorRef.current.detectForVideo(source, performance.now());
             phone = (od?.detections || []).some((d) => {
               const c = d.categories && d.categories[0];
               return c && /cell phone|phone/i.test(c.categoryName) && c.score > PHONE_MIN;
@@ -327,7 +347,7 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
       if (state === "calibrating") {
         score = 70;
       } else if (isNeg && forceNeg) {
-        // High-confidence negatives (phone, tab hidden) commit immediately.
+        // High-confidence negatives (phone in frame) commit immediately.
         score = rawScore;
         confirmedNeg = true;
       } else if (isNeg && negStreakRef.current < CONFIRM) {
@@ -372,6 +392,8 @@ export default function useFocusMonitor({ enabled, intervalMs = 5000 }) {
       }
     } catch {
       // swallow — a model blip shouldn't stop the session
+    } finally {
+      frame?.close?.();
     }
   }, [getNoiseLevel]);
 

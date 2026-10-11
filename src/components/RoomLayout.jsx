@@ -16,10 +16,12 @@ import {
   Upload,
   Volume2,
   VolumeX,
+  PictureInPicture2,
 } from "lucide-react";
 import useMediaControls from "../hooks/useMediaControl";
 import useFocusMonitor from "../hooks/useFocusMonitor";
 import useAmbientSound from "../hooks/useAmbientSound";
+import useMiniWindow from "../hooks/useMiniWindow";
 import { useNavigate } from "react-router-dom";
 import AmbientBackground from "./AmbientBackground";
 import { SCENE_LIST } from "./ambientScenes";
@@ -54,6 +56,15 @@ export default function RoomLayout({
 
   // Focus monitoring only ever runs with explicit camera-analysis consent.
   const focusMonitor = useFocusMonitor({ enabled: camEnabled && aiMonitorEnabled && hasConsent, intervalMs: 5000 });
+
+  // Mini window: timer + focus score in a small always-on-top window while
+  // the user works in another tab. Opens by itself only after they say yes.
+  const mini = useMiniWindow();
+  const miniFocus =
+    aiMonitorEnabled && focusMonitor.status === "active" && focusMonitor.currentLevel
+      ? focusMonitor.currentLevel
+      : null;
+  const showMiniPrompt = mini.supported && mini.preference === null;
 
   const handleToggleAiMonitor = () => {
     if (!hasConsent) {
@@ -259,6 +270,17 @@ export default function RoomLayout({
                 monitor={focusMonitor}
                 onToggle={handleToggleAiMonitor}
               />
+              {mini.supported && (
+                <button
+                  type="button"
+                  style={styles.roomHeaderButton}
+                  onClick={() => (mini.isOpen ? mini.close() : mini.open())}
+                  title="Keep the timer and AI focus in a small window on top of other tabs and apps"
+                >
+                  <PictureInPicture2 size={15} />
+                  {mini.isOpen ? "Close mini" : "Mini window"}
+                </button>
+              )}
               <button type="button" style={styles.roomHeaderButton} onClick={copyRoomId}>
                 <Copy size={15} />
                 {shareStatus || "Share"}
@@ -328,7 +350,13 @@ export default function RoomLayout({
                 tabs never resets the running Pomodoro timer. */}
             <div style={styles.railBody}>
               <div style={{ ...styles.railPane, display: railTab === "pomodoro" ? "flex" : "none" }}>
-                <PomodoroTimer onLeaveRoom={handleLeave} roomDurationMinutes={roomDurationMinutes} />
+                <PomodoroTimer
+                  onLeaveRoom={handleLeave}
+                  roomDurationMinutes={roomDurationMinutes}
+                  miniContainer={mini.container}
+                  miniFocus={miniFocus}
+                  roomName={roomName}
+                />
               </div>
               {roomPlan && (
                 <div style={{ ...styles.railPane, display: railTab === "plan" ? "flex" : "none" }}>
@@ -347,6 +375,24 @@ export default function RoomLayout({
           </div>
         </div>
       </div>
+
+      {showMiniPrompt && !showSummary && (
+        <div style={styles.miniPrompt} role="dialog" aria-label="Mini window">
+          <p style={styles.miniPromptTitle}>Keep your timer in view?</p>
+          <p style={styles.miniPromptText}>
+            When you switch tabs, PrepSy can shrink into a small window that stays on top and shows
+            only your Pomodoro timer and AI focus.
+          </p>
+          <div style={styles.miniPromptActions}>
+            <button type="button" style={styles.miniPromptAllow} onClick={() => mini.setPreference("allow")}>
+              Allow
+            </button>
+            <button type="button" style={styles.miniPromptDeny} onClick={() => mini.setPreference("deny")}>
+              Not now
+            </button>
+          </div>
+        </div>
+      )}
 
       {showSummary && (
         <LeaveSummaryModal
@@ -755,6 +801,23 @@ const modalStyles = {
 };
 
 const styles = {
+  miniPrompt: {
+    position: "fixed", left: 16, bottom: 16, zIndex: 9000, width: "min(320px, calc(100vw - 32px))",
+    background: "var(--card-bg-solid, var(--card-bg))", border: "1px solid var(--card-border)",
+    borderRadius: 16, padding: "14px 16px", boxShadow: "0 14px 36px rgba(0,0,0,0.22)",
+    backdropFilter: "blur(12px)",
+  },
+  miniPromptTitle: { margin: "0 0 4px", fontSize: 14, fontWeight: 700, color: "var(--text-primary)" },
+  miniPromptText: { margin: "0 0 12px", fontSize: 12.5, lineHeight: 1.5, color: "var(--text-secondary)" },
+  miniPromptActions: { display: "flex", gap: 8 },
+  miniPromptAllow: {
+    padding: "8px 16px", borderRadius: 999, border: "none", background: "#7c3aed", color: "#fff",
+    fontSize: 12.5, fontWeight: 700, cursor: "pointer",
+  },
+  miniPromptDeny: {
+    padding: "8px 14px", borderRadius: 999, border: "1px solid var(--card-border)", background: "transparent",
+    color: "var(--text-secondary)", fontSize: 12.5, fontWeight: 600, cursor: "pointer",
+  },
   page: {
     width: "100%",
     minHeight: "100%",
